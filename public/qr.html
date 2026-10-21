@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="uk" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,44 +10,61 @@
   #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; gap: 24px; padding: 24px; box-sizing: border-box; }
   .qr-card {
     background: #fff; padding: 16px; border-radius: 20px; display: flex; flex-direction: column;
-    align-items: center; gap: 10px; box-shadow: 0 18px 50px rgba(0,0,0,.45);
+    align-items: center; box-shadow: 0 18px 50px rgba(0,0,0,.45);
   }
   .qr-card svg { display: block; width: 220px; height: 220px; }
-  .qr-card .cap { font-size: 12px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: #111; }
   .jar-card {
     min-width: 300px; max-width: 430px; padding: 20px 22px; border-radius: 20px; color: #e9edf3;
-    background: rgba(16,18,23,.86); border: 1px solid rgba(255,255,255,.14);
+    background: #101217; border: 1px solid rgba(255,255,255,.14);
     box-shadow: 0 18px 50px rgba(0,0,0,.45); backdrop-filter: blur(10px);
   }
   .jar-card h2 { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
-  .jar-card .nums { font-size: 26px; font-weight: 800; letter-spacing: .01em; }
-  .jar-card .nums small { font-size: 15px; font-weight: 600; color: #9aa4b2; }
-  .bar { height: 10px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; margin: 14px 0 8px; }
+  .raised { font-size: 30px; font-weight: 800; letter-spacing: .01em; line-height: 1.15; }
+  .raised small { font-size: 15px; font-weight: 600; opacity: .7; margin-left: 4px; }
+  .bar { height: 10px; border-radius: 6px; background: var(--track, rgba(255,255,255,.14)); overflow: hidden; margin: 14px 0 8px; }
   .bar i { display: block; height: 100%; width: 0; border-radius: 6px;
     background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width .4s ease; }
-  .meta { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: .08em;
-    text-transform: uppercase; color: #9aa4b2; }
-  .meta b { color: #e9edf3; }
+  .goal-line { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted, rgba(233,237,243,.62)); }
+  .goal-line b { font-size: 14px; letter-spacing: 0; text-transform: none; color: inherit; }
 </style>
 </head>
 <body>
 <div id="wrap">
-  <div class="qr-card">
-    <div id="qr"></div>
-    <div class="cap" id="cap">DONATE</div>
-  </div>
-  <div class="jar-card">
+  <div class="qr-card" id="qrCard"><div id="qr"></div></div>
+  <div class="jar-card" id="jarCard">
     <h2 id="title">—</h2>
-    <div class="nums" id="nums">—</div>
+    <div class="raised"><span id="raised">0</span><small id="cur"></small></div>
     <div class="bar"><i id="fill"></i></div>
-    <div class="meta"><span id="pct"></span><span id="goalLbl"></span></div>
+    <div class="goal-line" id="goalLine">of <b id="goal">—</b></div>
   </div>
 </div>
 <script src="/qrcode.js"></script>
 <script>
   const $ = id => document.getElementById(id);
   const fmt = n => Math.round(Number(n) || 0).toLocaleString('uk-UA');
-  let lastUrl = '', cfg = {}, cfgLoaded = false;
+  const qrCard = $('qrCard'), jarCard = $('jarCard'), wrap = $('wrap');
+  const idx = (() => {
+    const m = location.pathname.match(/^\/qr(\d*)/);
+    return m && m[1] ? Math.max(0, Number(m[1]) - 1) : 0;
+  })();
+  let cfg = {}, cfgLoaded = false, widget = null, lastUrl = '';
+
+  function luminance(hex) {
+    const h = hex.replace('#', '');
+    const rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255)
+      .map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4));
+    return .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2];
+  }
+
+  function applyColor(color) {
+    const c = /^#[0-9a-f]{6}$/i.test(color || '') ? color : '#101217';
+    const light = luminance(c) > .58;
+    jarCard.style.background = c;
+    jarCard.style.color = light ? '#101217' : '#e9edf3';
+    jarCard.style.borderColor = light ? 'rgba(0,0,0,.12)' : 'rgba(255,255,255,.14)';
+    jarCard.style.setProperty('--track', light ? 'rgba(0,0,0,.14)' : 'rgba(255,255,255,.14)');
+    jarCard.style.setProperty('--muted', light ? 'rgba(16,18,23,.62)' : 'rgba(233,237,243,.62)');
+  }
 
   function renderQr(url) {
     if (!url || url === lastUrl) return;
@@ -58,38 +75,71 @@
       qr.make();
       $('qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, alt: 'Donate' });
     } catch (e) { console.warn(e); }
+    requestAnimationFrame(align);
+  }
+
+  function setWidget(w) {
+    widget = w;
+    if (!w) { qrCard.style.display = 'none'; jarCard.style.display = 'none'; return; }
+    const style = w.style || 'both';
+    qrCard.style.display = style === 'goal' ? 'none' : '';
+    jarCard.style.display = style === 'qr' ? 'none' : '';
+    applyColor(w.color);
+    renderQr(cfg.publicDonate || (cfg.links && cfg.links.donate) || '');
+    requestAnimationFrame(align);
+  }
+
+  async function loadCfg() {
+    try {
+      cfg = await (await fetch('/api/config')).json();
+      cfgLoaded = true;
+      const widgets = (cfg.qrWidgets && cfg.qrWidgets.length)
+        ? cfg.qrWidgets
+        : [{ jar: cfg.widgetJar || '', color: '#101217', style: 'both' }];
+      setWidget(widgets[idx] || null);
+    } catch (e) { cfgLoaded = false; }
+  }
+
+  // keep the actual QR code's bottom edge on the goal card's bottom edge
+  function align() {
+    qrCard.style.transform = '';
+    if (!widget || widget.style === 'qr' || widget.style === 'goal') return;
+    const q = $('qr').getBoundingClientRect();
+    const g = jarCard.getBoundingClientRect();
+    if (!q.height || !g.height) return;
+    qrCard.style.transform = 'translateY(' + Math.round(g.bottom - q.bottom) + 'px)';
   }
 
   async function refresh() {
+    if (!cfgLoaded) await loadCfg();
+    if (!widget) return;
     try {
-      if (!cfgLoaded) {
-        try { cfg = await (await fetch('/api/config')).json(); } catch (e) {}
-        cfgLoaded = true;
-      }
       const s = await (await fetch('/api/state')).json();
       const jars = s.jars || [];
-      const pick = jars.find(j => j.code === cfg.widgetJar) || jars[0];
-      renderQr(cfg.publicDonate || (cfg.links && cfg.links.donate) || '');
-      if (!pick) {
+      const jar = jars.find(j => j.code === widget.jar) || jars[0];
+      if (!jar) {
         $('title').textContent = 'No jar';
-        $('nums').textContent = '—';
+        $('raised').textContent = '—';
+        $('cur').textContent = '';
         $('fill').style.width = '0%';
-        $('pct').textContent = '';
-        $('goalLbl').textContent = '';
+        $('goal').textContent = '—';
+        requestAnimationFrame(align);
         return;
       }
-      const cur = pick.currency || '';
-      const bal = Number(pick.balance || 0);
-      const goal = Number(pick.goal || 0);
-      $('title').textContent = pick.title || pick.code || 'Jar';
-      $('nums').innerHTML = fmt(bal) + ' ' + cur + (goal > 0 ? ' <small>/ ' + fmt(goal) + ' ' + cur + '</small>' : '');
+      const cur = jar.currency || '';
+      const bal = Number(jar.balance || 0) / 100;
+      const goal = Number(jar.goal || 0) / 100;
+      $('title').textContent = jar.title || jar.code || 'Jar';
+      $('raised').textContent = fmt(bal);
+      $('cur').textContent = cur;
+      $('goal').textContent = goal > 0 ? fmt(goal) + ' ' + cur : '—';
       const pct = goal > 0 ? Math.max(0, Math.min(100, bal / goal * 100)) : 0;
       $('fill').style.width = pct + '%';
-      $('pct').textContent = goal > 0 ? Math.round(pct) + '%' : '';
-      $('goalLbl').innerHTML = goal > 0 ? 'GOAL' : '';
-    } catch (e) { /* keep last rendered state */ }
+    } catch (e) { /* keep the last rendered state */ }
+    requestAnimationFrame(align);
   }
 
+  window.addEventListener('resize', align);
   refresh();
   setInterval(refresh, 4000);
 </script>

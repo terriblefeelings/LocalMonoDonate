@@ -41,9 +41,10 @@
         <div style="display:flex;gap:8px"><input id="token" class="masked" placeholder="X-Token"><button id="tokToggle" data-i18n="show">Show</button></div>
         <div class="note" data-i18n="tokenNote">personal token from api.monobank.ua · shared by all jars</div>
       </div></div>
-      <div class="row" style="align-items:flex-start"><label data-i18n="widgetJar">QR widget jar</label><div class="ctl">
-        <select id="widgetJar"></select>
-        <div class="note" data-i18n="widgetJarNote">Jar shown on the QR overlay; the QR opens your donation page.</div>
+      <div class="row" style="align-items:flex-start"><label data-i18n="qrWidgets">QR widgets</label><div class="ctl">
+        <div id="qrWidgets"></div>
+        <button class="add" id="addQr" data-i18n="addQr">+ Add QR widget</button>
+        <div class="note" data-i18n="qrWidgetsNote">Up to 5 overlays: /qr, /qr2 … /qr5. Each has its own jar, background color and style.</div>
       </div></div>
     </div>
   </div>
@@ -106,7 +107,11 @@
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="bits"><span class="track"></span></label><div class="k" data-i18n="kBitsPage">Bits page</div><div class="u masked" id="l_bitsPage"></div><button class="tg" data-t="bitsPage" data-i18n="show">Show</button><button class="cp" data-t="bitsPage" data-i18n="copy">Copy</button></div>
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="bitsOverlay"><span class="track"></span></label><div class="k" data-i18n="kBitsOvl">Bits ovl</div><div class="u masked" id="l_bitsOverlay"></div><button class="tg" data-t="bitsOverlay" data-i18n="show">Show</button><button class="cp" data-t="bitsOverlay" data-i18n="copy">Copy</button></div>
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="youtube"><span class="track"></span></label><div class="k" data-i18n="kYouTube">YouTube</div><div class="u masked" id="l_youtube"></div><button class="tg" data-t="youtube" data-i18n="show">Show</button><button class="cp" data-t="youtube" data-i18n="copy">Copy</button></div>
-      <div class="link"><label class="sw feat"><input type="checkbox" data-feat="qr"><span class="track"></span></label><div class="k" data-i18n="kQr">QR widget</div><div class="u masked" id="l_qr"></div><button class="tg" data-t="qr" data-i18n="show">Show</button><button class="cp" data-t="qr" data-i18n="copy">Copy</button></div>
+      <div class="link qrlink"><label class="sw feat"><input type="checkbox" data-feat="qr"><span class="track"></span></label><div class="k" data-i18n="kQr">QR widget</div><div class="u masked" id="l_qr"></div><button class="tg" data-t="qr" data-i18n="show">Show</button><button class="cp" data-t="qr" data-i18n="copy">Copy</button></div>
+      <div class="link qrlink" id="qrLink2" style="display:none"><span class="feat" style="width:22px"></span><div class="k">QR 2</div><div class="u masked" id="l_qr2"></div><button class="tg" data-t="qr2" data-i18n="show">Show</button><button class="cp" data-t="qr2" data-i18n="copy">Copy</button></div>
+      <div class="link qrlink" id="qrLink3" style="display:none"><span class="feat" style="width:22px"></span><div class="k">QR 3</div><div class="u masked" id="l_qr3"></div><button class="tg" data-t="qr3" data-i18n="show">Show</button><button class="cp" data-t="qr3" data-i18n="copy">Copy</button></div>
+      <div class="link qrlink" id="qrLink4" style="display:none"><span class="feat" style="width:22px"></span><div class="k">QR 4</div><div class="u masked" id="l_qr4"></div><button class="tg" data-t="qr4" data-i18n="show">Show</button><button class="cp" data-t="qr4" data-i18n="copy">Copy</button></div>
+      <div class="link qrlink" id="qrLink5" style="display:none"><span class="feat" style="width:22px"></span><div class="k">QR 5</div><div class="u masked" id="l_qr5"></div><button class="tg" data-t="qr5" data-i18n="show">Show</button><button class="cp" data-t="qr5" data-i18n="copy">Copy</button></div>
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="timer"><span class="track"></span></label><div class="k" data-i18n="kTimer">Timer</div><div class="u masked" id="l_timer"></div><button class="tg" data-t="timer" data-i18n="show">Show</button><button class="cp" data-t="timer" data-i18n="copy">Copy</button></div>
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="auction"><span class="track"></span></label><div class="k" data-i18n="kAuction">Auction</div><div class="u masked" id="l_auction"></div><button class="tg" data-t="auction" data-i18n="show">Show</button><button class="cp" data-t="auction" data-i18n="copy">Copy</button></div>
       <div class="link" id="seLink"><label class="sw feat"><input type="checkbox" id="seEnabled"><span class="track"></span></label><div class="k" data-i18n="seLinkTitle">StreamElements</div><div class="u masked" id="l_streamElements"></div><button class="tg" data-t="streamElements" data-i18n="show">Show</button><button class="cp" data-t="streamElements" data-i18n="copy">Copy</button></div>
@@ -128,6 +133,8 @@ Object.assign(window.I18N.en, { tsTitle: 'Tailscale', tsAccess: 'Public link', t
 Object.assign(window.I18N.ua, { tsTitle: 'Tailscale', tsAccess: 'Публічне посилання', tsAuth: 'Підключити Tailscale', tsReconnect: 'Перепідключити', tsInstall: 'Встановити Tailscale', tsMissing: 'не встановлено', tsOff: 'не підключено', tsNote: 'Один клік: відкриває логін Tailscale, далі сторінка донатів доступна на <nickname>.ts.net — безкоштовно, без домену.' });
 Object.assign(window.I18N.en, { tsConnect: 'Install & Connect', tsFunnel: 'Enable Funnel', tsInstalling: 'Installing Tailscale… accept the Windows prompt', tsSignIn: 'Sign in to Tailscale in the browser…', tsFunnelWait: 'Enabling Funnel…', tsInstallFail: 'Install did not finish. Accept the administrator prompt, then press Connect again.', tsLoginFail: 'Sign-in did not finish. Open the login page and press Connect again.', tsFunnelOff: 'Funnel off', tsFunnelOn: 'Funnel on', tsG1: 'Connect installs the bundled Tailscale and opens the Tailscale login. Sign in or create a free account.', tsG2: 'If Funnel is off, press Enable Funnel and allow HTTPS certificates + Funnel for this device.', tsG3: 'Return here: the status turns green and the public link is live. The free Tailscale plan is enough.', tsNote: 'One click: installs Tailscale if needed, opens login, and enables Funnel. Public link: <nickname>.ts.net — free, no domain.' });
 Object.assign(window.I18N.ua, { tsConnect: 'Встановити й підключити', tsFunnel: 'Увімкнути Funnel', tsInstalling: 'Встановлюємо Tailscale… підтвердьте запит Windows', tsSignIn: 'Увійдіть у Tailscale у браузері…', tsFunnelWait: 'Увімкнюємо Funnel…', tsInstallFail: 'Встановлення не завершилося. Підтвердьте запит адміністратора й натисніть «Підключити» ще раз.', tsLoginFail: 'Вхід не завершився. Відкрийте сторінку входу й натисніть «Підключити» ще раз.', tsFunnelOff: 'Funnel вимкнено', tsFunnelOn: 'Funnel увімкнено', tsG1: '«Підключити»: встановлює Tailscale з комплекту й відкриває вхід. Увійдіть або створіть безкоштовний акаунт.', tsG2: 'Якщо Funnel не увімкнено, натисніть «Увімкнути Funnel» і дозвольте HTTPS-сертифікати та Funnel для цього пристрою.', tsG3: 'Поверніться сюди: статус стане зеленим, і публічне посилання запрацює. Безкоштовного плану Tailscale достатньо.', tsNote: 'Один клік: за потреби встановлює Tailscale, відкриває вхід і вмикає Funnel. Публічне посилання: <nickname>.ts.net — безкоштовно, без домену.' });
+Object.assign(window.I18N.en, { qrWidgets: 'QR widgets', addQr: '+ Add QR widget', qrWidgetsNote: 'Up to 5 overlays: /qr, /qr2 … /qr5. Each has its own jar, background color and style.', qrStyleBoth: 'QR + goal', qrStyleQr: 'QR only', qrStyleGoal: 'Goal only', qrColor: 'Background color', qrJar: 'Jar', qrRemove: 'Remove widget' });
+Object.assign(window.I18N.ua, { qrWidgets: 'QR-віджети', addQr: '+ Додати QR-віджет', qrWidgetsNote: 'До 5 оверлеїв: /qr, /qr2 … /qr5. У кожного своя банка, колір фону та стиль.', qrStyleBoth: 'QR + ціль', qrStyleQr: 'Лише QR', qrStyleGoal: 'Лише ціль', qrColor: 'Колір фону', qrJar: 'Банка', qrRemove: 'Видалити віджет' });
 Object.assign(window.I18N.en, { twTitle: 'Twitch', twClientId: 'Client ID', twSecret: 'Client Secret', twAuth: 'Authorize Twitch', guide: 'Guide', twG1a: 'Open', twG1b: '\u2192 Register Your Application.', twG2: 'Name \u2014 any; OAuth Redirect URLs \u2014 add:', twG3: 'Category \u2014 any (e.g. Broadcaster Suite); Client Type \u2014 Confidential.', twG4: 'Copy the Client ID; click New Secret and copy the Client Secret.', twG5: 'Paste both above and press Save.', twG6: 'Press Authorize Twitch, log in and allow access.', twG7: 'Back here press Save again \u2014 the status turns green.', twNoId: 'no Client ID', twNoSecret: 'no Client Secret', twNotAuth: 'not authorized', twConnecting: 'connecting', twOk: 'ok' });
 Object.assign(window.I18N.ua, { twTitle: 'Twitch', twClientId: 'Client ID', twSecret: 'Client Secret', twAuth: '\u0410\u0432\u0442\u043e\u0440\u0438\u0437\u0443\u0432\u0430\u0442\u0438 Twitch', guide: '\u0406\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0456\u044f', twG1a: '\u0412\u0456\u0434\u043a\u0440\u0438\u0439', twG1b: '\u2192 Register Your Application.', twG2: 'Name \u2014 \u0431\u0443\u0434\u044c-\u044f\u043a\u0435; OAuth Redirect URLs \u2014 \u0434\u043e\u0434\u0430\u0439:', twG3: 'Category \u2014 \u0431\u0443\u0434\u044c-\u044f\u043a\u0430 (\u043d\u0430\u043f\u0440. Broadcaster Suite); Client Type \u2014 Confidential.', twG4: '\u0421\u043a\u043e\u043f\u0456\u044e\u0439 Client ID; \u043d\u0430\u0442\u0438\u0441\u043d\u0438 New Secret \u0456 \u0441\u043a\u043e\u043f\u0456\u044e\u0439 Client Secret.', twG5: '\u0412\u0441\u0442\u0430\u0432 \u043e\u0431\u0438\u0434\u0432\u0430 \u0432\u0438\u0449\u0435 \u0442\u0430 \u043d\u0430\u0442\u0438\u0441\u043d\u0438 Save.', twG6: '\u041d\u0430\u0442\u0438\u0441\u043d\u0438 Authorize Twitch, \u0443\u0432\u0456\u0439\u0434\u0438 \u0442\u0430 \u0434\u043e\u0437\u0432\u043e\u043b\u044c \u0434\u043e\u0441\u0442\u0443\u043f.', twG7: '\u041f\u043e\u0432\u0435\u0440\u043d\u0438\u0441\u044c \u0441\u044e\u0434\u0438 \u0442\u0430 \u043d\u0430\u0442\u0438\u0441\u043d\u0438 Save \u0449\u0435 \u0440\u0430\u0437 \u2014 \u0441\u0442\u0430\u0442\u0443\u0441 \u0441\u0442\u0430\u043d\u0435 \u0437\u0435\u043b\u0435\u043d\u0438\u043c.' });
 Object.assign(window.I18N.ua, { twNoId: '\u043d\u0435\u043c\u0430\u0454 Client ID', twNoSecret: '\u043d\u0435\u043c\u0430\u0454 Client Secret', twNotAuth: '\u043d\u0435 \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u043e\u0432\u0430\u043d\u043e', twConnecting: '\u043f\u0456\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u043d\u044f', twOk: '\u043e\u043a' });
@@ -137,7 +144,7 @@ Object.assign(window.I18N.en, { kQr: 'QR widget', widgetJar: 'QR widget jar', wi
 Object.assign(window.I18N.ua, { kQr: 'QR-віджет', widgetJar: 'Банка для QR-віджета', widgetJarNote: 'Банка на QR-оверлеї; QR веде на сторінку донатів.' });
 window.HEAD_PAGE_BG = true;
 const $ = id => document.getElementById(id);
-let SERVER = {}, PORT = 8787, TOK = '', MAXJ = 5, TS = {};
+let SERVER = {}, PORT = 8787, TOK = '', MAXJ = 5, TS = {}, WIDGETS = [];
 function addJarRow(v, nm, mine) {
   if ($('jars').children.length >= MAXJ) return;
   const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
@@ -155,9 +162,53 @@ function updateAdd() { $('addjar').style.display = $('jars').children.length >= 
 $('addjar').onclick = () => addJarRow('');
 const norm = s => (s || '').trim().toLowerCase();
 function hasJar() { return [...$('jars').children].some(r => { const i = r.querySelector('input'); return i && i.value.trim(); }); }
+function currentJarRows() {
+  return [...$('jars').children].map(r => {
+    const ins = r.querySelectorAll('input');
+    return { code: (ins[0]?.value || '').trim(), name: (ins[1]?.value || '').trim() };
+  }).filter(j => j.code);
+}
+function renderQrWidgets() {
+  const box = $('qrWidgets'); if (!box) return;
+  box.innerHTML = '';
+  const jars = currentJarRows();
+  WIDGETS.forEach((w, i) => {
+    if (!jars.some(j => j.code === w.jar)) w.jar = jars[0]?.code || '';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap';
+    const tag = document.createElement('span'); tag.textContent = 'QR ' + (i + 1);
+    tag.style.cssText = 'font-size:11px;color:var(--muted);min-width:30px';
+    const jar = document.createElement('select'); jar.className = 'qr-jar'; jar.title = window.t('qrJar');
+    jar.style.cssText = 'min-width:140px';
+    jars.forEach(j => jar.add(new Option(j.name || j.code, j.code)));
+    jar.value = w.jar;
+    jar.onchange = () => { WIDGETS[i].jar = jar.value; refreshLive(); };
+    const color = document.createElement('input'); color.type = 'color'; color.className = 'qr-color';
+    color.value = /^#[0-9a-f]{6}$/i.test(w.color || '') ? w.color : '#101217';
+    color.title = window.t('qrColor');
+    color.oninput = () => { WIDGETS[i].color = color.value; };
+    const style = document.createElement('select'); style.className = 'qr-style';
+    [['both', 'qrStyleBoth'], ['qr', 'qrStyleQr'], ['goal', 'qrStyleGoal']].forEach(([v, k]) => style.add(new Option(window.t(k), v)));
+    style.value = ['both', 'qr', 'goal'].includes(w.style) ? w.style : 'both';
+    style.onchange = () => { WIDGETS[i].style = style.value; };
+    const del = document.createElement('button'); del.type = 'button'; del.textContent = '✕'; del.title = window.t('qrRemove');
+    del.style.cssText = 'flex:0 0 34px;justify-content:center';
+    del.disabled = WIDGETS.length <= 1;
+    del.onclick = () => { if (WIDGETS.length > 1) { WIDGETS.splice(i, 1); renderQrWidgets(); refreshLive(); } };
+    row.append(tag, jar, color, style, del);
+    box.append(row);
+  });
+  $('addQr').style.display = WIDGETS.length >= 5 ? 'none' : 'inline-flex';
+}
+$('addQr').onclick = () => {
+  if (WIDGETS.length >= 5) return;
+  WIDGETS.push({ jar: currentJarRows()[0]?.code || '', color: '#101217', style: 'both' });
+  renderQrWidgets(); refreshLive();
+};
 function liveLinks() { const n = norm($('nickname').value), o = 'overlay';
   const b = TS.dnsName ? 'https://' + TS.dnsName : '';
   const p = n ? '/' + n : '';
+  const qrLinks = [0, 1, 2, 3, 4].map(i => (n && o) ? `http://${n}.${o}.localhost:${PORT}/qr${i ? i + 1 : ''}` : '');
   return {
     donate: (b && hasJar()) ? b + p + '/donation' : '',
     bitsPage: b ? b + p + '/soundalerts' : '',
@@ -165,7 +216,7 @@ function liveLinks() { const n = norm($('nickname').value), o = 'overlay';
     overlay: (n && o) ? `http://${n}.${o}.localhost:${PORT}/main` : '',
     bitsOverlay: (n && o) ? `http://${n}.${o}.localhost:${PORT}/bits` : '',
     youtube: (n && o) ? `http://${n}.${o}.localhost:${PORT}/youtube` : '',
-    qr: (n && o) ? `http://${n}.${o}.localhost:${PORT}/qr` : '',
+    qr: qrLinks[0], qr2: qrLinks[1], qr3: qrLinks[2], qr4: qrLinks[3], qr5: qrLinks[4], qrLinks,
     timer: (n && o) ? `http://${n}.${o}.localhost:${PORT}/timer` : '',
     auction: n ? `http://${n}.auction.localhost:${PORT}/` : '',
     streamElements: 'https://streamelements.com/dashboard'
@@ -177,6 +228,10 @@ function renderLinks() { $('l_donate').textContent = SERVER.donate || ''; $('l_s
   $('l_bitsPage').textContent = SERVER.bitsPage || ''; $('l_bitsOverlay').textContent = SERVER.bitsOverlay || '';
   $('l_youtube').textContent = SERVER.youtube || '';
   $('l_qr').textContent = SERVER.qr || '';
+  for (let i = 1; i < 5; i++) {
+    const el = $('l_qr' + (i + 1)); if (el) el.textContent = SERVER['qr' + (i + 1)] || '';
+    const row = $('qrLink' + (i + 1)); if (row) row.style.display = i < WIDGETS.length ? '' : 'none';
+  }
   $('l_timer').textContent = SERVER.timer || '';
   $('l_auction').textContent = SERVER.auction || '';
   $('l_streamElements').textContent = SERVER.streamElements || '';
@@ -188,14 +243,16 @@ async function load() { let c; try { c = await (await fetch('/api/config')).json
   $('nickname').value = c.nickname || ''; $('token').value = c.token || '';
   TS = c.tailscale || {};
   $('jars').innerHTML = ''; { const js = (c.jars && c.jars.length ? c.jars : ['']); const jn = c.jarNames || []; const jm = c.jarMine || []; js.forEach((j, i) => addJarRow(j, jn[i], jm[i])); }
-  { const wj = $('widgetJar'); if (wj) { wj.innerHTML = ''; const js = (c.jars || []).filter(Boolean); const jn = c.jarNames || [];
-    js.forEach((code, i) => { const o = document.createElement('option'); o.value = code; o.textContent = jn[i] || code; wj.append(o); });
-    wj.value = js.includes(c.widgetJar) ? c.widgetJar : (js[0] || ''); } }
+  WIDGETS = (c.qrWidgets && c.qrWidgets.length ? c.qrWidgets
+    : [{ jar: c.widgetJar || '', color: '#101217', style: 'both' }]).slice(0, 5);
+  renderQrWidgets();
   applyFeatures(c.features || {}); refreshLive(); }
 function applyFeatures(f) {
   document.querySelectorAll('[data-feat]').forEach(cb => {
     const on = f[cb.dataset.feat] !== false; cb.checked = on; cb.closest('.link').classList.toggle('off', !on);
-    cb.onchange = () => { cb.closest('.link').classList.toggle('off', !cb.checked); saveFeatures(); };
+    if (cb.dataset.feat === 'qr') document.querySelectorAll('.qrlink').forEach(r => r.classList.toggle('off', !on));
+    cb.onchange = () => { cb.closest('.link').classList.toggle('off', !cb.checked); saveFeatures();
+      if (cb.dataset.feat === 'qr') document.querySelectorAll('.qrlink').forEach(r => r.classList.toggle('off', !cb.checked)); };
   });
 }
 async function saveFeatures() {
@@ -230,7 +287,7 @@ window.savePage = async () => { const sb = $('save'); if (sb) sb.disabled = true
   const jarNames = jarRows.map(r => r.querySelectorAll('input')[1].value);
   const jarMine = jarRows.map(r => { const c = r.querySelector('input[type=checkbox]'); return c ? c.checked : true; });
   try { const r = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname: $('nickname').value, overlayname: 'overlay', token: $('token').value, jars, jarNames, jarMine, widgetJar: $('widgetJar') ? $('widgetJar').value : '' }) });
+      body: JSON.stringify({ nickname: $('nickname').value, overlayname: 'overlay', token: $('token').value, jars, jarNames, jarMine, qrWidgets: WIDGETS }) });
     const d = await r.json(); $('status').className = 'status' + (d.ok ? ' ok' : ' err'); $('status').textContent = d.ok ? 'saved — server running' : ('error: ' + (d.error || '')); if (d.ok) { await loadTs(); await load(); }
   } catch { $('status').className = 'status err'; $('status').textContent = 'save failed'; } await saveTwitch(); await saveSE(); if (sb) sb.disabled = false; };
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { const u = $('l_' + b.dataset.t); const m = u.classList.toggle('masked'); b.textContent = m ? window.t('show') : window.t('hide'); });

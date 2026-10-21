@@ -251,7 +251,7 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
         }
     }
     ctx.save();
-    ctx.watch(15 * 60 * 1000);
+    ctx.watch(10 * 60 * 1000);
 
     let comment = donate_comment(&code).replace(' ', "%20");
     let redirect = format!("https://send.monobank.ua/jar/{}?a={:.0}&t={}", jar_code, amount, comment);
@@ -692,12 +692,14 @@ fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
         let base = if public_base.starts_with("http") { public_base.clone() } else { format!("https://{}", public_base) };
         format!("{}/{}/donation", base.trim_end_matches('/'), sanitize_name(&cfg.nickname))
     };
+    let qr_links: Vec<String> = (0..MAX_QR_WIDGETS).map(|i| qr_link_at(&cfg, i)).collect();
     let mut v = json!({
         "nickname": cfg.nickname, "overlayname": cfg.overlayname,
         "publicDonate": public_donate,
         "statsToken": cfg.stats_token, "port": cfg.port, "publicPort": cfg.public_port, "publicBase": public_base,
         "tailscale": ts,
         "token": cfg.token, "bg": cfg.bg, "bitsBg": cfg.bits_bg, "bitsPageBg": cfg.bits_page_bg, "bitsGrid": cfg.bits_grid, "jars": cfg.jars, "jarNames": cfg.jar_names, "jarMine": cfg.jar_mine, "maxJars": MAX_JARS, "widgetJar": cfg.widget_jar,
+        "qrWidgets": cfg.qr_widgets, "qrLinks": qr_links,
         "features": cfg.features,
         "links": { "donate": donate, "stats": stats, "overlay": overlay, "qr": qr_link(&cfg), "bitsPage": bits_page, "bitsOverlay": bits_overlay, "youtube": youtube_link(&cfg) }
     });
@@ -706,12 +708,18 @@ fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
         if let Some(o) = v.as_object_mut() {
             o.remove("token");
             o.remove("statsToken");
+            o.remove("qrWidgets");
+            o.remove("qrLinks");
             if let Some(l) = o.get_mut("links").and_then(|x| x.as_object_mut()) {
-                for k in ["stats", "overlay", "bitsOverlay", "youtube"] { l.remove(k); }
+                for k in ["stats", "overlay", "bitsOverlay", "youtube", "qr"] { l.remove(k); }
             }
         }
     }
     v
+}
+
+fn valid_hex_color(s: &str) -> bool {
+    s.len() == 7 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit())
 }
 
 fn config_post(ctx: &Ctx, mut request: tiny_http::Request) {
@@ -734,6 +742,23 @@ fn config_post(ctx: &Ctx, mut request: tiny_http::Request) {
         cfg.jar_mine = arr.iter().map(|x| x.as_bool().unwrap_or(true)).collect();
     }
     if let Some(s) = v.get("widgetJar").and_then(|x| x.as_str()) { cfg.widget_jar = s.trim().to_string(); }
+    if let Some(arr) = v.get("qrWidgets").and_then(|x| x.as_array()) {
+        let mut widgets: Vec<QrWidgetCfg> = arr.iter().take(MAX_QR_WIDGETS)
+            .filter_map(|x| serde_json::from_value::<QrWidgetCfg>(x.clone()).ok())
+            .map(|mut w| {
+                w.jar = w.jar.trim().to_string();
+                if !cfg.jars.iter().any(|j| j == &w.jar) { w.jar = cfg.jars.first().cloned().unwrap_or_default(); }
+                if !valid_hex_color(&w.color) { w.color = "#101217".into(); }
+                if !matches!(w.style.as_str(), "both" | "qr" | "goal") { w.style = "both".into(); }
+                w
+            })
+            .collect();
+        if widgets.is_empty() {
+            widgets.push(QrWidgetCfg { jar: cfg.jars.first().cloned().unwrap_or_default(), ..Default::default() });
+        }
+        cfg.widget_jar = widgets[0].jar.clone();
+        cfg.qr_widgets = widgets;
+    }
     if let Some(s) = v.get("publicBase").and_then(|x| x.as_str()) {
         let s = s.trim().trim_end_matches('/');
         // accept a bare host ("ratcorporation.us.kg") or a full URL

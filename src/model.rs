@@ -107,6 +107,7 @@ pub fn currency_iso(code: i64) -> String {
 }
 
 pub const MAX_JARS: usize = 5;
+pub const MAX_QR_WIDGETS: usize = 5;
 
 /// true when we can bind the public listener on this port right now
 pub fn port_free(port: u16) -> bool {
@@ -556,6 +557,21 @@ pub fn list_fonts() -> Vec<String> {
     }
 }
 
+fn d_qr_color() -> String { "#101217".into() }
+fn d_qr_style() -> String { "both".into() }
+
+/// one QR overlay: which jar it shows, goal-window background and layout style
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct QrWidgetCfg {
+    #[serde(default = "d_s")] pub jar: String,
+    #[serde(default = "d_qr_color")] pub color: String,
+    #[serde(default = "d_qr_style")] pub style: String, // "both" | "qr" | "goal"
+}
+impl Default for QrWidgetCfg {
+    fn default() -> Self { QrWidgetCfg { jar: String::new(), color: d_qr_color(), style: d_qr_style() } }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
@@ -593,8 +609,10 @@ pub struct Config {
     #[serde(default)] pub auction: AuctionCfg,
     #[serde(default)] pub tts: TtsCfg,
     #[serde(default)] pub streamelements: StreamElementsCfg,
-    /// jar code shown in the QR widget overlay ("" = first jar)
+    /// legacy first QR widget jar (also kept in sync with qr_widgets[0].jar)
     #[serde(default = "d_s")] pub widget_jar: String,
+    /// /qr, /qr2 … /qr5 overlays (up to MAX_QR_WIDGETS)
+    #[serde(default)] pub qr_widgets: Vec<QrWidgetCfg>,
 }
 impl Default for Config {
     fn default() -> Self {
@@ -611,6 +629,7 @@ impl Default for Config {
             tts: TtsCfg::default(),
             streamelements: StreamElementsCfg::default(),
             widget_jar: String::new(),
+            qr_widgets: Vec::new(),
         }
     }
 }
@@ -1055,6 +1074,21 @@ pub fn is_youtube_id(s: &str) -> bool {
     s.len() == 11 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
+#[cfg(test)]
+mod qr_path_tests {
+    use super::*;
+
+    #[test]
+    fn only_qr_and_qr2_to_qr5_are_widget_routes() {
+        assert_eq!(qr_path_index("/qr"), Some(0));
+        assert_eq!(qr_path_index("/qr2"), Some(1));
+        assert_eq!(qr_path_index("/qr5"), Some(4));
+        assert_eq!(qr_path_index("/qr6"), None);
+        assert_eq!(qr_path_index("/qrcode.js"), None);
+        assert_eq!(qr_path_index("/qr/"), None);
+    }
+}
+
 pub fn sanitize_name(s: &str) -> String { s.trim().to_ascii_lowercase() }
 
 /// Grouping key: the nickname itself, trimmed and case-insensitive - nothing else.
@@ -1126,10 +1160,21 @@ pub fn links(cfg: &Config) -> (String, String, String) {
     )
 }
 
-/// QR + jar widget overlay (OBS browser source)
-pub fn qr_link(cfg: &Config) -> String {
-    format!("http://{}.{}.localhost:{}/qr",
-        sanitize_name(&cfg.nickname), sanitize_name(&cfg.overlayname), cfg.port)
+/// QR + jar widget overlay (OBS browser source); index 0 = /qr, 1 = /qr2, …
+pub fn qr_link_at(cfg: &Config, index: usize) -> String {
+    let suffix = if index == 0 { String::new() } else { (index + 1).to_string() };
+    format!("http://{}.{}.localhost:{}/qr{}",
+        sanitize_name(&cfg.nickname), sanitize_name(&cfg.overlayname), cfg.port, suffix)
+}
+
+pub fn qr_link(cfg: &Config) -> String { qr_link_at(cfg, 0) }
+
+/// `/qr` -> 0, `/qr2` -> 1 … `/qr5` -> 4
+pub fn qr_path_index(path: &str) -> Option<usize> {
+    let rest = path.strip_prefix("/qr")?;
+    if rest.is_empty() { return Some(0); }
+    let n: usize = rest.parse().ok()?;
+    if (2..=MAX_QR_WIDGETS).contains(&n) { Some(n - 1) } else { None }
 }
 
 /// (bits donor page, bits overlay)
@@ -1173,11 +1218,11 @@ pub fn route_by_host(cfg: &Config, host: &str, path: &str) -> Option<Page> {
     let on = |b: bool, p: Page| if b { Some(p) } else { None };
     let h = host.split(':').next().unwrap_or("").to_ascii_lowercase();
     if h.is_empty() || h == "127.0.0.1" || h == "localhost" || h == "0.0.0.0" {
+        if qr_path_index(path).is_some() { return on(f.qr, Page::Qr); }
         return match path {
             "/banka" | "/donatiks" | "/form" => on(f.donate, Page::Donor),
             "/stats" | "/check" | "/" => on(f.stats, Page::Stats),
             "/main" | "/overlay" => on(f.overlay, Page::Overlay),
-            "/qr" => on(f.qr, Page::Qr),
             "/bits" => on(f.bits_overlay, Page::BitsOverlay),
             "/bitsform" => on(f.bits, Page::BitsDonor),
             "/youtube" | "/yt" => on(f.youtube, Page::YouTube),
@@ -1195,7 +1240,7 @@ pub fn route_by_host(cfg: &Config, host: &str, path: &str) -> Option<Page> {
     if page == "auction" { return on(f.auction, Page::AuctionUi); }
     if page == "donate" { if path == "/bits" { return on(f.bits, Page::BitsDonor); } return on(f.donate, Page::Donor); }
     if page == sanitize_name(&cfg.overlayname) && !cfg.overlayname.trim().is_empty() {
-        if path == "/qr" { return on(f.qr, Page::Qr); }
+        if qr_path_index(path).is_some() { return on(f.qr, Page::Qr); }
         if path == "/bits" { return on(f.bits_overlay, Page::BitsOverlay); }
         if path == "/youtube" || path == "/yt" { return on(f.youtube, Page::YouTube); }
         if path == "/timer" { return on(f.timer, Page::TimerOverlay); }

@@ -128,7 +128,8 @@ impl Ctx {
         Ok(())
     }
 
-    fn handle_incoming(&self, i: usize, tx: &mono::StatementItem, quiet: bool) {
+    /// returns true when this was the live donation a form submission was waiting for
+    fn handle_incoming(&self, i: usize, tx: &mono::StatementItem, quiet: bool) -> bool {
         let cfg = self.cfg();
         let uah = tx.amount as f64 / 100.0;
         let comment = [tx.comment.clone().unwrap_or_default(), tx.description.clone().unwrap_or_default()]
@@ -161,7 +162,7 @@ impl Ctx {
             self.timer_add_donation(uah, &name, quiet);
             if !quiet { self.auction_bid(&name, uah, "monobank"); }
             self.save();
-            return;
+            return false;
         }
 
         // match a pending donation by code first, else by amount + recency
@@ -201,7 +202,7 @@ impl Ctx {
                 self.timer_add_donation(uah, &n, quiet);
                 if !quiet { self.auction_bid(&n, uah, "monobank"); }
                 self.save();
-                return;
+                return false;
             }
             let pname = if p.name.trim().is_empty() { "Anonymous".to_string() } else { p.name.trim().to_string() };
             (pname, p.message, p.youtube_id, matched, Some(p.code), true, p.voice)
@@ -227,7 +228,6 @@ impl Ctx {
         self.timer_add_donation(uah, &name, quiet);
         if !quiet { self.auction_bid(&name, uah, "monobank"); }
         if alert && !quiet {
-            if no_pending && (kind == "code" || kind == "amount") { self.stop_watch(); }
             // synthesize the voice FIRST so the alert and the audio appear together
             let mut tts_url = String::new();
             if cfg.tts.enabled() {
@@ -261,6 +261,7 @@ impl Ctx {
             crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), message.clone());
         }
         self.save();
+        alert && !quiet && no_pending && (kind == "code" || kind == "amount")
     }
 
     /// add marathon time for a jar donation (proportional: amount / per_amount * per_seconds)
@@ -326,10 +327,14 @@ impl Ctx {
                         .filter(|t| !self.state.lock().unwrap().jars[i].seen.contains(&t.id))
                         .collect();
                     fresh.sort_by_key(|t| t.time);
+                    let mut fetched = false;
                     for tx in fresh {
                         self.state.lock().unwrap().jars[i].seen.push(tx.id.clone());
-                        if tx.amount > 0 { self.handle_incoming(i, &tx, quiet); }
+                        if tx.amount > 0 && self.handle_incoming(i, &tx, quiet) { fetched = true; }
                     }
+                    // the QR/stat widgets need the post-donation jar balance: refresh now and
+                    // only then stop the 10-minute watch instead of waiting for the idle interval
+                    if fetched && self.refresh_jars().is_ok() { self.stop_watch(); }
                     let ttl = now_ms() - (cfg.pending_ttl_hours as i64) * 3_600_000;
                     {
                         let mut st = self.state.lock().unwrap();
@@ -358,7 +363,11 @@ pub fn run_poller(ctx: Arc<Ctx>) {
         let token = !ctx.cfg().token.is_empty();
         let unresolved = ctx.state.lock().unwrap().jars.iter()
             .any(|j| j.statement_account.is_empty());
-        let jar_interval: i64 = if unresolved && token { 60_000 } else { (ctx.cfg().idle_poll_seconds.max(60) * 1000) as i64 };
+        let watching = now_ms() < *ctx.watch_until.lock().unwrap();
+        // after a form submit, refresh jar title/balance/goal every 60 s until the
+        // donation is fetched (stop_watch) or the 10-minute watch expires
+        let jar_interval: i64 = if token && (unresolved || watching) { 60_000 }
+            else { (ctx.cfg().idle_poll_seconds.max(60) * 1000) as i64 };
         if now_ms() - last_jar > jar_interval {
             if let Err(e) = ctx.refresh_jars() { log(&format!("client-info failed: {}", e)); }
             last_jar = now_ms();
