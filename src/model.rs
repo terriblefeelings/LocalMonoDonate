@@ -108,6 +108,38 @@ pub fn currency_iso(code: i64) -> String {
 
 pub const MAX_JARS: usize = 5;
 
+/// true when we can bind the public listener on this port right now
+pub fn port_free(port: u16) -> bool {
+    use std::net::{SocketAddr, TcpListener, TcpStream};
+    use std::time::Duration;
+    // a live listener answers a connect even if it never accepts; this catches services
+    // that allow a non-exclusive second bind (which made the old check unreliable)
+    let addr: SocketAddr = ([127, 0, 0, 1], port).into();
+    if TcpStream::connect_timeout(&addr, Duration::from_millis(150)).is_ok() { return false; }
+    match TcpListener::bind(("0.0.0.0", port)) {
+        Ok(l) => { drop(l); true }
+        Err(_) => false,
+    }
+}
+
+/// first free port at/after `preferred`, skipping the app's own ports.
+/// Falls back to an OS-assigned port if the whole range is taken.
+pub fn pick_free_port(preferred: u16, skip: &[u16]) -> u16 {
+    let start = preferred.max(1024);
+    let end = start.saturating_add(200);
+    for p in start..end {
+        if skip.contains(&p) { continue; }
+        if port_free(p) { return p; }
+    }
+    std::net::TcpListener::bind(("0.0.0.0", 0))
+        .ok()
+        .and_then(|l| l.local_addr().ok())
+        .map(|a| a.port())
+        .unwrap_or(preferred)
+}
+
+
+
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Limits {

@@ -176,6 +176,9 @@ Tailscale один раз.
 зʼявлялася помилка `Host header is specified…` від Chrome DevTools) і публікує `publicPort`. Якщо
 Tailscale піднявся пізніше за застосунок — він повторить спробу протягом хвилини.
 
+Якщо `publicPort` зайнятий іншим застосунком, LocalMonoDonate автоматично бере наступний вільний порт,
+зберігає його в `config.json` і публікує через Funnel саме його — нічого не треба робити вручну.
+
 **Готовий скрипт:** у релізі є `enable-funnel.ps1`. Запустіть
 
 ```powershell
@@ -325,7 +328,7 @@ docs/screenshots/      зображення для README
 | Немає тіпів у StreamElements | увімкніть перемикач у *Links*, натисніть *Test connection*, перевірте лог |
 | Немає голосу | немає TTS-рушія або Google недоступний; для Azure потрібні ключ і регіон |
 | Помилка WebView2 під час старту | встановіть WebView2 (застосунок запускає вбудований інсталятор тихо) |
-| Порт зайнятий | змініть `port` у `config.json` |
+| Порт зайнятий | `publicPort` застосунок вибирає сам (наступний вільний і зберігає в `config.json`); `port`/`auctionPort` змініть вручну |
 | `Host header is specified and is not an IP address or localhost` | Funnel дивиться на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 8080` |
 
 Логи: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.

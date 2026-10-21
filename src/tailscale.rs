@@ -2,6 +2,7 @@
 //! public `https://<nickname>.<tailnet>.ts.net` link with one "Connect" click —
 //! no Cloudflare, no domain, works behind CGNAT.
 
+use crate::model::log;
 use serde_json::{json, Value};
 use std::process::{Command, Stdio};
 
@@ -66,7 +67,14 @@ pub fn login_url() -> Option<String> {
 /// the Tailscale hostname is the nickname => `<nickname>.<tailnet>.ts.net`
 pub fn set_hostname(name: &str) {
     if !name.is_empty() {
-        let _ = cmd().args(["set", "--hostname", name]).output();
+        match cmd().args(["set", "--hostname", name]).output() {
+            Ok(o) if !o.status.success() => {
+                let e = String::from_utf8_lossy(&o.stderr);
+                log(&format!("tailscale set --hostname failed: {}", e.trim()));
+            }
+            Err(e) => log(&format!("tailscale set --hostname failed: {}", e)),
+            _ => {}
+        }
     }
 }
 
@@ -109,11 +117,25 @@ pub fn funnel_ok(port: u16) -> bool {
 }
 
 pub fn reset_funnel() {
-    let _ = cmd().args(["funnel", "reset"]).output();
+    match cmd().args(["funnel", "reset"]).output() {
+        Ok(o) if !o.status.success() => {
+            let e = String::from_utf8_lossy(&o.stderr);
+            log(&format!("tailscale funnel reset failed: {}", e.trim()));
+        }
+        Err(e) => log(&format!("tailscale funnel reset failed: {}", e)),
+        _ => {}
+    }
 }
 
 pub fn funnel(port: u16) {
-    let _ = cmd().args(["funnel", "--bg", &port.to_string()]).output();
+    match cmd().args(["funnel", "--bg", &port.to_string()]).output() {
+        Ok(o) if !o.status.success() => {
+            let e = String::from_utf8_lossy(&o.stderr);
+            log(&format!("tailscale funnel --bg {} failed: {}", port, e.trim()));
+        }
+        Err(e) => log(&format!("tailscale funnel --bg {} failed: {}", port, e)),
+        _ => {}
+    }
 }
 
 /// true when Tailscale is connected (so the caller can point the funnel at us)

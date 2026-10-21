@@ -16,7 +16,21 @@ use model::*;
 fn main() {
     let base = Paths::new();
     init_logging(&base);
-    let cfg = load_config(&base);
+    let mut cfg = load_config(&base);
+    // the configured public port may already be taken (another app, a second copy, a dev
+    // server). Pick the next free one, persist it and let Tailscale Funnel follow.
+    if cfg.public_port != 0 {
+        let busy = cfg.public_port == cfg.port
+            || cfg.public_port == cfg.auction_port
+            || !port_free(cfg.public_port);
+        if busy {
+            let old = cfg.public_port;
+            let skip = [cfg.port, cfg.auction_port];
+            cfg.public_port = pick_free_port(old, &skip);
+            save_config(&base, &cfg);
+            log(&format!("public port {} is busy, using {}", old, cfg.public_port));
+        }
+    }
     let headless = std::env::args().any(|a| a == "--headless");
 
     log("LocalMonoDonate starting");
