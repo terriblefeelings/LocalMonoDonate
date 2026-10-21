@@ -264,11 +264,11 @@ never in URLs and never in the UI source.
 ## Credits & disclaimer
 
 This is a hobby, fan-made tool. **Nothing here was made by `terriblefeelings`** — the code was written
-by **opencode / DeepSeek** models. The marathon timer's original code is by
+by **opencode**. The marathon timer's original code is by
 [**stalexteam**](https://github.com/stalexteam) and was reworked for this app.
 The same note is shown at the bottom of the donation page.
 
-Contributors: **terriblefeelings** (idea, testing, stream feedback) · **opencode / DeepSeek** (implementation).
+Contributors: **terriblefeelings** (idea, testing, stream feedback) · **opencode** (implementation).
 
 Not affiliated with Monobank, Twitch, StreamElements or Tailscale.
 
