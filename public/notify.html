@@ -181,7 +181,7 @@ function renderRules() { const box = $('rules'); box.innerHTML = '';
       pc.innerHTML = '<input type="checkbox"' + (r.pool ? ' checked' : '') + '><span class="track"></span>';
       pc.querySelector('input').onclick = (e) => { e.stopPropagation(); r.pool = e.target.checked; renderRules(); if (sel === i) loadStyleToUI(); };
       el.append(pc); }
-    const tb = document.createElement('button'); tb.className = 'del'; tb.textContent = '\u25B6'; tb.title = 'Test this variation';
+    const tb = document.createElement('button'); tb.className = 'testbtn'; tb.textContent = 'TEST'; tb.title = 'Test this variation';
     tb.onclick = (e) => { e.stopPropagation(); testRule(r); };
     el.append(tb);
     if (!isDef) { const d = document.createElement('button'); d.className = 'del'; d.textContent = '✕'; d.onclick = (e) => { e.stopPropagation(); rules.splice(i, 1); if (sel >= rules.length) sel = 0; loadStyleToUI(); renderRules(); }; el.append(d); }

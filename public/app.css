@@ -63,6 +63,8 @@ a{color:inherit}
 .head .tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .update-btn{display:none;align-items:center;padding:8px 14px;border-radius:10px;background:#2ea043;color:#fff;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.03em}
 .update-btn.show{display:inline-flex}
+.testbtn{border:0;background:transparent;color:#8fd0ff;font:800 9px/1 var(--sans);letter-spacing:.08em;padding:3px 4px;border-radius:4px;cursor:pointer}
+.testbtn:hover{color:#c2e8ff}
 
 /* sections */
 .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:22px;overflow:hidden}
