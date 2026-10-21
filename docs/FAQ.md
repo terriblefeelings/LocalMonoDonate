@@ -295,7 +295,7 @@ Alerts → voice set → Azure, вставте власний ключ Speech і
 & "C:\Program Files\Tailscale\tailscale.exe" funnel status
 ```
 
-8080 — це `publicPort` із `config.json`, не 8787. Далі відкрийте
+8080 — це `publicPort` із `config.json`, не 8787. У релізі є `enable-funnel.ps1`: `powershell -ExecutionPolicy Bypass -File enable-funnel.ps1` (додайте `-StatusOnly`, щоб лише подивитися стан). Далі відкрийте
 `https://<machine>.<tailnet>.ts.net/<нік>/donation`. Скинути — `tailscale funnel reset`; змінити хост —
 `tailscale set --hostname <нік>`. Деталі — в README, розділ «Як увімкнути Funnel вручну».
 

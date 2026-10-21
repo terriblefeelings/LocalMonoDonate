@@ -171,6 +171,16 @@ Tailscale один раз.
 8. Хочете хост із ніком: `tailscale set --hostname <нік>`, потім перепідключіться — сертифікат
    перевипуститься, і посилання стане `<нік>.<tailnet>.ts.net`.
 
+**Готовий скрипт:** у релізі є `enable-funnel.ps1`. Запустіть
+
+```powershell
+powershell -ExecutionPolicy Bypass -File enable-funnel.ps1
+```
+
+Він знайде Tailscale, перевірить логін, візьме `publicPort` і нік із `config.json`, опублікує порт,
+покаже готове посилання на донати й підкаже, якщо в tailnet вимкнено Funnel/HTTPS.
+Прапорці: `-StatusOnly` (нічого не змінювати), `-Reset`, `-Hostname <нік>`, `-Nickname <нік>`, `-Port 8080`.
+
 **Типові помилки**
 
 | Повідомлення | Що зробити |
