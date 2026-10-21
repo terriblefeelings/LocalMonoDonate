@@ -14,6 +14,21 @@
   .range{display:flex;align-items:center;gap:12px}
   .range input[type=range]{width:260px;max-width:100%}
   .range output{min-width:48px;font-variant-numeric:tabular-nums;color:var(--fg)}
+  .qrPreview{background:#eef1f6;border-radius:14px;padding:24px;display:flex;justify-content:center;overflow:auto}
+  .qrprev-stage{display:flex;align-items:flex-end;gap:24px}
+  .qrprev-qr{background:#fff;padding:16px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.18);flex:0 0 auto}
+  .qrprev-qr svg{display:block;width:var(--prev-qr,220px);height:var(--prev-qr,220px)}
+  .qrprev-jar{min-width:300px;max-width:430px;padding:20px 22px;border-radius:20px;color:#e9edf3;background:#101217;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14)}
+  .qrprev-jar h3{margin:0 0 6px;font-size:20px;font-weight:700}
+  .prevbar{height:10px;border-radius:6px;background:var(--prev-track,rgba(255,255,255,.14));overflow:hidden}
+  .prevbar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);
+    box-shadow:0 0 12px rgba(139,92,246,.55)}
+  .prevbottom{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:10px}
+  .prevbottom b{font-size:24px;font-weight:800}
+  .prevbottom small{font-size:13px;font-weight:600;opacity:.7;margin-left:3px}
+  .prevgoal{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--prev-muted,rgba(233,237,243,.62))}
+  .prevgoal b{font-size:14px;letter-spacing:0;text-transform:none;color:inherit}
 </style>
 </head>
 <body>
@@ -25,7 +40,24 @@
   <div class="status" id="status"></div>
 
   <div class="panel">
-    <div class="sec"><span class="n">01</span><span class="h" data-i18n="qrWidgets">QR widgets</span></div>
+    <div class="sec"><span class="n">01</span><span class="h" data-i18n="qrPreview">Preview</span><span class="sp"></span><span class="hint">5 000 / 10 000</span></div>
+    <div class="body">
+      <div class="qrPreview">
+        <div class="qrprev-stage" id="prevStage">
+          <div class="qrprev-qr" id="prevQr"><div id="prevQrCode"></div></div>
+          <div class="qrprev-jar" id="prevJar">
+            <h3 id="prevTitle">TEST JAR</h3>
+            <div class="prevbar"><i id="prevFill"></i></div>
+            <div class="prevbottom"><span><b id="prevRaised">5 000</b><small>₴</small></span><span class="prevgoal">of <b>10 000 ₴</b></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="note" data-i18n="qrPreviewNote">Live preview with 5 000 of 10 000; styling comes from the first widget.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec"><span class="n">02</span><span class="h" data-i18n="qrWidgets">QR widgets</span></div>
     <div class="body">
       <div id="qrWidgets"></div>
       <button class="add" id="addQr" data-i18n="addQr">+ Add QR widget</button>
@@ -35,7 +67,7 @@
   </div>
 
   <div class="panel">
-    <div class="sec"><span class="n">02</span><span class="h" data-i18n="qrLayout">Layout</span></div>
+    <div class="sec"><span class="n">03</span><span class="h" data-i18n="qrLayout">Layout</span></div>
     <div class="body">
       <div class="row"><label data-i18n="qrAlign">Alignment</label><div class="ctl">
         <select id="qrAlign">
@@ -52,11 +84,13 @@
     </div>
   </div>
 </div>
+<script src="/qrcode.js"></script>
 <script src="/i18n.js"></script>
 <script src="/head.js"></script>
 <script>
 window.I18N = {
   en: {
+    qrPreview: 'Preview', qrPreviewNote: 'Live preview with 5 000 of 10 000; styling comes from the first widget.',
     qrWidgets: 'QR widgets', addQr: '+ Add QR widget',
     qrWidgetsNote: 'Up to 5 overlays: /qr, /qr2 … /qr5. Each has its own jar, background color and style.',
     qrDemo: 'Test QR: 5 000 / 10 000', qrLayout: 'Layout', qrAlign: 'Alignment',
@@ -68,6 +102,7 @@ window.I18N = {
     saved: 'saved', saveFailed: 'save failed', noJars: 'Add a jar in Setup first'
   },
   ua: {
+    qrPreview: 'Попередній перегляд', qrPreviewNote: 'Живий перегляд із 5 000 із 10 000; стиль береться з першого віджета.',
     qrWidgets: 'QR-віджети', addQr: '+ Додати QR-віджет',
     qrWidgetsNote: 'До 5 оверлеїв: /qr, /qr2 … /qr5. У кожного своя банка, колір фону та стиль.',
     qrDemo: 'Тестовий QR: 5 000 / 10 000', qrLayout: 'Розміщення', qrAlign: 'Вирівнювання',
@@ -80,7 +115,47 @@ window.I18N = {
   }
 };
 const $ = id => document.getElementById(id);
-let CFG = {}, WIDGETS = [], ALIGN = 'bottom', SIZE = 100;
+let CFG = {}, WIDGETS = [], ALIGN = 'bottom', SIZE = 100, prevUrl = '';
+
+function luminance(hex) {
+  const h = hex.replace('#', '');
+  const rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255)
+    .map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4));
+  return .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2];
+}
+
+function renderPreviewQr() {
+  const url = CFG.publicDonate || (CFG.links && CFG.links.donate) || '';
+  if (!url || url === prevUrl) return;
+  prevUrl = url;
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    $('prevQrCode').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, alt: 'Donate' });
+  } catch (e) { console.warn(e); }
+}
+
+function renderPreview() {
+  const w = WIDGETS[0], stage = $('prevStage'), qr = $('prevQr'), jar = $('prevJar');
+  if (!w) { stage.style.display = 'none'; return; }
+  stage.style.display = 'flex';
+  stage.style.alignItems = ALIGN === 'top' ? 'flex-start' : ALIGN === 'mid' ? 'center' : 'flex-end';
+  const style = w.style || 'both';
+  qr.style.display = (style === 'goal' || SIZE <= 0) ? 'none' : '';
+  jar.style.display = style === 'qr' ? 'none' : '';
+  qr.style.setProperty('--prev-qr', Math.round(220 * Math.max(0, Math.min(200, SIZE)) / 100) + 'px');
+  const c = /^#[0-9a-f]{6}$/i.test(w.color || '') ? w.color : '#101217';
+  const light = luminance(c) > .58;
+  jar.style.background = c;
+  jar.style.color = light ? '#101217' : '#e9edf3';
+  jar.style.borderColor = light ? 'rgba(0,0,0,.12)' : 'rgba(255,255,255,.14)';
+  jar.style.setProperty('--prev-track', light ? 'rgba(0,0,0,.14)' : 'rgba(255,255,255,.14)');
+  jar.style.setProperty('--prev-muted', light ? 'rgba(16,18,23,.62)' : 'rgba(233,237,243,.62)');
+  const j = jars().find(x => x.code === w.jar);
+  $('prevTitle').textContent = j ? j.name : 'TEST JAR';
+  $('prevFill').style.width = '50%';
+}
 
 function jars() {
   const codes = CFG.jars || [], names = CFG.jarNames || [];
@@ -90,7 +165,7 @@ function styleLabel(v) { return window.t(v === 'qr' ? 'qrStyleQr' : v === 'goal'
 function renderWidgets() {
   const box = $('qrWidgets'); box.innerHTML = '';
   const list = jars();
-  if (!list.length) { box.innerHTML = '<div class="note">' + window.t('noJars') + '</div>'; $('addQr').style.display = 'none'; return; }
+  if (!list.length) { box.innerHTML = '<div class="note">' + window.t('noJars') + '</div>'; $('addQr').style.display = 'none'; $('prevStage').style.display = 'none'; return; }
   WIDGETS.forEach((w, i) => {
     if (!list.some(j => j.code === w.jar)) w.jar = list[0].code;
     const row = document.createElement('div'); row.className = 'qrrow';
@@ -98,21 +173,22 @@ function renderWidgets() {
     const jar = document.createElement('select'); jar.title = window.t('qrJar');
     list.forEach(j => jar.add(new Option(j.name, j.code)));
     jar.value = w.jar;
-    jar.onchange = () => { WIDGETS[i].jar = jar.value; };
+    jar.onchange = () => { WIDGETS[i].jar = jar.value; renderPreview(); };
     const color = document.createElement('input'); color.type = 'color'; color.className = 'qr-color';
     color.value = /^#[0-9a-f]{6}$/i.test(w.color || '') ? w.color : '#101217';
     color.title = window.t('qrColor');
-    color.oninput = () => { WIDGETS[i].color = color.value; };
+    color.oninput = () => { WIDGETS[i].color = color.value; renderPreview(); };
     const style = document.createElement('select'); style.className = 'qr-style';
     ['both', 'qr', 'goal'].forEach(v => style.add(new Option(styleLabel(v), v)));
     style.value = ['both', 'qr', 'goal'].includes(w.style) ? w.style : 'both';
-    style.onchange = () => { WIDGETS[i].style = style.value; };
+    style.onchange = () => { WIDGETS[i].style = style.value; renderPreview(); };
     const del = document.createElement('button'); del.className = 'del'; del.type = 'button';
     del.textContent = '✕'; del.title = window.t('qrRemove'); del.disabled = WIDGETS.length <= 1;
     del.onclick = () => { if (WIDGETS.length > 1) { WIDGETS.splice(i, 1); renderWidgets(); } };
     row.append(tag, jar, color, style, del); box.append(row);
   });
   $('addQr').style.display = WIDGETS.length >= 5 ? 'none' : 'inline-flex';
+  renderPreview();
 }
 $('addQr').onclick = () => {
   if (WIDGETS.length >= 5) return;
@@ -120,8 +196,8 @@ $('addQr').onclick = () => {
   WIDGETS.push({ jar: list[0].code, color: '#101217', style: 'both' });
   renderWidgets();
 };
-$('qrSize').oninput = () => { SIZE = Number($('qrSize').value) || 0; $('qrSizeVal').textContent = SIZE + '%'; };
-$('qrAlign').onchange = () => { ALIGN = $('qrAlign').value; };
+$('qrSize').oninput = () => { SIZE = Number($('qrSize').value) || 0; $('qrSizeVal').textContent = SIZE + '%'; renderPreview(); };
+$('qrAlign').onchange = () => { ALIGN = $('qrAlign').value; renderPreview(); };
 
 async function load() {
   try { CFG = await (await fetch('/api/config')).json(); } catch { CFG = {}; }
@@ -136,6 +212,7 @@ async function load() {
   $('qrSizeVal').textContent = SIZE + '%';
   const qr = (CFG.qrLinks && CFG.qrLinks[0]) || (CFG.links && CFG.links.qr) || '';
   const demo = $('qrDemo'); if (demo) { if (qr) demo.href = qr + '?demo=1'; else demo.removeAttribute('href'); }
+  renderPreviewQr();
   renderWidgets();
   if (window.applyI18n) window.applyI18n();
 }

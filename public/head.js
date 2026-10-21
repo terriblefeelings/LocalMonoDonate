@@ -11,8 +11,8 @@
   const $ = id => document.getElementById(id);
   const HEAD = { bg: '', bitsBg: '', bitsPageBg: '' };
   const HEAD_I18N = {
-    en: { navSetup: 'Setup', navAlerts: 'Alerts', navBits: 'Sound alerts', navDonate: 'Donation page', navTimer: 'Timer', navAuction: 'Auction', save: 'Save', th_dark: 'Dark', th_light: 'Light' },
-    ua: { navSetup: 'Налаштування', navAlerts: 'Сповіщення', navBits: 'Звукові сповіщення', navDonate: 'Сторінка донатів', navTimer: 'Таймер', navAuction: 'Аукціон', save: 'Зберегти', th_dark: 'Темна', th_light: 'Світла' }
+    en: { navSetup: 'Setup', navAlerts: 'Alerts', navBits: 'Sound alerts', navDonate: 'Donation page', navQr: 'QR widgets', navTimer: 'Timer', navAuction: 'Auction', save: 'Save', th_dark: 'Dark', th_light: 'Light' },
+    ua: { navSetup: 'Налаштування', navAlerts: 'Сповіщення', navBits: 'Звукові сповіщення', navDonate: 'Сторінка донатів', navQr: 'QR-віджети', navTimer: 'Таймер', navAuction: 'Аукціон', save: 'Зберегти', th_dark: 'Темна', th_light: 'Світла' }
   };
 
   function applyTheme(th) {
@@ -92,6 +92,7 @@
       alerts: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
       bits: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
       donate: '<path d="M19 14c1.5-1.5 3-3.3 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/>',
+      qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/>',
       timer: '<path d="M10 2h4"/><path d="M12 14v-4"/><circle cx="12" cy="14" r="8"/>',
       auction: '<path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/>'
     };
@@ -102,6 +103,7 @@
       '<a class="ib btn" href="/notify" data-i18n-title="navAlerts" title="Alerts">' + ico(ICON.alerts) + '</a>' +
       '<a class="ib btn" href="/bitsedit" data-i18n-title="navBits" title="Bits">' + ico(ICON.bits) + '</a>' +
       '<a class="ib btn" href="/donateedit" data-i18n-title="navDonate" title="Donate page">' + ico(ICON.donate) + '</a>' +
+      '<a class="ib btn" href="/qredit" data-i18n-title="navQr" title="QR widgets">' + ico(ICON.qr) + '</a>' +
       '<a class="ib btn" href="/timeradmin" data-i18n-title="navTimer" title="Timer">' + ico(ICON.timer) + '</a>' +
       '<a class="ib btn" href="/auctionsettings" data-i18n-title="navAuction" title="Auction settings">' + ico(ICON.auction) + '</a>' +
       '<button class="primary" id="save" data-i18n="save">Save</button>' +
