@@ -140,8 +140,10 @@ Node, Python, Rust та інсталятор не потрібні. Налашт
    з цим префіксом; після зміни ніка старі посилання дають 404.
 4. **Збережіть**. Сторінка донатів: `http://<нік>.donate.localhost:8787/banka`.
 5. **Tailscale — обовʼязково для глядачів.** Сторінка на вашому ПК недоступна з телефона чи іншої мережі.
-   Натисніть *Підключити Tailscale* (інсталятор лежить поруч із exe), увійдіть один раз — і сторінка
-   донатів стане доступною за `https://<tailnet>/<нік>/donation`.
+   Натисніть *Встановити й підключити*: застосунок поставить Tailscale з комплекту (підтвердьте запит
+   Windows), відкриє вхід і після нього ввімкне Funnel. Якщо Funnel ще не дозволений у tailnet, натисніть
+   *Увімкнути Funnel* — відкриється <https://login.tailscale.com/f/funnel>. Після налаштування натисніть
+   *Підключити* ще раз; сторінка донатів буде доступна за `https://<tailnet>/<нік>/donation`.
 6. *(Опційно)* **Twitch** — створіть застосунок на <https://dev.twitch.tv/console/apps> (confidential),
    додайте редірект із Setup, вставте Client ID/Secret і натисніть *Authorize Twitch*.
 7. *(Опційно)* **StreamElements** — Settings → Account → скопіюйте account id і JWT (API token).
@@ -152,9 +154,10 @@ Node, Python, Rust та інсталятор не потрібні. Налашт
 
 ### Як увімкнути Funnel вручну
 
-Автопідключення робить лише `tailscale funnel --bg <publicPort>` і тільки якщо Tailscale вже залогований.
-Воно **не може** увімкнути Funnel у політиці tailnet чи HTTPS-сертифікати — це робиться в адмінці
-Tailscale один раз.
+Кнопка *Встановити й підключити* ставить Tailscale з комплекту, відкриває логін і після входу робить
+`tailscale funnel --bg <publicPort>`. Кнопка *Увімкнути Funnel* відкриває сторінку
+<https://login.tailscale.com/f/funnel> і додатково повторює локальну команду. Застосунок **не може**
+увімкнути HTTPS-сертифікати чи Funnel у політиці tailnet — це робиться в адмінці Tailscale один раз.
 
 1. Переконайтеся, що Tailscale на ПК залогований (іконка в треї — Connected).
 2. <https://login.tailscale.com/admin/dns> → **HTTPS Certificates** → увімкнути.

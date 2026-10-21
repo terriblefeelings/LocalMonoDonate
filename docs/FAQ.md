@@ -280,16 +280,22 @@ Alerts → voice set → Azure, вставте власний ключ Speech і
 ## 11. Tailscale та публічна сторінка
 
 **Чому глядачі не можуть відкрити посилання?**
-`*.localhost` існує лише локально. Використовуйте Tailscale: Setup → *Connect Tailscale* (інсталятор у
-релізі), увійдіть один раз — і публічна адреса стане `https://<tailnet>/<нік>/donation`.
+`*.localhost` існує лише локально. Використовуйте Tailscale: Setup → **Встановити й підключити**.
+Застосунок сам поставить Tailscale з комплекту (підтвердьте запит Windows), відкриє вхід і після нього
+ввімкне Funnel. Публічна адреса — `https://<tailnet>/<нік>/donation`.
+
+**Funnel не ввімкнувся — що робити?**
+Натисніть **Увімкнути Funnel** у Setup: відкриється <https://login.tailscale.com/f/funnel>. Дозвольте
+HTTPS-сертифікати та Funnel для цього пристрою, поверніться і натисніть **Підключити** ще раз. Статус
+у Setup показує `Funnel on/off`.
 
 **Чи можна змінити імʼя вузла?**
 Застосунок сам виставляє `ratcorporation` і скидає старі funnel-правила, тож посилання має вигляд
 `https://ratcorporation.<tailnet>.ts.net/<нік>/donation`. Вручну: `tailscale set --hostname ratcorporation`.
 
 **Застосунок сам створює тунель?**
-Він запускає `tailscale up` для входу й тримає `tailscale funnel` на публічному порту (`8080` типово),
-з hostname = ваш нік.
+Він ставить Tailscale з комплекту (якщо ще немає), запускає `tailscale up` для входу й тримає
+`tailscale funnel` на публічному порту (`8080` типово), з hostname = ваш нік.
 
 **Funnel не створився автоматично — як зробити вручну?**
 Увімкніть HTTPS-сертифікати (<https://login.tailscale.com/admin/dns>) і Funnel у політиці tailnet

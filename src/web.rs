@@ -984,7 +984,7 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         return;
     }
     if path == "/api/tailscale" {
-        if method == Method::Get { let _ = request.respond(json_resp(200, crate::tailscale::status())); }
+        if method == Method::Get { let _ = request.respond(json_resp(200, crate::tailscale::status_for(ctx.cfg().public_port))); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
@@ -997,8 +997,8 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
     }
     if path == "/api/tailscale/funnel" {
         if method == Method::Post {
-            crate::tailscale::funnel(ctx.cfg().public_port);
-            let _ = request.respond(json_resp(200, json!({ "ok": true })));
+            let r = crate::tailscale::funnel_enable(ctx.cfg().public_port);
+            let _ = request.respond(json_resp(200, r));
         } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
@@ -1010,10 +1010,10 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
                 .filter(|p| p.exists())
                 .unwrap_or_else(|| ctx.paths.base.join("tailscale-setup.msi"));
             if msi.exists() {
-                let _ = std::process::Command::new("msiexec")
-                    .args(["/i", &msi.to_string_lossy(), "/qb"])
-                    .spawn();
-                let _ = request.respond(json_resp(200, json!({ "ok": true, "started": true })));
+                match crate::tailscale::install(&msi) {
+                    Ok(_) => { let _ = request.respond(json_resp(200, json!({ "ok": true, "started": true }))); }
+                    Err(e) => { let _ = request.respond(json_resp(200, json!({ "ok": false, "error": e }))); }
+                }
             } else {
                 let _ = request.respond(json_resp(200, json!({ "ok": false, "download": "https://tailscale.com/download/windows" })));
             }
