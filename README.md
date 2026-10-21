@@ -138,6 +138,52 @@ Node, Python, Rust та інсталятор не потрібні. Налашт
 Без токена/банки застосунок теж запускається, але сторінка донатів покаже «No jar configured», а кнопка
 оплати буде неактивною.
 
+### Як увімкнути Funnel вручну
+
+Автопідключення робить лише `tailscale funnel --bg <publicPort>` і тільки якщо Tailscale вже залогований.
+Воно **не може** увімкнути Funnel у політиці tailnet чи HTTPS-сертифікати — це робиться в адмінці
+Tailscale один раз.
+
+1. Переконайтеся, що Tailscale на ПК залогований (іконка в треї — Connected).
+2. <https://login.tailscale.com/admin/dns> → **HTTPS Certificates** → увімкнути.
+3. <https://login.tailscale.com/admin/acls> → дозвольте Funnel для вашого tailnet:
+
+   ```json
+   "nodeAttrs": [
+     { "target": ["autogroup:member"], "attr": ["funnel"] }
+   ]
+   ```
+
+   Також є сторінка <https://login.tailscale.com/f/funnel>.
+4. Виконайте в PowerShell (повний шлях, бо CLI може бути не в PATH):
+
+   ```powershell
+   & "C:\Program Files\Tailscale\tailscale.exe" status
+   & "C:\Program Files\Tailscale\tailscale.exe" funnel --bg 8080
+   & "C:\Program Files\Tailscale\tailscale.exe" funnel status
+   ```
+
+   `8080` — це `publicPort` із `config.json` (публічний слухач). **Не 8787** — це локальна адмінка.
+5. Скопіюйте адресу `https://<machine>.<tailnet>.ts.net`; сторінка донатів —
+   `https://<machine>.<tailnet>.ts.net/<нік>/donation`.
+6. Локальна перевірка перед публікацією: `http://127.0.0.1:8080/<нік>/donation`.
+7. Скинути всі правила: `tailscale funnel reset`.
+8. Хочете хост із ніком: `tailscale set --hostname <нік>`, потім перепідключіться — сертифікат
+   перевипуститься, і посилання стане `<нік>.<tailnet>.ts.net`.
+
+**Типові помилки**
+
+| Повідомлення | Що зробити |
+|---|---|
+| `Funnel is not enabled on your tailnet` | крок 3 (ACL / сторінка Funnel) |
+| `HTTPS is not enabled` / cert error | крок 2 (HTTPS Certificates) |
+| `funnel status` порожній | не виконано `funnel --bg 8080` або Tailscale не залогований |
+| Публічна сторінка 502/порожня | застосунок не запущений або `publicPort` не 8080 |
+| Публічна сторінка 404 | неправильний нік у шляху (`/<нік>/donation`) |
+
+Якщо Funnel заборонений політикою організації — `tailscale serve` (лише в межах tailnet), Cloudflare
+Tunnel або власний реверс-проксі з HTTPS на `publicPort`.
+
 ### Чому Tailscale обовʼязковий
 
 Посилання `*.localhost` резолвляться лише на ПК стрімера — OBS їх бачить, глядачі ні. Tailscale Funnel

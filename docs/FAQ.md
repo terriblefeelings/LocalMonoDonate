@@ -286,6 +286,19 @@ Alerts → voice set → Azure, вставте власний ключ Speech і
 Він запускає `tailscale up` для входу й тримає `tailscale funnel` на публічному порту (`8080` типово),
 з hostname = ваш нік.
 
+**Funnel не створився автоматично — як зробити вручну?**
+Увімкніть HTTPS-сертифікати (<https://login.tailscale.com/admin/dns>) і Funnel у політиці tailnet
+(<https://login.tailscale.com/admin/acls>, `"attr": ["funnel"]`), потім:
+
+```powershell
+& "C:\Program Files\Tailscale\tailscale.exe" funnel --bg 8080
+& "C:\Program Files\Tailscale\tailscale.exe" funnel status
+```
+
+8080 — це `publicPort` із `config.json`, не 8787. Далі відкрийте
+`https://<machine>.<tailnet>.ts.net/<нік>/donation`. Скинути — `tailscale funnel reset`; змінити хост —
+`tailscale set --hostname <нік>`. Деталі — в README, розділ «Як увімкнути Funnel вручну».
+
 **Що саме відкрито?**
 Лише сторінка донатів і колода звукових сповіщень. Адмінка й оверлеї лишаються локальними.
 
