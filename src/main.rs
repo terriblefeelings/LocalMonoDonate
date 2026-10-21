@@ -56,6 +56,7 @@ fn main() {
     if auc_port > 0 && auc_port != main_port {
         let c = ctx.clone(); std::thread::spawn(move || twitch::run(c, auc_port, true));
     }
+    if !headless && std::env::var_os("LMD_NO_UPDATE").is_none() { web::start_update_check(); }
     { let c = ctx.clone(); std::thread::spawn(move || web::serve(c)); }
 
     if headless {

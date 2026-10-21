@@ -4,9 +4,61 @@ use crate::mono;
 use serde_json::json;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::time::Duration;
 use tiny_http::{Header, Method, Response, StatusCode};
 
 type Resp = Response<std::io::Cursor<Vec<u8>>>;
+
+static UPDATE_INFO: std::sync::OnceLock<std::sync::Mutex<serde_json::Value>> = std::sync::OnceLock::new();
+
+fn update_info() -> &'static std::sync::Mutex<serde_json::Value> {
+    UPDATE_INFO.get_or_init(|| std::sync::Mutex::new(json!({
+        "checking": true, "available": false, "current": env!("CARGO_PKG_VERSION")
+    })))
+}
+
+fn version_gt(latest: &str, current: &str) -> bool {
+    let parse = |s: &str| -> Vec<u64> {
+        s.trim().trim_start_matches(['v', 'V'])
+            .split('.')
+            .map(|x| x.split(|c: char| !c.is_ascii_digit()).next().unwrap_or("0").parse().unwrap_or(0))
+            .collect()
+    };
+    let a = parse(latest);
+    let b = parse(current);
+    for i in 0..a.len().max(b.len()) {
+        let x = *a.get(i).unwrap_or(&0);
+        let y = *b.get(i).unwrap_or(&0);
+        if x != y { return x > y; }
+    }
+    false
+}
+
+/// Background GitHub release check; /api/update serves the cached result.
+pub fn start_update_check() {
+    std::thread::spawn(|| {
+        let current = env!("CARGO_PKG_VERSION");
+        let val = match ureq::get("https://api.github.com/repos/terriblefeelings/LocalMonoDonate/releases/latest")
+            .set("User-Agent", "LocalMonoDonate")
+            .set("Accept", "application/vnd.github+json")
+            .timeout(Duration::from_secs(10))
+            .call()
+        {
+            Ok(r) => match r.into_string().ok().and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok()) {
+                Some(j) => {
+                    let tag = j.get("tag_name").and_then(|x| x.as_str()).unwrap_or("").to_string();
+                    let url = j.get("html_url").and_then(|x| x.as_str()).unwrap_or("").to_string();
+                    let name = j.get("name").and_then(|x| x.as_str()).unwrap_or(&tag).to_string();
+                    json!({ "checking": false, "current": current, "latest": tag,
+                            "available": version_gt(&tag, current), "url": url, "name": name })
+                }
+                None => json!({ "checking": false, "available": false, "current": current, "error": "invalid GitHub response" }),
+            },
+            Err(e) => json!({ "checking": false, "available": false, "current": current, "error": e.to_string() }),
+        };
+        *update_info().lock().unwrap() = val;
+    });
+}
 
 fn hdr(k: &str, v: &str) -> Header { Header::from_bytes(k.as_bytes(), v.as_bytes()).unwrap() }
 
@@ -107,7 +159,7 @@ fn state_json(ctx: &Ctx) -> serde_json::Value {
         json!({
             "code": j.code, "title": if !custom.trim().is_empty() { custom } else { j.title.clone() },
             "mine": cfg.jar_mine.get(i).copied().unwrap_or(true),
-            "balance": j.balance, "goal": j.goal,
+            "balance": j.balance, "goal": j.goal, "currency": currency_symbol(j.currency),
             "accountResolved": !j.statement_account.is_empty(),
             "stats": { "total": j.stats.total, "count": j.stats.count,
                        "biggest": j.stats.biggest, "biggestToday": biggest_today },
@@ -163,10 +215,11 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     if name.chars().count() > cfg.limits.name_max { return fail(request, "Занадто довге ім'я"); }
     if message.is_empty() && bit_sel.is_none() { return fail(request, "Напишіть повідомлення"); }
     if message.chars().count() > cfg.limits.message_max { return fail(request, "Занадто довге повідомлення"); }
-    let ytid = match youtube_id(&yt) { Ok(x) => x, Err(_) => return fail(request, "Некоректне посилання YouTube") };
+    let ytid = match youtube_id(&yt) { Ok(x) => x, Err(_) => return fail(request, "Потрібне посилання на одне YouTube-відео (плейлисти, кліпи й канали не підтримуються)") };
     // YouTube checks (thresholds come from the variation matched for this amount)
     let ystyle = pick_style(&cfg.notify.rules, amount);
-    if yt.contains("list=") && !ystyle.yt_playlists { return fail(request, "Плейлисти не дозволені"); }
+    // a watch link with &list= still points at one video and is allowed; a pure playlist has no id
+    if ytid.is_empty() && yt.contains("list=") && !ystyle.yt_playlists { return fail(request, "Плейлисти не дозволені"); }
     if !ytid.is_empty() {
         if let Some((views, secs)) = mono::youtube_meta(&ytid) {
             if ystyle.yt_views > 0 && views < ystyle.yt_views { return fail(request, &format!("Відео повинно мати щонайменше {} переглядів", ystyle.yt_views)); }
@@ -244,6 +297,32 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
         "id": format!("test-{}", now_ms()), "name": name, "amount": amount,
         "message": message, "youtubeId": "", "matched": "test", "jar": "", "currency": "",
         "ttsUrl": tts_url }}));
+    let _ = request.respond(json_resp(200, json!({ "ok": true })));
+}
+
+/// Called by the donation overlay after the alert (and TTS) finished; the YouTube
+/// overlay listens for the resulting event, so the video never competes with the alert audio.
+fn youtube_post(ctx: &Ctx, mut request: tiny_http::Request) {
+    let v = read_body(&mut request);
+    if v.get("stop").and_then(|x| x.as_bool()).unwrap_or(false) {
+        ctx.broadcast(json!({ "type": "youtube", "data": { "stop": true } }));
+        let _ = request.respond(json_resp(200, json!({ "ok": true })));
+        return;
+    }
+    let id = v.get("youtubeId").and_then(|x| x.as_str()).unwrap_or("").trim();
+    let amount = v.get("amount").and_then(|x| x.as_f64()).unwrap_or(0.0);
+    let rule = v.get("ruleId").and_then(|x| x.as_str()).unwrap_or("");
+    if !crate::model::is_youtube_id(id) {
+        let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "invalid video id" })));
+        return;
+    }
+    if !ctx.cfg().features.youtube {
+        let _ = request.respond(json_resp(200, json!({ "ok": false, "error": "youtube overlay disabled" })));
+        return;
+    }
+    ctx.broadcast(json!({ "type": "youtube", "data": {
+        "youtubeId": id, "amount": amount, "ruleId": rule } }));
+    log(&format!("youtube: play {} after alert", id));
     let _ = request.respond(json_resp(200, json!({ "ok": true })));
 }
 
@@ -383,6 +462,7 @@ fn features_post(ctx: &Ctx, mut request: tiny_http::Request) {
     if let Some(b) = v.get("youtube").and_then(|x| x.as_bool()) { f.youtube = b; }
     if let Some(b) = v.get("timer").and_then(|x| x.as_bool()) { f.timer = b; }
     if let Some(b) = v.get("auction").and_then(|x| x.as_bool()) { f.auction = b; }
+    if let Some(b) = v.get("qr").and_then(|x| x.as_bool()) { f.qr = b; }
     save_config(&ctx.paths, &cfg);
     *ctx.cfg.lock().unwrap() = cfg.clone();
     log("features saved");
@@ -606,13 +686,20 @@ fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
         Some(d) if !d.is_empty() => format!("https://{}", d),
         _ => cfg.public_base.clone(),
     };
+    let public_donate = if public_base.is_empty() {
+        donate.clone()
+    } else {
+        let base = if public_base.starts_with("http") { public_base.clone() } else { format!("https://{}", public_base) };
+        format!("{}/{}/donation", base.trim_end_matches('/'), sanitize_name(&cfg.nickname))
+    };
     let mut v = json!({
         "nickname": cfg.nickname, "overlayname": cfg.overlayname,
+        "publicDonate": public_donate,
         "statsToken": cfg.stats_token, "port": cfg.port, "publicPort": cfg.public_port, "publicBase": public_base,
         "tailscale": ts,
-        "token": cfg.token, "bg": cfg.bg, "bitsBg": cfg.bits_bg, "bitsPageBg": cfg.bits_page_bg, "bitsGrid": cfg.bits_grid, "jars": cfg.jars, "jarNames": cfg.jar_names, "jarMine": cfg.jar_mine, "maxJars": MAX_JARS,
+        "token": cfg.token, "bg": cfg.bg, "bitsBg": cfg.bits_bg, "bitsPageBg": cfg.bits_page_bg, "bitsGrid": cfg.bits_grid, "jars": cfg.jars, "jarNames": cfg.jar_names, "jarMine": cfg.jar_mine, "maxJars": MAX_JARS, "widgetJar": cfg.widget_jar,
         "features": cfg.features,
-        "links": { "donate": donate, "stats": stats, "overlay": overlay, "bitsPage": bits_page, "bitsOverlay": bits_overlay, "youtube": youtube_link(&cfg) }
+        "links": { "donate": donate, "stats": stats, "overlay": overlay, "qr": qr_link(&cfg), "bitsPage": bits_page, "bitsOverlay": bits_overlay, "youtube": youtube_link(&cfg) }
     });
     // the public listener must never hand out the Monobank token or the stats link
     if public {
@@ -646,6 +733,7 @@ fn config_post(ctx: &Ctx, mut request: tiny_http::Request) {
     if let Some(arr) = v.get("jarMine").and_then(|x| x.as_array()) {
         cfg.jar_mine = arr.iter().map(|x| x.as_bool().unwrap_or(true)).collect();
     }
+    if let Some(s) = v.get("widgetJar").and_then(|x| x.as_str()) { cfg.widget_jar = s.trim().to_string(); }
     if let Some(s) = v.get("publicBase").and_then(|x| x.as_str()) {
         let s = s.trim().trim_end_matches('/');
         // accept a bare host ("ratcorporation.us.kg") or a full URL
@@ -787,6 +875,7 @@ fn serve_page(ctx: &Ctx, host: &str, path: &str, public: bool) -> Option<Vec<u8>
         Page::Donor => include_str!("../public/form.html"),
         Page::Stats => include_str!("../public/check.html"),
         Page::Overlay => include_str!("../public/overlay.html"),
+        Page::Qr => include_str!("../public/qr.html"),
         Page::Setup => include_str!("../public/setup.html"),
         Page::Notify => include_str!("../public/notify.html"),
         Page::BitsOverlay => include_str!("../public/bits_overlay.html"),
@@ -806,7 +895,7 @@ fn serve_page(ctx: &Ctx, host: &str, path: &str, public: bool) -> Option<Vec<u8>
 fn public_allowed(method: Method, path: &str, cfg: &Config) -> bool {
     match (method, path) {
         (Method::Get, "/favicon.ico") | (Method::Get, "/app.css") | (Method::Get, "/alert.js")
-        | (Method::Get, "/head.js") | (Method::Get, "/i18n.js") | (Method::Get, "/auc.js")
+        | (Method::Get, "/head.js") | (Method::Get, "/i18n.js") | (Method::Get, "/auc.js") | (Method::Get, "/qrcode.js")
         | (Method::Get, "/auc.css") | (Method::Get, "/assets/default.jpg") | (Method::Get, "/rat.mp4")
         | (Method::Get, "/api/state") | (Method::Get, "/api/notify") | (Method::Get, "/api/config")
         | (Method::Get, "/api/bits")
@@ -846,6 +935,10 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
     }
     if method == Method::Get && path == "/head.js" {
         let _ = request.respond(body_resp(200, "application/javascript; charset=utf-8", include_str!("../public/head.js").as_bytes().to_vec()));
+        return;
+    }
+    if method == Method::Get && path == "/qrcode.js" {
+        let _ = request.respond(body_resp(200, "application/javascript; charset=utf-8", include_str!("../public/qrcode.js").as_bytes().to_vec()));
         return;
     }
     if method == Method::Get && path == "/i18n.js" {
@@ -1065,6 +1158,20 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         return;
     }
     if path == "/api/streamelements/test" { se_test(&ctx, request, port); return; }
+    if path == "/api/update" {
+        if method == Method::Get {
+            let v = update_info().lock().unwrap().clone();
+            let _ = request.respond(json_resp(200, v));
+        } else {
+            let _ = request.respond(json_resp(405, json!({ "ok": false })));
+        }
+        return;
+    }
+    if path == "/api/youtube" {
+        if method == Method::Post { youtube_post(&ctx, request); }
+        else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
     if path == "/api/notify" {
         if method == Method::Get { let _ = request.respond(json_resp(200, serde_json::to_value(&ctx.cfg().notify).unwrap_or(json!({})))); }
         else if method == Method::Post { notify_post(&ctx, request); }
@@ -1147,5 +1254,20 @@ fn serve_port(ctx: Arc<Ctx>, host: &str, port: u16) {
     for request in server.incoming_requests() {
         let ctx = ctx.clone();
         std::thread::spawn(move || handle(ctx, request, port));
+    }
+}
+
+#[cfg(test)]
+mod update_tests {
+    use super::version_gt;
+
+    #[test]
+    fn newer_release_wins_and_equal_is_silent() {
+        assert!(version_gt("v0.2.4", "0.2.3"));
+        assert!(!version_gt("v0.2.3", "0.2.3"));
+        assert!(!version_gt("0.2.3", "v0.2.4"));
+        assert!(version_gt("v0.10.0", "0.9.9"));
+        assert!(version_gt("v1.0", "0.99.99"));
+        assert!(!version_gt("v0.2.4-beta", "0.2.4"));
     }
 }

@@ -1,7 +1,7 @@
 # AGENTS.md — LocalMonoDonate
 
 Rust-застосунок в одному exe для донат-алертів Monobank з аукціоном, який віддає локальні веб-сторінки
-(`/setup`, `/timeradmin`, `/auctionsettings`, `/auction`, …).
+(`/setup`, `/timeradmin`, `/auctionsettings`, `/auction`, `/qr`, …).
 
 ## Збірка та публікація
 
@@ -20,7 +20,7 @@ exe віддавав зміни.
 
 ```powershell
 cd J:\MONOBANK\AUC
-node _alltest.mjs       # 179 глибоких HTTP-перевірок (сторінки, API, аукціон, донати, таймер, біти)
+node _alltest.mjs       # 186 глибоких HTTP-перевірок (сторінки, API, аукціон, донати, таймер, біти, QR)
 node combotest.mjs      # 33 комбінації режимів аукціону × джерело × валюта + продовження таймера
 node _deeptest.mjs      # 15 кліків у браузері + тема/мова
 node capture_pages.mjs  # 53 скріншоти -> J:\MONOBANK\shots

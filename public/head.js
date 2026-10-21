@@ -104,7 +104,8 @@
       '<a class="ib btn" href="/donateedit" data-i18n-title="navDonate" title="Donate page">' + ico(ICON.donate) + '</a>' +
       '<a class="ib btn" href="/timeradmin" data-i18n-title="navTimer" title="Timer">' + ico(ICON.timer) + '</a>' +
       '<a class="ib btn" href="/auctionsettings" data-i18n-title="navAuction" title="Auction settings">' + ico(ICON.auction) + '</a>' +
-      '<button class="primary" id="save" data-i18n="save">Save</button>';
+      '<button class="primary" id="save" data-i18n="save">Save</button>' +
+      '<a id="updateBtn" class="update-btn" target="_blank" rel="noopener"></a>';
     document.querySelectorAll('#themeseg button').forEach(b => b.onclick = () => applyTheme(b.dataset.th));
     document.querySelectorAll('#langseg button').forEach(b => b.onclick = () => { window.setLang(b.dataset.lang); document.querySelectorAll('#langseg button').forEach(x => x.classList.toggle('on', x.dataset.lang === b.dataset.lang)); });
     $('save').onclick = () => { if (typeof window.savePage === 'function') window.savePage(); };

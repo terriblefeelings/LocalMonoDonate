@@ -357,9 +357,10 @@ pub struct Features {
     #[serde(default = "d_true")] pub youtube: bool,
     #[serde(default = "d_true")] pub timer: bool,
     #[serde(default = "d_true")] pub auction: bool,
+    #[serde(default = "d_true")] pub qr: bool,
 }
 impl Default for Features {
-    fn default() -> Self { Features { donate: true, stats: true, overlay: true, bits: true, bits_overlay: true, youtube: true, timer: true, auction: true } }
+    fn default() -> Self { Features { donate: true, stats: true, overlay: true, bits: true, bits_overlay: true, youtube: true, timer: true, auction: true, qr: true } }
 }
 
 /* notification appearance (own clean-room implementation) */
@@ -592,6 +593,8 @@ pub struct Config {
     #[serde(default)] pub auction: AuctionCfg,
     #[serde(default)] pub tts: TtsCfg,
     #[serde(default)] pub streamelements: StreamElementsCfg,
+    /// jar code shown in the QR widget overlay ("" = first jar)
+    #[serde(default = "d_s")] pub widget_jar: String,
 }
 impl Default for Config {
     fn default() -> Self {
@@ -607,6 +610,7 @@ impl Default for Config {
             auction: AuctionCfg::default(),
             tts: TtsCfg::default(),
             streamelements: StreamElementsCfg::default(),
+            widget_jar: String::new(),
         }
     }
 }
@@ -1001,22 +1005,54 @@ pub fn donate_comment(code: &str) -> String { format!("{}{}", DONATE_PREFIX, cod
 
 /* ---------------------------------------------------------------- misc */
 
+/// Accepts every common YouTube URL shape (with or without scheme, any subdomain)
+/// and a bare 11-character id. Returns Ok("") for an empty input (the field is optional).
 pub fn youtube_id(input: &str) -> Result<String, ()> {
-    let u = input.trim();
-    if u.is_empty() { return Ok(String::new()); }
-    let take11 = |s: &str| -> Option<String> {
-        let id: String = s.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_').take(11).collect();
-        if id.len() == 11 { Some(id) } else { None }
-    };
-    for marker in ["youtu.be/", "v=", "/embed/", "/shorts/", "/live/"] {
-        if let Some(pos) = u.find(marker) {
-            if let Some(id) = take11(&u[pos + marker.len()..]) { return Ok(id); }
+    let raw = input.trim();
+    if raw.is_empty() { return Ok(String::new()); }
+    if is_youtube_id(raw) { return Ok(raw.to_string()); }
+
+    let s = raw.strip_prefix("https://").or_else(|| raw.strip_prefix("http://")).unwrap_or(raw);
+    let s = s.strip_prefix("//").unwrap_or(s);
+    let (host_raw, rest) = match s.find('/') { Some(i) => (&s[..i], &s[i..]), None => (s, "") };
+    let host = host_raw.rsplit('@').next().unwrap_or(host_raw);
+    let host = host.split(':').next().unwrap_or("").to_ascii_lowercase();
+    let host = host.trim_start_matches("www.").trim_start_matches("m.");
+
+    let rest = rest.split('#').next().unwrap_or("");
+    let (path, query) = match rest.split_once('?') { Some((p, q)) => (p, q), None => (rest, "") };
+    let segs: Vec<&str> = path.trim_start_matches('/').split('/').filter(|x| !x.is_empty()).collect();
+
+    // youtu.be/ID, yt.be/ID, www.youtu.be/ID
+    if host == "youtu.be" || host == "yt.be" {
+        if let Some(id) = segs.first() { if is_youtube_id(id) { return Ok((*id).to_string()); } }
+    }
+
+    // ?v=ID wins anywhere: /watch, /watch_popup, music., tv., international TLDs
+    for pair in query.split('&') {
+        let (k, v) = match pair.split_once('=') { Some(kv) => kv, None => (pair, "") };
+        if k.eq_ignore_ascii_case("v") && is_youtube_id(v) { return Ok(v.to_string()); }
+    }
+
+    let youtube_host = host.split('.').any(|l| l == "youtube" || l == "youtube-nocookie");
+    let ytimg_host = host.split('.').any(|l| l == "ytimg");
+    if !youtube_host && !ytimg_host { return Err(()); }
+
+    // /embed/, /shorts/, /live/, /v/, /e/
+    if let Some(first) = segs.first() {
+        let key = first.to_ascii_lowercase();
+        if ["embed", "shorts", "live", "v", "e"].contains(&key.as_str()) {
+            if let Some(id) = segs.get(1) { if is_youtube_id(id) { return Ok((*id).to_string()); } }
+        }
+        // thumbnails: i.ytimg.com/vi/<id>/..., /vi_webp/, /vi_live/
+        if ytimg_host && ["vi", "vi_webp", "vi_live"].contains(&key.as_str()) {
+            if let Some(id) = segs.get(1) { if is_youtube_id(id) { return Ok((*id).to_string()); } }
         }
     }
-    if u.len() == 11 && u.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
-        return Ok(u.to_string());
-    }
     Err(())
+}
+pub fn is_youtube_id(s: &str) -> bool {
+    s.len() == 11 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
 pub fn sanitize_name(s: &str) -> String { s.trim().to_ascii_lowercase() }
@@ -1090,6 +1126,12 @@ pub fn links(cfg: &Config) -> (String, String, String) {
     )
 }
 
+/// QR + jar widget overlay (OBS browser source)
+pub fn qr_link(cfg: &Config) -> String {
+    format!("http://{}.{}.localhost:{}/qr",
+        sanitize_name(&cfg.nickname), sanitize_name(&cfg.overlayname), cfg.port)
+}
+
 /// (bits donor page, bits overlay)
 pub fn bits_links(cfg: &Config) -> (String, String) {
     let p = cfg.port;
@@ -1118,7 +1160,7 @@ pub fn timer_link(cfg: &Config) -> String {
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
-pub enum Page { Donor, Stats, Overlay, Setup, Notify, BitsOverlay, BitsDonor, BitsEdit, DonateEdit, YouTube, TimerAdmin, TimerOverlay, AuctionUi, AuctionSettings }
+pub enum Page { Donor, Stats, Overlay, Qr, Setup, Notify, BitsOverlay, BitsDonor, BitsEdit, DonateEdit, YouTube, TimerAdmin, TimerOverlay, AuctionUi, AuctionSettings }
 
 pub fn route_by_host(cfg: &Config, host: &str, path: &str) -> Option<Page> {
     if path == "/setup" { return Some(Page::Setup); }
@@ -1135,6 +1177,7 @@ pub fn route_by_host(cfg: &Config, host: &str, path: &str) -> Option<Page> {
             "/banka" | "/donatiks" | "/form" => on(f.donate, Page::Donor),
             "/stats" | "/check" | "/" => on(f.stats, Page::Stats),
             "/main" | "/overlay" => on(f.overlay, Page::Overlay),
+            "/qr" => on(f.qr, Page::Qr),
             "/bits" => on(f.bits_overlay, Page::BitsOverlay),
             "/bitsform" => on(f.bits, Page::BitsDonor),
             "/youtube" | "/yt" => on(f.youtube, Page::YouTube),
@@ -1152,6 +1195,7 @@ pub fn route_by_host(cfg: &Config, host: &str, path: &str) -> Option<Page> {
     if page == "auction" { return on(f.auction, Page::AuctionUi); }
     if page == "donate" { if path == "/bits" { return on(f.bits, Page::BitsDonor); } return on(f.donate, Page::Donor); }
     if page == sanitize_name(&cfg.overlayname) && !cfg.overlayname.trim().is_empty() {
+        if path == "/qr" { return on(f.qr, Page::Qr); }
         if path == "/bits" { return on(f.bits_overlay, Page::BitsOverlay); }
         if path == "/youtube" || path == "/yt" { return on(f.youtube, Page::YouTube); }
         if path == "/timer" { return on(f.timer, Page::TimerOverlay); }
@@ -1202,5 +1246,110 @@ pub fn log(msg: &str) {
     { use std::io::Write; let _ = writeln!(std::io::stdout(), "{}", line); }
     if let Some(f) = LOGFILE.get() {
         if let Ok(mut f) = f.lock() { use std::io::Write; let _ = writeln!(f, "{}", line); }
+    }
+}
+
+
+
+#[cfg(test)]
+mod youtube_id_tests {
+    use super::*;
+
+    const ID: &str = "dQw4w9WgXcQ";
+
+    #[test]
+    fn accepts_every_common_youtube_shape() {
+        let cases = [
+            ID,
+            "https://youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10s",
+            "http://m.youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://music.youtube.com/watch?v=dQw4w9WgXcQ&list=RD",
+            "https://youtu.be/dQw4w9WgXcQ?t=1",
+            "https://www.youtu.be/dQw4w9WgXcQ",
+            "https://yt.be/dQw4w9WgXcQ",
+            "https://youtube.com/shorts/dQw4w9WgXcQ",
+            "https://www.youtube.com/live/dQw4w9WgXcQ?si=x",
+            "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+            "https://youtube.com/v/dQw4w9WgXcQ",
+            "https://youtube.com/e/dQw4w9WgXcQ",
+            "https://youtube.com/watch_popup?v=dQw4w9WgXcQ",
+            "www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "youtube.com/shorts/dQw4w9WgXcQ",
+            "https://youtube.googleapis.com/v/dQw4w9WgXcQ",
+            "https://www.youtubekids.com/watch?v=dQw4w9WgXcQ",
+            "https://tv.youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com/watch?v=dQw4w9WgXcQ&t=120s",
+            "https://youtu.be/dQw4w9WgXcQ?t=120",
+            "https://youtube.com/embed/dQw4w9WgXcQ?start=120",
+            "https://youtu.be/dQw4w9WgXcQ?si=SHARE_TOKEN",
+            "https://youtube.com/watch?v=dQw4w9WgXcQ&feature=shared",
+            "https://youtube.com/shorts/dQw4w9WgXcQ?si=SHARE_TOKEN",
+            "https://youtube.com/watch?v=dQw4w9WgXcQ&list=PL123",
+            "https://youtube.co.uk/watch?v=dQw4w9WgXcQ",
+            "https://www.youtube.co.jp/watch?v=dQw4w9WgXcQ",
+            "https://youtube.co.kr/watch?v=dQw4w9WgXcQ",
+            "https://youtube.co.in/watch?v=dQw4w9WgXcQ",
+            "https://youtube.co.nz/watch?v=dQw4w9WgXcQ",
+            "https://youtube.co.za/watch?v=dQw4w9WgXcQ",
+            "https://youtube.co.id/watch?v=dQw4w9WgXcQ",
+            "https://youtube.co.th/watch?v=dQw4w9WgXcQ",
+            "https://youtube.co.il/watch?v=dQw4w9WgXcQ",
+            "https://youtube.co.ae/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com.br/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com.au/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com.mx/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com.ar/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com.tr/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com.hk/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com.sg/watch?v=dQw4w9WgXcQ",
+            "https://youtube.com.tw/watch?v=dQw4w9WgXcQ",
+            "https://youtube.de/watch?v=dQw4w9WgXcQ",
+            "https://youtube.fr/watch?v=dQw4w9WgXcQ",
+            "https://youtube.it/watch?v=dQw4w9WgXcQ",
+            "https://youtube.es/watch?v=dQw4w9WgXcQ",
+            "https://youtube.ca/watch?v=dQw4w9WgXcQ",
+            "https://youtube.be/watch?v=dQw4w9WgXcQ",
+            "https://youtube.nl/watch?v=dQw4w9WgXcQ",
+            "https://youtube.pl/watch?v=dQw4w9WgXcQ",
+            "https://youtube.ru/watch?v=dQw4w9WgXcQ",
+            "https://youtube.ua/watch?v=dQw4w9WgXcQ",
+            "https://youtube.ua/shorts/dQw4w9WgXcQ",
+            "https://youtube.ua/embed/dQw4w9WgXcQ",
+            "https://youtube.ua/live/dQw4w9WgXcQ",
+            "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+            "https://ytimg.com/vi_webp/dQw4w9WgXcQ/maxres.webp",
+        ];
+        for input in cases {
+            assert_eq!(youtube_id(input), Ok(ID.to_string()), "input: {input}");
+        }
+    }
+
+    #[test]
+    fn rejects_links_without_a_single_video() {
+        for input in [
+            "https://www.youtube.com/playlist?list=PL123",
+            "https://www.youtube.com/clip/Ugkx123",
+            "https://www.youtube.com/@SomeChannel",
+            "https://www.youtube.com/@SomeChannel/live",
+            "https://www.youtube.com/@SomeChannel/shorts",
+            "https://www.youtube.com/channel/UC123/live",
+            "https://www.youtube.com/c/SomeChannel",
+            "https://www.youtube.com/user/SomeUser",
+            "https://www.youtube.com/results?search_query=cats",
+            "https://youtubei.googleapis.com/v1/search",
+            "https://redirector.googlevideo.com/videoplayback?id=abc",
+            "https://lh3.ggpht.com/avatar.png",
+            "just some text",
+            "https://example.com/watch?v=short",
+        ] {
+            assert!(youtube_id(input).is_err(), "input: {input}");
+        }
+    }
+
+    #[test]
+    fn empty_is_allowed() {
+        assert_eq!(youtube_id("   "), Ok(String::new()));
     }
 }

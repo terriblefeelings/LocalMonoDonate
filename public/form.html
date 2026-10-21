@@ -11,7 +11,7 @@
   .wrap{max-width:560px;width:100%}
   .row .ctl{max-width:none}
 
-.credits{position:fixed;left:0;right:0;bottom:14px;margin:0 auto;max-width:560px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
+.credits{position:static;margin:18px auto 0;max-width:560px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
 .credits a{color:inherit;text-decoration:underline}
 .credits b{font-weight:600}
 </style>
@@ -33,8 +33,8 @@
       <div class="status err" id="err" style="min-height:18px"></div>
     </div>
   </div>
+  <div class="credits" id="credits"></div>
 </div>
-<div class="credits" id="credits"></div>
 <script src="/i18n.js"></script>
 <script>
 window.I18N_DEFAULT = 'ua';

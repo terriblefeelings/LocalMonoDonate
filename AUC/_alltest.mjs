@@ -49,6 +49,7 @@ async function testPages() {
     ['overlay /overlay', '/overlay', 0], ['overlay /main', '/main', 0],
     ['bits overlay /bits', '/bits', 0], ['bits donor /bitsform', '/bitsform', 1],
     ['youtube /youtube', '/youtube', 0], ['youtube /yt', '/yt', 0],
+    ['qr /qr', '/qr', 0],
     ['timer overlay /timer', '/timer', 0], ['auction /auction', '/auction', 0],
   ];
   for (const [name, path, kind] of PAGES) {
@@ -63,7 +64,7 @@ async function testPages() {
     }
   }
   sec('assets');
-  for (const [n, p] of [['app.css', '/app.css'], ['head.js', '/head.js'], ['i18n.js', '/i18n.js'], ['auc.js', '/auc.js'], ['auc.css', '/auc.css'], ['alert.js', '/alert.js'], ['default.jpg', '/assets/default.jpg'], ['rat.mp4', '/rat.mp4']]) {
+  for (const [n, p] of [['app.css', '/app.css'], ['head.js', '/head.js'], ['i18n.js', '/i18n.js'], ['auc.js', '/auc.js'], ['auc.css', '/auc.css'], ['alert.js', '/alert.js'], ['qrcode.js', '/qrcode.js'], ['default.jpg', '/assets/default.jpg'], ['rat.mp4', '/rat.mp4']]) {
     ok(`asset ${n} 200`, (await fetch(BASE + p)).status === 200);
   }
   ok('favicon 204', (await fetch(BASE + '/favicon.ico')).status === 204);
@@ -82,6 +83,7 @@ async function testPages() {
   ok('auction host /timer', (await hostGet(AUCHOST, '/timer')).status === 200);
   ok('donate subdomain /bits -> bits donor', (await hostGet('test.donate.localhost:' + PORT, '/bits')).status === 200);
   ok('overlay subdomain / -> overlay', (await hostGet('test.ovl.localhost:' + PORT, '/')).status === 200);
+  ok('overlay subdomain /qr -> qr widget', (await hostGet('test.ovl.localhost:' + PORT, '/qr')).status === 200);
 }
 
 /* ---------------------------------------------------------------- core */
@@ -89,11 +91,15 @@ async function testCore() {
   sec('config / features / state');
   const cfg = await api('/api/config');
   ok('config: nickname+jars+features+links', cfg.nickname === 'test' && Array.isArray(cfg.jars) && !!cfg.features && !!cfg.links);
-  ok('config: every link kind', !!(cfg.links.donate && cfg.links.stats && cfg.links.overlay && cfg.links.bitsPage && cfg.links.bitsOverlay && cfg.links.youtube), JSON.stringify(cfg.links || {}).slice(0, 120));
-  await api('/api/config', { nickname: 'test', overlayname: 'ovl', jars: ['TESTJAR'], token: '' });
-  ok('config POST round-trip', (await api('/api/config')).nickname === 'test');
+  ok('config: every link kind', !!(cfg.links.donate && cfg.links.stats && cfg.links.overlay && cfg.links.bitsPage && cfg.links.bitsOverlay && cfg.links.youtube && cfg.links.qr), JSON.stringify(cfg.links || {}).slice(0, 120));
+  await api('/api/config', { nickname: 'test', overlayname: 'ovl', jars: ['TESTJAR'], token: '', widgetJar: 'TESTJAR' });
+  const cfg2 = await api('/api/config');
+  ok('config POST round-trip', cfg2.nickname === 'test');
+  ok('config: widget jar persisted', cfg2.widgetJar === 'TESTJAR', JSON.stringify(cfg2.widgetJar));
   const f = await api('/api/features');
-  ok('features: all true', !!(f.donate && f.stats && f.overlay && f.bits && f.bitsOverlay && f.youtube && f.timer && f.auction), JSON.stringify(f));
+  ok('features: all true', !!(f.donate && f.stats && f.overlay && f.bits && f.bitsOverlay && f.youtube && f.timer && f.auction && f.qr), JSON.stringify(f));
+  const up = await api('/api/update');
+  ok('update: {current, available}', typeof up.current === 'string' && typeof up.available === 'boolean', JSON.stringify(up));
   const st = await api('/api/state');
   ok('state: jars + links + minAmount', Array.isArray(st.jars) && !!st.links && typeof st.minAmount === 'number');
   const h = await api('/api/history?jar=0'); ok('history: {jar,items}', h.jar === 0 && Array.isArray(h.items));

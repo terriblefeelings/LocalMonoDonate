@@ -42,16 +42,6 @@ function markAudioReady() { if (audioReady) return; audioReady = true; const q =
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, markAudioReady, { passive: true }));
 function safePlay(el) { const p = el.play(); if (p && p.catch) p.catch(() => { if (!audioReady) audioRetries.push(() => { el.play().catch(() => {}); }); }); return p; }
 
-let ytPromise = null;
-function loadYT() { if (ytPromise) return ytPromise;
-  ytPromise = new Promise(res => { if (window.YT && window.YT.Player) return res(); window.onYouTubeIframeAPIReady = () => res();
-    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s); }); return ytPromise; }
-async function playYT(host, id, maxMs) { await loadYT();
-  return new Promise(resolve => { let player, done = false;
-    const fin = () => { if (done) return; done = true; clearTimeout(timer); try { player && player.destroy(); } catch {} resolve(); };
-    const timer = setTimeout(fin, maxMs);
-    player = new YT.Player(host, { videoId: id, width: 560, height: 315, playerVars: { autoplay: 1, controls: 0, rel: 0, playsinline: 1, modestbranding: 1 },
-      events: { onReady: e => e.target.playVideo(), onStateChange: e => { if (e.data === YT.PlayerState.ENDED) fin(); }, onError: () => fin() } }); }); }
 function playTts(url) { const a = new Audio(url); safePlay(a); }
 function soundEnd(src, maxMs, fallbackMs) { if (!src) return Promise.resolve();
   return new Promise(res => { const a = new Audio(src); let done = false; const fin = () => { if (done) return; done = true; res(); };
@@ -68,11 +58,11 @@ async function play(d) {
   const N = Object.assign({}, Alert.DEFAULTS, pickStyle(d.amount || 0, d.ruleId));
   const stage = document.getElementById('stage');
   const { notif, red, msgBase, msgH } = Alert.build(d, N);
-  const hasSound = !!N.sound_url, hasVideo = !!N.video_url, hasYT = !!d.youtubeId && (d.amount || 0) >= (N.yt_min || 0);
+  const hasSound = !!N.sound_url, hasVideo = !!N.video_url;
+  const wantsYt = !!d.youtubeId && (d.amount || 0) >= (N.yt_min || 0);
+  if (wantsYt) { fetch('/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stop: true }) }).catch(() => {}); }
   let mediaPromise = Promise.resolve();
   const v = notif.querySelector('.nmbox video'); if (v) mediaPromise = new Promise(res => { v.onended = res; v.onerror = res; setTimeout(res, CFG.videoMaxMs); });
-  let ytP = Promise.resolve();
-  if (hasYT) { const box = document.createElement('div'); box.className='nmbox'; box.style.width=(N.media_w||320)+'px'; box.style.height=(N.media_h||320)+'px'; box.style.borderRadius=(N.media_radius||0)+'px'; notif.prepend(box); ytP = playYT(box, d.youtubeId, CFG.videoMaxMs); }
   const soundPromise = hasSound ? soundEnd(N.sound_url, CFG.videoMaxMs, N.duration_ms) : Promise.resolve();
   const ttsPromise = d.ttsUrl ? soundEnd(d.ttsUrl, CFG.videoMaxMs, 20000) : Promise.resolve();
 
@@ -84,13 +74,21 @@ async function play(d) {
   notif.style.opacity = '1'; notif.style.transform = 'none';
   if (red) Alert.fitMessage(red, msgH, msgBase);
 
-  if (hasVideo || hasSound || hasYT || d.ttsUrl) {
-    await Promise.race([Promise.all([mediaPromise, soundPromise, ytP, ttsPromise]), sleep(CFG.videoMaxMs)]);
+  if (hasVideo || hasSound || d.ttsUrl) {
+    await Promise.race([Promise.all([mediaPromise, soundPromise, ttsPromise]), sleep(CFG.videoMaxMs)]);
     await sleep(300);
   } else await sleep(N.duration_ms);
   notif.style.transition = `opacity ${N.anim_ms}ms ease, transform ${N.anim_ms}ms ease`;
   notif.style.opacity = '0'; notif.style.transform = Alert.animFrom(N.anim_out);
   await sleep(N.anim_ms + 60); notif.remove();
+  // the video is a separate OBS source: start it only after the alert + TTS finished
+  if (wantsYt) {
+    await sleep(2000);
+    try {
+      await fetch('/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtubeId: d.youtubeId, amount: d.amount || 0, ruleId: d.ruleId || '' }) });
+    } catch {}
+  }
 }
 
 let lastId = 0, firstPoll = true;
