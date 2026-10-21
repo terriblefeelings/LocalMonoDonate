@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timer — LocalMonoDonate</title>
+<style>
+  html,body{margin:0;height:100%;background:transparent;overflow:hidden}
+  #t{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;
+    font-family:var(--font,"JetBrains Mono"),ui-monospace,monospace;
+    font-size:var(--size,22vw);font-weight:700;letter-spacing:.02em;color:var(--color,#fff);
+    text-shadow:3px 3px 0 var(--outline,#000)}
+  #t.paused{opacity:.5}
+  #pop{position:absolute;left:50%;bottom:72%;transform:translateX(-50%) translateY(8px);
+    font-family:var(--font,"JetBrains Mono"),ui-monospace,monospace;
+    font-size:var(--popsize,7vh);font-weight:700;color:var(--accent,#7dffb0);opacity:0;
+    transition:opacity .25s,transform .25s;text-shadow:2px 2px 0 var(--outline,#000)}
+  #pop.show{opacity:1;transform:translateX(-50%) translateY(-8px)}
+</style>
+</head>
+<body>
+<div id="pop"></div>
+<div id="t">--:--:--</div>
+<script>
+  const root = document.documentElement;
+  const $ = id => document.getElementById(id);
+  let lastAt = 0;
+  function fmt(ms){ ms = Math.max(0, ms|0); const s = Math.floor(ms/1000);
+    const h = Math.floor(s/3600), m = Math.floor(s%3600/60), ss = s%60; const p = n => String(n).padStart(2,'0');
+    return (h > 0 ? p(h) + ':' : '') + p(m) + ':' + p(ss); }
+  function fmtAdd(sec){ const s = Math.abs(sec|0), m = Math.floor(s/60), ss = s%60; const p = n => String(n).padStart(2,'0');
+    return (sec < 0 ? '\u2212' : '+') + (m > 0 ? m + ':' + p(ss) : p(ss)); }
+  async function tick(){
+    try {
+      const d = await (await fetch('/api/timer')).json();
+      const c = d.cfg || {};
+      root.style.setProperty('--color', c.color || '#fff');
+      root.style.setProperty('--accent', c.accent || '#7dffb0');
+      root.style.setProperty('--outline', c.outline || '#000');
+      root.style.setProperty('--size', (c.size || 22) + 'vw');
+      if (c.font) root.style.setProperty('--font', '"' + c.font + '"'); else root.style.removeProperty('--font');
+      $('t').textContent = fmt(d.remainingMs);
+      $('t').classList.toggle('paused', !d.running);
+      const log = d.log || [];
+      if (log.length && log[0].at > lastAt) {
+        if (lastAt) { const p = $('pop'); p.textContent = fmtAdd(log[0].seconds); p.classList.add('show');
+          setTimeout(() => p.classList.remove('show'), 2600); }
+        lastAt = log[0].at;
+      }
+    } catch {}
+  }
+  tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

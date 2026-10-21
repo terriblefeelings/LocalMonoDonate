@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auction settings</title>
+  <link rel="stylesheet" href="/auc.css" />
+  <link rel="stylesheet" href="/app.css" />
+  <style>
+    html,body{height:auto}
+    body{margin:0}
+    .wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding:24px}
+    .wrap h1{font-size:18px;margin:0}
+    .wrap .sub{color:var(--muted);font-size:12px;margin:0}
+    .wrap a.link{color:var(--accent3);text-decoration:none}
+    .status{font-size:13px;color:var(--muted);min-height:18px}
+    .status.ok{color:#7ee2a8}.status.err{color:#ff6b6b}
+    .setbody .seg{display:inline-flex;gap:6px;flex-wrap:wrap;background:transparent;border:0;padding:0;width:auto}
+    .setbody .seg button{border:1px solid var(--line);background:var(--panel2);color:var(--fg);border-radius:8px;padding:6px 14px;font-size:13px;height:auto}
+    .setbody .seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+    .head{min-height:66px}
+    .head .primary{height:37px;line-height:normal}
+    .head .brand .logo{height:auto}
+    .head .seg button{height:28px;line-height:normal}
+    /* follow the app theme (auc.css hardcodes the dark palette) */
+    .setpanel{background:var(--card);border-color:var(--line)}
+    .setpanel h3{color:var(--fg);border-bottom-color:var(--line)}
+    .setpanel h4,.subhead{color:var(--muted)}
+    .setbody .field,.wset .field{border-bottom-color:var(--line)}
+    .setbody .field label,.wset .field label{color:var(--muted)}
+    .setbody input,.setbody select,.wset input,.wset select{background:var(--field);border-color:var(--line);color:var(--fg)}
+    .setbody .seg,.wset .seg{background:var(--card2);border-color:var(--line)}
+    .setbody .seg button,.wset .seg button{color:var(--muted)}
+    .switch i{background:var(--field2)}
+    .btn-outline{border-color:var(--line);color:var(--fg)}
+    .btn-new{background:var(--accent);color:var(--accent-ink)}
+    .setbody .seg button{background:transparent;color:var(--muted)}
+    .setbody .seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  </style>
+</head>
+<body>
+<div class="head">
+    <div class="brand">
+    <button class="logo" id="logo" type="button" title="🐀"><svg viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14,54c6.409,0,11.645-5.054,11.969-11.383c1.384,0.424,2.797,0.749,4.226,0.979C30.471,44.02,34,49.526,34,54v2.095  l-6.114,0.611C25.67,56.928,24,58.774,24,61c0,0.552,0.448,1,1,1h26c3.459,0,10-1.463,10-7V43c0-5.262-1.374-10.178-4.454-15.94  c-1.475-2.76-3.147-5.888-3.581-9.148c-0.317-2.381,0.135-4.744,1.239-6.481c0.602-0.947,1.501-1.55,2.406-1.615  c0.74-0.046,1.438,0.277,2.018,0.953c0.717,0.837,0.863,2.015,0.37,3l-0.392,0.783l1.789,0.895l0.392-0.783  c0.854-1.708,0.602-3.748-0.64-5.197c-0.994-1.16-2.302-1.74-3.678-1.646c-1.534,0.109-3.011,1.058-3.951,2.537  c-1.373,2.16-1.918,4.936-1.534,7.818c0.481,3.62,2.245,6.917,3.8,9.827C57.699,33.459,59,38.085,59,43v1.603  c-2.332-5.197-6.409-8.344-10.652-11.595c-1.547-1.186-3.147-2.412-4.689-3.761c-0.474-0.415-0.912-0.815-1.316-1.201  c-1.211-1.157-1.496-2.961-0.675-4.289c0.216-0.349,0.404-0.714,0.579-1.085C45.566,21.7,48,18.631,48,15c0-4.411-3.589-8-8-8  c-0.52,0-1.03,0.068-1.533,0.167C37.307,4.083,34.369,2,31,2c-4.411,0-8,3.589-8,8c0,0.596,0.095,1.204,0.241,1.812  c-0.183,0.267-0.373,0.528-0.534,0.813c-0.087,0.165-2.212,4.063-8.167,5.659c-1.545,0.414-2.527,1.148-2.916,2.181  c-0.353,0.936-0.16,2.033,0.544,3.089c2.422,3.634,6.231,5.038,14.557,5.365c1.729,0.068,3.38,0.854,4.527,2.156  c0.794,0.901,1.524,1.773,2.062,2.428c0.493,0.6,0.479,1.481-0.08,2.056c-0.286,0.284-0.665,0.438-1.094,0.43  c-2.415-0.061-4.544-0.371-7.347-1.072l-1.239-0.31c-0.047-0.012-0.094-0.014-0.141-0.024C21.146,31.714,17.666,30,14,30  C7.383,30,2,35.383,2,42S7.383,54,14,54z M31,4c2.497,0,4.672,1.531,5.562,3.801c-0.031,0.015-0.062,0.03-0.093,0.045  C35.133,7.295,33.735,7,32.298,7C29.574,7,27,8.036,25.01,9.807C25.113,6.588,27.756,4,31,4z M32.09,37.989  c0.938,0.033,1.881-0.345,2.546-1.004c0.006-0.006,0.075-0.075,0.081-0.081c1.229-1.264,1.289-3.271,0.142-4.669  c-0.549-0.668-1.296-1.56-2.106-2.48c-1.507-1.71-3.676-2.743-5.949-2.832c-0.953-0.038-1.823-0.093-2.637-0.16  c0.125-0.085,0.257-0.16,0.378-0.251c2.609-1.947,3.218-2.849,3.359-3.146l-1.778-0.913c-0.018,0.029-0.47,0.733-2.778,2.456  c-0.841,0.627-1.834,1.077-2.944,1.356c-3.736-0.742-5.384-2.037-6.573-3.82c-0.157-0.235-0.504-0.832-0.337-1.274  c0.145-0.385,0.7-0.724,1.563-0.955c6.849-1.835,9.321-6.47,9.406-6.634C26.061,10.755,29.063,9,32.298,9  c0.722,0,1.432,0.095,2.127,0.267c-0.49,0.474-0.923,1.013-1.282,1.609l1.713,1.032C35.954,10.087,37.876,9,40,9  c3.309,0,6,2.691,6,6s-2.691,6-6,6c-0.286,0-0.575-0.021-0.859-0.061l-0.281,1.98c0.32,0.045,0.644,0.061,0.967,0.068  c-1.118,2.093-0.676,4.777,1.135,6.506c0.424,0.404,0.883,0.824,1.38,1.259c1.591,1.393,3.218,2.638,4.791,3.843  C53.5,39.475,59,43.689,59,55c0,4.926-7.921,5-8,5H26.225c0.338-0.709,1.027-1.22,1.86-1.303l7.015-0.702  C35.611,57.944,36,57.514,36,57v-3.982c0-2.294,1.792-4.229,4.08-4.406l7.997-0.615l-0.153-1.994l-7.997,0.615  c-1.975,0.152-3.69,1.211-4.762,2.741c-0.713-2.201-1.728-4.188-2.455-5.464C33.509,43.957,34.308,44,35.109,44H37v-2h-1.891  c-4.496,0-8.999-1.063-13.02-3.074c-0.317-0.158-0.549-0.432-0.654-0.771c-0.105-0.34-0.065-0.706,0.114-1.029  c0.271-0.488,0.909-0.733,1.521-0.579l1.239,0.31C27.224,37.587,29.551,37.925,32.09,37.989z M14,32c2.653,0,5.188,1.081,7.049,2.93  c-0.516,0.284-0.956,0.697-1.251,1.227c-0.445,0.805-0.543,1.725-0.275,2.59c0.264,0.852,0.873,1.569,1.67,1.968  c0.912,0.456,1.85,0.856,2.803,1.219C23.998,41.957,24,41.978,24,42c0,5.514-4.486,10-10,10S4,47.514,4,42S8.486,32,14,32z"/><path d="M11,46h6c0.552,0,1-0.448,1-1v-6c0-0.552-0.448-1-1-1h-6c-0.552,0-1,0.448-1,1v6C10,45.552,10.448,46,11,46z M12,40h4v4h-4  V40z"/><rect height="2" width="2" x="28" y="16"/><rect height="2" width="2" x="4" y="22"/><rect height="2" width="2" x="2" y="24"/><rect height="2" width="2" x="6" y="24"/><rect height="2" width="2" x="4" y="26"/><rect height="2" width="2" x="12" y="56"/><rect height="2" width="2" x="10" y="58"/><rect height="2" width="2" x="14" y="58"/><rect height="2" width="2" x="12" y="60"/><rect height="2" width="2" x="11" y="2"/><rect height="2" width="2" x="9" y="4"/><rect height="2" width="2" x="13" y="4"/><rect height="2" width="2" x="11" y="6"/></svg></button>
+    <div class="t">LocalMonoDonate <span class="pg">- Auction Customization</span></div>
+  </div>
+  <div class="tools"></div>
+</div>
+
+<div class="wrap">
+  <h1 data-i18n="auTitle">Auction settings</h1>
+  <p class="sub"><span data-i18n="auSub">Auction-only settings. The Monobank jar / token and the Twitch keys live on the main</span> <a class="link" href="/setup" data-i18n="navSetup">Setup</a> <span data-i18n="auSubEnd">page.</span></p>
+
+  <div class="setbody">
+    <div class="setpanel"><h3 data-i18n="auTimer">Timer</h3><div class="in">
+      <div class="field"><label data-i18n="auInitial">Initial time (min)</label><input id="t_initial" type="number" min="0" /><div class="note" data-i18n="nInitial"></div></div>
+      <label class="switch"><input id="t_showtotal" type="checkbox" /><i></i><span data-i18n="auShowTotal">Show total auction time</span></label>
+      <div class="subhead" data-i18n="auLeader">Leader Change</div><div class="note" data-i18n="nLeader"></div>
+      <div class="field"><label data-i18n="auPoints">Points (sec)</label><input id="t_lcp" type="number" min="0" /></div>
+      <div class="field"><label data-i18n="auDonations">Donations (sec)</label><input id="t_lcd" type="number" min="0" /></div>
+      <div class="subhead" data-i18n="auNewPos">New Position</div><div class="note" data-i18n="nNewPos"></div>
+      <div class="field"><label data-i18n="auPoints">Points (sec)</label><input id="t_npp" type="number" min="0" /></div>
+      <div class="field"><label data-i18n="auDonations">Donations (sec)</label><input id="t_npd" type="number" min="0" /></div>
+      <div class="field"><label data-i18n="auAddPoints">Add points to already existing bid (sec)</label><input id="t_aep" type="number" min="0" /></div>
+      <div class="field"><label data-i18n="auAddDon">Add donation to already existing bid (sec)</label><input id="t_aed" type="number" min="0" /><div class="note" data-i18n="nExisting"></div></div>
+      <h4 data-i18n="auExceptions">Exceptions</h4><div class="note" data-i18n="nException"></div>
+      <div class="field"><label data-i18n="auTimeMore">Time is more than (min)</label><input id="t_tmt" type="number" min="0" /></div>
+    </div></div>
+
+    <div class="setpanel"><h3 data-i18n="auBids">Bids general</h3><div class="in">
+      <div class="field"><label data-i18n="auMode">Mode</label><div class="seg" id="b_mode"><button data-v="manual" data-i18n="auManual">Manual</button><button data-v="auto" data-i18n="auAuto">Automatic</button></div><div class="note" data-i18n="nMode"></div></div>
+      <div class="field"><label data-i18n="auSource">Source</label><div class="seg" id="b_source"><button data-v="points" data-i18n="auPtsOnly">Points</button><button data-v="donations" data-i18n="auDonOnly">Donations</button></div><div class="note" data-i18n="nSource"></div></div>
+      <div class="field"><label data-i18n="auCurrency">Currency</label><div class="seg" id="b_cur"><button data-v="UAH">UAH</button><button data-v="USD">USD</button></div></div>
+      <div class="field"><label data-i18n="auRewardTitle">Reward title</label><input id="tw_reward" /></div>
+      <div class="field"><label data-i18n="auRewardCost">Reward cost (points) &mdash; toggle one or more</label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="seg" id="b_cost"><button data-v="1000">1k</button><button data-v="5000">5k</button><button data-v="10000">10k</button><button data-v="50000">50k</button><button data-v="100000">100k</button></div><button class="btn-outline" id="b_cost_all" data-i18n="auAll">All</button></div><div class="note" data-i18n="nReward"></div></div>
+    </div></div>
+
+    <div class="row"><button class="btn-new" id="aucSave" data-i18n="auSave">Save auction settings</button></div>
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<script>
+window.I18N = {
+  en: { auTitle: 'Auction settings', auSub: 'Auction-only settings. The Monobank jar / token and the Twitch keys live on the main', auSubEnd: 'page.', auTimer: 'Timer', auBids: 'Bids general', auInitial: 'Initial time (min)', auShowTotal: 'Show total auction time', auLeader: 'Leader Change', auNewPos: 'New Position', auPoints: 'Points (sec)', auDonations: 'Donations (sec)', auAddPoints: 'Add points to already existing bid (sec)', auAddDon: 'Add donation to already existing bid (sec)', auExceptions: 'Exceptions', auTimeMore: 'Time is more than (min)', auMode: 'Mode', auManual: 'Manual', auAuto: 'Automatic', auSource: 'Source', auPtsOnly: 'Points', auDonOnly: 'Donations', auCurrency: 'Currency', auRewardTitle: 'Reward title', auRewardCost: 'Reward cost (points) \u2014 toggle one or more', auAll: 'All', auSave: 'Save auction settings', nMode: 'Manual \u2014 approve each bid in Pending; Automatic \u2014 bids apply instantly.', nSource: 'Points = Twitch channel points; Donations = Monobank jar.', nLeader: 'Seconds added when a bid takes the lead.', nNewPos: 'Seconds added when a lot moves up the ranking.', nExisting: 'Seconds added when someone bids on a lot that already has bids.', nException: 'If the timer is already above this, no time is added.', nReward: 'The Twitch channel-point reward viewers redeem to bid \u2014 one reward is created per selected cost.', nInitial: 'The auction length when it starts (it can grow with bids).' },
+  ua: { auTitle: '\u041d\u0430\u043b\u0430\u0448\u0442\u0443\u0432\u0430\u043d\u043d\u044f \u0430\u0443\u043a\u0446\u0456\u043e\u043d\u0443', auSub: '\u041b\u0438\u0448\u0435 \u043d\u0430\u043b\u0430\u0448\u0442\u0443\u0432\u0430\u043d\u043d\u044f \u0430\u0443\u043a\u0446\u0456\u043e\u043d\u0443. \u0411\u0430\u043d\u043a\u0430/\u0442\u043e\u043a\u0435\u043d Monobank \u0456 \u043a\u043b\u044e\u0447\u0456 Twitch \u2014 \u043d\u0430 \u0433\u043e\u043b\u043e\u0432\u043d\u0456\u0439', auSubEnd: '\u0441\u0442\u043e\u0440\u0456\u043d\u0446\u0456.', auTimer: '\u0422\u0430\u0439\u043c\u0435\u0440', auBids: '\u0421\u0442\u0430\u0432\u043a\u0438', auInitial: '\u041f\u043e\u0447\u0430\u0442\u043a\u043e\u0432\u0438\u0439 \u0447\u0430\u0441 (\u0445\u0432)', auShowTotal: '\u041f\u043e\u043a\u0430\u0437\u0443\u0432\u0430\u0442\u0438 \u0437\u0430\u0433\u0430\u043b\u044c\u043d\u0438\u0439 \u0447\u0430\u0441 \u0430\u0443\u043a\u0446\u0456\u043e\u043d\u0443', auLeader: '\u0417\u043c\u0456\u043d\u0430 \u043b\u0456\u0434\u0435\u0440\u0430', auNewPos: '\u041d\u043e\u0432\u0430 \u043f\u043e\u0437\u0438\u0446\u0456\u044f', auPoints: '\u0411\u0430\u043b\u0438 (\u0441\u0435\u043a)', auDonations: '\u0414\u043e\u043d\u0430\u0442\u0438 (\u0441\u0435\u043a)', auAddPoints: '\u0414\u043e\u0434\u0430\u0442\u0438 \u0431\u0430\u043b\u0438 \u0434\u043e \u043d\u0430\u044f\u0432\u043d\u043e\u0457 \u0441\u0442\u0430\u0432\u043a\u0438 (\u0441\u0435\u043a)', auAddDon: '\u0414\u043e\u0434\u0430\u0442\u0438 \u0434\u043e\u043d\u0430\u0442 \u0434\u043e \u043d\u0430\u044f\u0432\u043d\u043e\u0457 \u0441\u0442\u0430\u0432\u043a\u0438 (\u0441\u0435\u043a)', auExceptions: '\u0412\u0438\u043d\u044f\u0442\u043a\u0438', auTimeMore: '\u0427\u0430\u0441 \u0431\u0456\u043b\u044c\u0448\u0435 \u043d\u0456\u0436 (\u0445\u0432)', auMode: '\u0420\u0435\u0436\u0438\u043c', auManual: '\u0412\u0440\u0443\u0447\u043d\u0443', auAuto: '\u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u043d\u043e', auSource: '\u0414\u0436\u0435\u0440\u0435\u043b\u043e', auPtsOnly: '\u0411\u0430\u043b\u0438', auDonOnly: '\u0414\u043e\u043d\u0430\u0442\u0438', auCurrency: '\u0412\u0430\u043b\u044e\u0442\u0430', auRewardTitle: '\u041d\u0430\u0437\u0432\u0430 \u043d\u0430\u0433\u043e\u0440\u043e\u0434\u0438', auRewardCost: '\u0412\u0430\u0440\u0442\u0456\u0441\u0442\u044c \u043d\u0430\u0433\u043e\u0440\u043e\u0434\u0438 (\u0431\u0430\u043b\u0438) \u2014 \u043e\u0431\u0435\u0440\u0438 \u043e\u0434\u043d\u0443 \u0430\u0431\u043e \u043a\u0456\u043b\u044c\u043a\u0430', auAll: '\u0423\u0441\u0456', auSave: '\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438 \u043d\u0430\u043b\u0430\u0448\u0442\u0443\u0432\u0430\u043d\u043d\u044f \u0430\u0443\u043a\u0446\u0456\u043e\u043d\u0443' }
+};
+Object.assign(window.I18N.ua, { nMode: '\u0412\u0440\u0443\u0447\u043d\u0443 \u2014 \u043f\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0443\u0439 \u043a\u043e\u0436\u043d\u0443 \u0441\u0442\u0430\u0432\u043a\u0443; \u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u043d\u043e \u2014 \u0441\u0442\u0430\u0432\u043a\u0438 \u0437\u0430\u0441\u0442\u043e\u0441\u043e\u0432\u0443\u044e\u0442\u044c\u0441\u044f \u043e\u0434\u0440\u0430\u0437\u0443.', nSource: '\u0411\u0430\u043b\u0438 \u2014 \u0431\u0430\u043b\u0438 Twitch; \u0414\u043e\u043d\u0430\u0442\u0438 \u2014 \u0431\u0430\u043d\u043a\u0430 Monobank.', nLeader: '\u0421\u0435\u043a\u0443\u043d\u0434\u0438, \u0449\u043e \u0434\u043e\u0434\u0430\u044e\u0442\u044c\u0441\u044f, \u043a\u043e\u043b\u0438 \u0441\u0442\u0430\u0432\u043a\u0430 \u0432\u0438\u0445\u043e\u0434\u0438\u0442\u044c \u0443 \u043b\u0456\u0434\u0435\u0440\u0438.', nNewPos: '\u0421\u0435\u043a\u0443\u043d\u0434\u0438, \u0449\u043e \u0434\u043e\u0434\u0430\u044e\u0442\u044c\u0441\u044f, \u043a\u043e\u043b\u0438 \u043b\u043e\u0442 \u043f\u0456\u0434\u043d\u0456\u043c\u0430\u0454\u0442\u044c\u0441\u044f \u0432 \u0440\u0435\u0439\u0442\u0438\u043d\u0433\u0443.', nExisting: '\u0421\u0435\u043a\u0443\u043d\u0434\u0438, \u0449\u043e \u0434\u043e\u0434\u0430\u044e\u0442\u044c\u0441\u044f, \u043a\u043e\u043b\u0438 \u0445\u0442\u043e\u0441\u044c \u0441\u0442\u0430\u0432\u0438\u0442\u044c \u043d\u0430 \u043b\u043e\u0442, \u0434\u0435 \u0432\u0436\u0435 \u0454 \u0441\u0442\u0430\u0432\u043a\u0438.', nException: '\u042f\u043a\u0449\u043e \u0442\u0430\u0439\u043c\u0435\u0440 \u0443\u0436\u0435 \u0431\u0456\u043b\u044c\u0448\u0438\u0439 \u0437\u0430 \u0446\u0435 \u2014 \u0447\u0430\u0441 \u043d\u0435 \u0434\u043e\u0434\u0430\u0454\u0442\u044c\u0441\u044f.', nReward: '\u041d\u0430\u0433\u043e\u0440\u043e\u0434\u0430 \u0437\u0430 \u0431\u0430\u043b\u0438 Twitch, \u044f\u043a\u0443 \u0433\u043b\u044f\u0434\u0430\u0447\u0456 \u0432\u0438\u043a\u043e\u0440\u0438\u0441\u0442\u043e\u0432\u0443\u044e\u0442\u044c \u0434\u043b\u044f \u0441\u0442\u0430\u0432\u043a\u0438 \u2014 \u0441\u0442\u0432\u043e\u0440\u044e\u0454\u0442\u044c\u0441\u044f \u043f\u043e \u043e\u0434\u043d\u0456\u0439 \u043d\u0430 \u043a\u043e\u0436\u043d\u0443 \u043e\u0431\u0440\u0430\u043d\u0443 \u0432\u0430\u0440\u0442\u0456\u0441\u0442\u044c.', nInitial: '\u0422\u0440\u0438\u0432\u0430\u043b\u0456\u0441\u0442\u044c \u0430\u0443\u043a\u0446\u0456\u043e\u043d\u0443 \u043d\u0430 \u0441\u0442\u0430\u0440\u0442\u0456 (\u043c\u043e\u0436\u0435 \u0437\u0440\u043e\u0441\u0442\u0430\u0442\u0438 \u0437\u0456 \u0441\u0442\u0430\u0432\u043a\u0430\u043c\u0438).' });
+const $ = (id) => document.getElementById(id);
+let AUC = {};
+function seg(id, val) { document.querySelectorAll('#' + id + ' button').forEach(b => { const on = b.dataset.v === val; b.classList.toggle('on', on); b.onclick = () => { val = b.dataset.v; seg(id, val); }; }); }
+function segVal(id) { const b = document.querySelector('#' + id + ' button.on'); return b ? b.dataset.v : ''; }
+function num(id, v) { $(id).value = Number(v) || 0; }
+function val(id) { return Number($(id).value) || 0; }
+
+async function load() {
+  // auction settings (exe config)
+  try { AUC = await (await fetch('/api/auc/settings')).json(); } catch {}
+  num('t_initial', Math.round((AUC.timerSeconds || 0) / 60)); $('t_showtotal').checked = !!AUC.showTotalTime;
+  num('t_lcp', AUC.leaderChangePoints); num('t_lcd', AUC.leaderChangeDonations);
+  num('t_npp', AUC.newPositionPoints); num('t_npd', AUC.newPositionDonations);
+  num('t_aep', AUC.addExistingPoints); num('t_aed', AUC.addExistingDonations);
+  num('t_tmt', AUC.timeMoreThanMin);
+  $('tw_reward').value = AUC.rewardTitle || 'Bid';
+  seg('b_mode', AUC.mode || 'manual'); seg('b_source', AUC.source || 'points'); seg('b_cur', AUC.currency || 'UAH');
+  const costs = ((AUC.rewardCosts && AUC.rewardCosts.length) ? AUC.rewardCosts : [1000]).map(Number);
+  document.querySelectorAll('#b_cost button').forEach(b => { b.classList.toggle('on', costs.includes(Number(b.dataset.v))); b.onclick = () => b.classList.toggle('on'); });
+  $('b_cost_all').onclick = () => { const bs = document.querySelectorAll('#b_cost button'); const allOn = [...bs].every(b => b.classList.contains('on')); bs.forEach(b => b.classList.toggle('on', !allOn)); };
+}
+
+async function post(url, body) { try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return await r.json(); } catch { return {}; } }
+function say(ok, msg) { $('status').className = 'status ' + (ok ? 'ok' : 'err'); $('status').textContent = msg; }
+
+$('aucSave').onclick = async () => {
+  const body = {
+    mode: segVal('b_mode'), source: segVal('b_source'), currency: segVal('b_cur'),
+    timerSeconds: val('t_initial') * 60, showTotalTime: $('t_showtotal').checked,
+    leaderChangePoints: val('t_lcp'), leaderChangeDonations: val('t_lcd'),
+    newPositionPoints: val('t_npp'), newPositionDonations: val('t_npd'),
+    addExistingPoints: val('t_aep'), addExistingDonations: val('t_aed'), timeMoreThanMin: val('t_tmt'),
+    rewardTitle: $('tw_reward').value, rewardCosts: [...document.querySelectorAll('#b_cost button.on')].map(b => Number(b.dataset.v)),
+  };
+  await post('/api/auc/settings', body);
+  say(true, 'saved');
+};
+load();
+window.savePage = () => $('aucSave').click();
+</script>
+<script src="/i18n.js"></script>
+<script src="/head.js"></script>
+</body>
+</html>

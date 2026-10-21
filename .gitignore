@@ -1,0 +1,29 @@
+# build output
+/target/
+/dist/
+/LocalMonoDonate.exe
+
+# bundled runtime / third-party installers (shipped as GitHub Release assets, not in git)
+/tts-engine/
+/MicrosoftEdgeWebview2Setup.exe
+/tailscale-setup.msi
+
+# per-user data and secrets (always live in %APPDATA%\LocalMonoDonate)
+config.json
+data.json
+*.log
+media/
+WebView2/
+.env
+
+# node tooling for the HTTP test-suite
+node_modules/
+AUC/node_modules/
+AUC/shots/
+shots/
+*.zip
+
+# os / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store

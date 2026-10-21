@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alerts — LocalMonoDonate</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  .mini{display:flex;flex-direction:column;gap:8px}
+  .pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+  .mini label{font-size:12px;color:var(--muted)}
+  .mini .cell{display:flex;flex-direction:column;gap:5px}
+  details.grp{margin-bottom:10px}
+  details.grp>summary{font-size:13px;font-weight:600;text-transform:none;letter-spacing:0}
+  details.grp>summary .h{color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="brand">
+    <button class="logo" id="logo" type="button" title="🐀"><svg viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14,54c6.409,0,11.645-5.054,11.969-11.383c1.384,0.424,2.797,0.749,4.226,0.979C30.471,44.02,34,49.526,34,54v2.095  l-6.114,0.611C25.67,56.928,24,58.774,24,61c0,0.552,0.448,1,1,1h26c3.459,0,10-1.463,10-7V43c0-5.262-1.374-10.178-4.454-15.94  c-1.475-2.76-3.147-5.888-3.581-9.148c-0.317-2.381,0.135-4.744,1.239-6.481c0.602-0.947,1.501-1.55,2.406-1.615  c0.74-0.046,1.438,0.277,2.018,0.953c0.717,0.837,0.863,2.015,0.37,3l-0.392,0.783l1.789,0.895l0.392-0.783  c0.854-1.708,0.602-3.748-0.64-5.197c-0.994-1.16-2.302-1.74-3.678-1.646c-1.534,0.109-3.011,1.058-3.951,2.537  c-1.373,2.16-1.918,4.936-1.534,7.818c0.481,3.62,2.245,6.917,3.8,9.827C57.699,33.459,59,38.085,59,43v1.603  c-2.332-5.197-6.409-8.344-10.652-11.595c-1.547-1.186-3.147-2.412-4.689-3.761c-0.474-0.415-0.912-0.815-1.316-1.201  c-1.211-1.157-1.496-2.961-0.675-4.289c0.216-0.349,0.404-0.714,0.579-1.085C45.566,21.7,48,18.631,48,15c0-4.411-3.589-8-8-8  c-0.52,0-1.03,0.068-1.533,0.167C37.307,4.083,34.369,2,31,2c-4.411,0-8,3.589-8,8c0,0.596,0.095,1.204,0.241,1.812  c-0.183,0.267-0.373,0.528-0.534,0.813c-0.087,0.165-2.212,4.063-8.167,5.659c-1.545,0.414-2.527,1.148-2.916,2.181  c-0.353,0.936-0.16,2.033,0.544,3.089c2.422,3.634,6.231,5.038,14.557,5.365c1.729,0.068,3.38,0.854,4.527,2.156  c0.794,0.901,1.524,1.773,2.062,2.428c0.493,0.6,0.479,1.481-0.08,2.056c-0.286,0.284-0.665,0.438-1.094,0.43  c-2.415-0.061-4.544-0.371-7.347-1.072l-1.239-0.31c-0.047-0.012-0.094-0.014-0.141-0.024C21.146,31.714,17.666,30,14,30  C7.383,30,2,35.383,2,42S7.383,54,14,54z M31,4c2.497,0,4.672,1.531,5.562,3.801c-0.031,0.015-0.062,0.03-0.093,0.045  C35.133,7.295,33.735,7,32.298,7C29.574,7,27,8.036,25.01,9.807C25.113,6.588,27.756,4,31,4z M32.09,37.989  c0.938,0.033,1.881-0.345,2.546-1.004c0.006-0.006,0.075-0.075,0.081-0.081c1.229-1.264,1.289-3.271,0.142-4.669  c-0.549-0.668-1.296-1.56-2.106-2.48c-1.507-1.71-3.676-2.743-5.949-2.832c-0.953-0.038-1.823-0.093-2.637-0.16  c0.125-0.085,0.257-0.16,0.378-0.251c2.609-1.947,3.218-2.849,3.359-3.146l-1.778-0.913c-0.018,0.029-0.47,0.733-2.778,2.456  c-0.841,0.627-1.834,1.077-2.944,1.356c-3.736-0.742-5.384-2.037-6.573-3.82c-0.157-0.235-0.504-0.832-0.337-1.274  c0.145-0.385,0.7-0.724,1.563-0.955c6.849-1.835,9.321-6.47,9.406-6.634C26.061,10.755,29.063,9,32.298,9  c0.722,0,1.432,0.095,2.127,0.267c-0.49,0.474-0.923,1.013-1.282,1.609l1.713,1.032C35.954,10.087,37.876,9,40,9  c3.309,0,6,2.691,6,6s-2.691,6-6,6c-0.286,0-0.575-0.021-0.859-0.061l-0.281,1.98c0.32,0.045,0.644,0.061,0.967,0.068  c-1.118,2.093-0.676,4.777,1.135,6.506c0.424,0.404,0.883,0.824,1.38,1.259c1.591,1.393,3.218,2.638,4.791,3.843  C53.5,39.475,59,43.689,59,55c0,4.926-7.921,5-8,5H26.225c0.338-0.709,1.027-1.22,1.86-1.303l7.015-0.702  C35.611,57.944,36,57.514,36,57v-3.982c0-2.294,1.792-4.229,4.08-4.406l7.997-0.615l-0.153-1.994l-7.997,0.615  c-1.975,0.152-3.69,1.211-4.762,2.741c-0.713-2.201-1.728-4.188-2.455-5.464C33.509,43.957,34.308,44,35.109,44H37v-2h-1.891  c-4.496,0-8.999-1.063-13.02-3.074c-0.317-0.158-0.549-0.432-0.654-0.771c-0.105-0.34-0.065-0.706,0.114-1.029  c0.271-0.488,0.909-0.733,1.521-0.579l1.239,0.31C27.224,37.587,29.551,37.925,32.09,37.989z M14,32c2.653,0,5.188,1.081,7.049,2.93  c-0.516,0.284-0.956,0.697-1.251,1.227c-0.445,0.805-0.543,1.725-0.275,2.59c0.264,0.852,0.873,1.569,1.67,1.968  c0.912,0.456,1.85,0.856,2.803,1.219C23.998,41.957,24,41.978,24,42c0,5.514-4.486,10-10,10S4,47.514,4,42S8.486,32,14,32z"/><path d="M11,46h6c0.552,0,1-0.448,1-1v-6c0-0.552-0.448-1-1-1h-6c-0.552,0-1,0.448-1,1v6C10,45.552,10.448,46,11,46z M12,40h4v4h-4  V40z"/><rect height="2" width="2" x="28" y="16"/><rect height="2" width="2" x="4" y="22"/><rect height="2" width="2" x="2" y="24"/><rect height="2" width="2" x="6" y="24"/><rect height="2" width="2" x="4" y="26"/><rect height="2" width="2" x="12" y="56"/><rect height="2" width="2" x="10" y="58"/><rect height="2" width="2" x="14" y="58"/><rect height="2" width="2" x="12" y="60"/><rect height="2" width="2" x="11" y="2"/><rect height="2" width="2" x="9" y="4"/><rect height="2" width="2" x="13" y="4"/><rect height="2" width="2" x="11" y="6"/></svg></button>
+    <div class="t">LocalMonoDonate <span class="pg">- Alerts Customization</span></div>
+  </div>
+  <div class="tools"></div>
+</div>
+
+<div class="wrap">
+  <div class="stage" id="stage"></div>
+  <div class="status" id="status"></div>
+
+  <div class="panel" style="margin-bottom:10px">
+    <div class="sec"><span class="h" data-i18n="variation">Donate Variation</span><span class="sp"></span><span class="hint" data-i18n="rulesHint">first match wins · default is the fallback</span></div>
+    <div class="body">
+      <div id="rules"></div>
+        <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div class="cell"><label data-i18n="from">from</label><input type="number" id="rule_min" min="10" max="29999"></div>
+          <div class="cell"><label data-i18n="toInf">to</label><input type="number" id="rule_max" min="10" max="29999"></div>
+        </div>
+      <div class="note" id="rulenote"></div>
+      <button class="add" id="addrule" data-i18n="addRule" style="margin-top:8px">+ Add variation</button>
+    </div>
+  </div>
+
+  <div class="pgrid"><details class="grp" style="order:1"><summary><span class="h" data-i18n="gText">Text</span></summary><div class="body mini">
+    <div class="cell"><label data-i18n="lineBlue">Top line (light blue)</label><input type="text" id="top_text"></div>
+    <div class="cell"><label data-i18n="lineGreen">Amount line (green)</label><input type="text" id="money_text"></div>
+    <div class="note" data-i18n="varsHint">%donate% = donor name · %money% = amount — both work in either line</div>
+    <div class="cell"><label data-i18n="ttsMode">Voice set</label><select id="tts_mode">
+      <option value="default" data-i18n="tmDefault">Default (all voices)</option>
+      <option value="google:uk" data-i18n="tmGuk">Google UA only</option>
+      <option value="google:us" data-i18n="tmGus">Google US only</option>
+      <option value="azure:uk" data-i18n="tmAzuk">Azure UA (Polina/Ostap)</option>
+      <option value="azure:us" data-i18n="tmAzus">Azure US (Jenny/Guy)</option>
+      <option value="custom" data-i18n="tmCustom">Custom only</option>
+      <option value="off" data-i18n="tmOff">Off (no voice)</option>
+    </select></div>
+    <div class="cell" id="azure_cell" style="display:none"><label data-i18n="azKey">Azure Speech key</label><input type="password" id="azure_key" placeholder="Key 1"></div>
+    <div class="cell" id="azure_reg_cell" style="display:none"><label data-i18n="azRegion">Azure region</label><input type="text" id="azure_region" placeholder="e.g. westeurope"></div>
+    <div class="note" id="azure_warn" style="display:none;color:#ff6b6b" data-i18n="azWarn">Fill in the Azure key and region below to use this voice set.</div>
+    <div class="note" id="azure_help" style="display:none" data-i18n="azHelp">How to get an Azure key (free, 500k characters/month): 1) sign in at portal.azure.com; 2) Create a resource → search "Speech"; 3) pick a resource group + a Region (remember it, e.g. westeurope); 4) Pricing tier = Free F0; 5) Create, then open the resource → Keys and Endpoint → copy KEY 1 and the Location. Paste them above and Save.</div>
+    <div class="cell"><label data-i18n="defVoice">Default voice</label><select id="tts_voice"></select></div>
+    <div class="cell"><label data-i18n="readMode">Read aloud</label><select id="tts_read">
+      <option value="announcement" data-i18n="rmAnn">Announcement only</option>
+      <option value="message" data-i18n="rmMsg">Message only</option>
+      <option value="both" data-i18n="rmBoth">Announcement + message</option>
+    </select></div>
+    <div class="note" data-i18n="ttsNote">Applies to all variations. Donors may pick another voice on the form unless a single voice is set.</div>
+  </div></details>
+
+  <details class="grp" style="order:2"><summary><span class="h" data-i18n="gDuration">Duration</span></summary><div class="body mini">
+    <div class="cell"><label data-i18n="showMs">Show for (ms, image/none)</label><input type="number" id="duration_ms" min="500" max="60000" step="500"></div>
+  </div></details>
+
+  <details class="grp" style="order:3"><summary><span class="h" data-i18n="gAnim">Animation</span></summary><div class="body mini">
+    <div class="cell"><label data-i18n="animIn">In</label><select id="anim_in"><option value="slide_up" data-i18n="aUp">slide up</option><option value="fade" data-i18n="aFade">fade</option><option value="zoom" data-i18n="aZoom">zoom</option><option value="slide_left" data-i18n="aLeft">slide left</option></select></div>
+    <div class="cell"><label data-i18n="animOut">Out</label><select id="anim_out"><option value="fade" data-i18n="aFade">fade</option><option value="slide_down" data-i18n="aDown">slide down</option><option value="zoom" data-i18n="aZoom">zoom</option></select></div>
+    <div class="cell"><label data-i18n="speedMs">Speed (ms)</label><input type="number" id="anim_ms" min="80" max="2000" step="20"></div>
+  </div></details>
+
+  <details class="grp" style="order:4"><summary><span class="h" data-i18n="gMsg">Message</span></summary><div class="body mini">
+    <div class="cell"><label data-i18n="font">Font</label><select id="msg_font"></select></div>
+    <div class="cell"><label data-i18n="size">Size (px)</label><input type="number" id="msg_size" min="6" max="120"></div>
+    <div class="cell"><label data-i18n="weight">Weight</label><select id="msg_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select></div>
+    <div class="cell"><label data-i18n="color">Text colour</label><input type="color" id="msg_color"></div>
+    <div class="cell"><label data-i18n="outline">Outline colour</label><input type="color" id="msg_outline"></div>
+    <div class="cell"><label data-i18n="outlineOp">Outline opacity</label><input type="range" id="msg_outline_op" min="0" max="1" step="0.01"></div>
+    <div class="cell"><label data-i18n="maxw">Max width (px)</label><input type="number" id="msg_maxw" min="80" max="2000"></div>
+    <div class="cell"><label data-i18n="maxh">Max height (px)</label><input type="number" id="msg_maxh" min="24" max="800"></div>
+    <div class="cell"><label data-i18n="bgc">Background</label><input type="color" id="red_bg"></div>
+    <div class="cell"><label data-i18n="bgo">Background opacity</label><input type="range" id="red_bg_opacity" min="0" max="1" step="0.01"></div>
+    <div class="cell"><label data-i18n="bgr">Background radius (px)</label><input type="number" id="red_radius" min="0" max="80"></div>
+  </div></details>
+
+  <details class="grp" style="order:5"><summary><span class="h" data-i18n="gBlue">Top line style</span></summary><div class="body mini">
+    <div class="cell"><label data-i18n="font">Font</label><select id="blue_font"></select></div>
+    <div class="cell"><label data-i18n="size">Size (px)</label><input type="number" id="blue_size" min="6" max="120"></div>
+    <div class="cell"><label data-i18n="weight">Weight</label><select id="blue_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select></div>
+    <div class="cell"><label data-i18n="color">Text colour</label><input type="color" id="blue_color"></div>
+    <div class="cell"><label data-i18n="outline">Outline colour</label><input type="color" id="blue_outline"></div>
+    <div class="cell"><label data-i18n="outlineOp">Outline opacity</label><input type="range" id="blue_outline_op" min="0" max="1" step="0.01"></div>
+    <div class="cell"><label data-i18n="maxw">Max width (px)</label><input type="number" id="blue_maxw" min="80" max="2000"></div>
+    <div class="cell"><label data-i18n="bgc">Background</label><input type="color" id="blue_bg"></div>
+    <div class="cell"><label data-i18n="bgo">Background opacity</label><input type="range" id="blue_bg_opacity" min="0" max="1" step="0.01"></div>
+    <div class="cell"><label data-i18n="bgr">Background radius (px)</label><input type="number" id="blue_radius" min="0" max="80"></div>
+  </div></details>
+
+  <details class="grp" style="order:6"><summary><span class="h" data-i18n="gGreen">Amount line style</span></summary><div class="body mini">
+    <div class="cell"><label data-i18n="font">Font</label><select id="green_font"></select></div>
+    <div class="cell"><label data-i18n="size">Size (px)</label><input type="number" id="green_size" min="6" max="120"></div>
+    <div class="cell"><label data-i18n="weight">Weight</label><select id="green_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select></div>
+    <div class="cell"><label data-i18n="color">Text colour</label><input type="color" id="green_color"></div>
+    <div class="cell"><label data-i18n="outline">Outline colour</label><input type="color" id="green_outline"></div>
+    <div class="cell"><label data-i18n="outlineOp">Outline opacity</label><input type="range" id="green_outline_op" min="0" max="1" step="0.01"></div>
+    <div class="cell"><label data-i18n="maxw">Max width (px)</label><input type="number" id="green_maxw" min="80" max="2000"></div>
+    <div class="cell"><label data-i18n="bgc">Background</label><input type="color" id="green_bg"></div>
+    <div class="cell"><label data-i18n="bgo">Background opacity</label><input type="range" id="green_bg_opacity" min="0" max="1" step="0.01"></div>
+    <div class="cell"><label data-i18n="bgr">Background radius (px)</label><input type="number" id="green_radius" min="0" max="80"></div>
+  </div></details>
+
+  <details class="grp" style="order:7"><summary><span class="h" data-i18n="gWindow">Window background</span></summary><div class="body mini">
+    <div class="cell"><label data-i18n="bgc">Background</label><input type="color" id="win_bg"></div>
+    <div class="cell"><label data-i18n="bgo">Opacity</label><input type="range" id="win_bg_opacity" min="0" max="1" step="0.01"></div>
+    <div class="cell"><label data-i18n="bgr">Corner radius (px)</label><input type="number" id="win_radius" min="0" max="80"></div>
+    <div class="cell"><label data-i18n="winMaxH">Max height (px, 0 = auto)</label><input type="number" id="win_maxh" min="0" max="2000"></div>
+    <div class="cell"><label data-i18n="maxw">Max width (px)</label><input type="number" id="max_width" min="120" max="2000"></div>
+  </div></details>
+
+  <details class="grp" style="order:8"><summary><span class="h" data-i18n="gMedia">Media &amp; sound</span></summary><div class="body mini">
+    <div class="cell"><label data-i18n="image">Image (png/jpg/gif…)</label><div style="display:flex;gap:6px"><input type="text" id="image_url" placeholder="/media/… or https://…"><button data-up="image">↑</button></div></div>
+    <div class="cell"><label data-i18n="video">Video (mp4/webm…)</label><div style="display:flex;gap:6px"><input type="text" id="video_url" placeholder="/media/… or https://…"><button data-up="video">↑</button></div></div>
+    <div class="cell"><label data-i18n="sound">Sound (mp3/…)</label><div style="display:flex;gap:6px"><input type="text" id="sound_url" placeholder="/media/… or https://…"><button data-up="sound">↑</button></div></div>
+    <div class="cell"><label data-i18n="mPos">Position vs window</label><select id="media_pos"><option value="top" data-i18n="mpTop">top</option><option value="bottom" data-i18n="mpBottom">bottom</option><option value="left" data-i18n="mpLeft">left</option><option value="right" data-i18n="mpRight">right</option></select></div>
+    <div class="cell"><label data-i18n="mSize">Size (px W×H)</label><div style="display:flex;gap:6px"><input type="number" id="media_w" min="40" max="2000" placeholder="W"><input type="number" id="media_h" min="40" max="2000" placeholder="H"></div></div>
+    <div class="cell"><label data-i18n="mZoom">Zoom (%)</label><input type="number" id="media_zoom" min="0" max="200" step="5"></div>
+    <div class="cell"><label data-i18n="mRadius">Radius (px)</label><input type="number" id="media_radius" min="0" max="200"></div>
+    <div class="note" data-i18n="mediaHint">drag inside the media to reposition it (pan) · zoom & size above</div>
+  </div></details>
+
+  <details class="grp" style="order:9"><summary><span class="h" data-i18n="gExport">Export / import</span></summary><div class="body mini" style="flex-direction:row;flex-wrap:wrap;gap:8px">
+    <button id="export" data-i18n="exportJson">Export JSON</button>
+    <button id="import" data-i18n="importJson">Import JSON</button>
+    <button id="reset" data-i18n="reset">Reset</button>
+  </div></details>
+</div>
+<div id="ministage"><div class="cap">Preview</div><div class="box" id="minibox"></div></div>
+<input type="file" id="file" style="display:none">
+<div id="ratbox"><button class="x" id="ratx">✕</button><video id="ratvid" playsinline controls></video></div>
+<script src="/i18n.js"></script>
+<script src="/head.js"></script>
+<script src="/alert.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const DEFAULTS = Alert.DEFAULTS;
+const STYLE_KEYS = ['top_text','money_text','blue_font','blue_size','blue_weight','blue_color','blue_outline','blue_outline_op','blue_maxw','green_font','green_size','green_weight','green_color','green_outline','green_outline_op','green_maxw','msg_font','msg_size','msg_weight','msg_color','msg_outline','msg_outline_op','msg_maxw','msg_maxh','win_bg','win_bg_opacity','win_radius','win_maxh','blue_bg','blue_bg_opacity','blue_radius','green_bg','green_bg_opacity','green_radius','red_bg','red_bg_opacity','red_radius','duration_ms','wait_media','anim_in','anim_out','anim_ms','image_url','video_url','sound_url','media_pos','media_w','media_h','media_zoom','media_radius','media_pan_x','media_pan_y','max_width'];
+const NUM = new Set(['blue_size','blue_weight','blue_outline_op','blue_maxw','green_size','green_weight','green_outline_op','green_maxw','msg_size','msg_weight','msg_outline_op','msg_maxw','msg_maxh','win_bg_opacity','win_radius','win_maxh','blue_bg_opacity','blue_radius','green_bg_opacity','green_radius','red_bg_opacity','red_radius','duration_ms','anim_ms','media_w','media_h','media_zoom','media_radius','media_pan_x','media_pan_y','max_width']);
+const BOOL = new Set(['wait_media']);
+const DICT = {
+  en:{save:'Save',variation:'Donation variation',rulesHint:'first match wins · default is fallback',addRule:'+ Add variation',from:'from',toInf:'to',allVoices:'All (donor chooses)',ttsMode:'Voice set',tmAzuk:'Azure UA (Polina/Ostap)',tmAzus:'Azure US (Jenny/Guy)',azKey:'Azure Speech key',azRegion:'Azure region',azWarn:'Fill in the Azure key and region below to use this voice set.',azHelp:'How to get an Azure key (free, 500k characters/month): 1) sign in at portal.azure.com; 2) Create a resource, search Speech; 3) pick a resource group + a Region (remember it, e.g. westeurope); 4) Pricing tier = Free F0; 5) Create, then open the resource, Keys and Endpoint, copy KEY 1 and the Location. Paste them above and Save.',tmDefault:'Default (all voices)',tmGuk:'Google UA only',tmGus:'Google US only',tmCustom:'Custom only',tmOff:'Off (no voice)',defVoice:'Default voice',readMode:'Read aloud',rmAnn:'Announcement only',rmMsg:'Message only',rmBoth:'Announcement + message',ttsNote:'Applies to all variations. Donors may pick another voice on the form unless a single voice is set.',gText:'Text',lineBlue:'Top line (light blue)',lineGreen:'Amount line (green)',varsHint:'%donate% = donor name · %money% = amount — both work in either line',gBlue:'Top line style',gGreen:'Amount line style',gMsg:'Message',gWindow:'Window background',font:'Font',size:'Size (px)',weight:'Weight',color:'Text colour',outline:'Outline colour',outlineOp:'Outline opacity',maxw:'Max width (px)',maxh:'Max height (px)',bgc:'Background',bgo:'Background opacity',bgr:'Background radius (px)',winMaxH:'Max height (px, 0 = auto)',gDuration:'Duration',showMs:'Show for (ms, image/none)',keepMedia:'Hold while audio/video plays',gAnim:'Animation',animIn:'In',animOut:'Out',speedMs:'Speed (ms)',aUp:'slide up',aFade:'fade',aZoom:'zoom',aLeft:'slide left',aDown:'slide down',gMedia:'Media & sound',image:'Image (png/jpg/gif…)',video:'Video (mp4/webm…)',sound:'Sound (mp3/…)',mPos:'Position vs window',mpTop:'top',mpBottom:'bottom',mpLeft:'left',mpRight:'right',mSize:'Size (px W×H)',mZoom:'Zoom (%)',mRadius:'Radius (px)',mediaHint:'drag inside the media to reposition it (pan) · zoom & size above',gExport:'Export / import',exportJson:'Export JSON',importJson:'Import JSON',reset:'Reset',defaultLabel:'Default (rest)',saved:'saved — server running',name:'Name',confirmReset:'Reset this variation to default settings?',resetDone:'variation reset to defaults'},
+  ua:{save:'Зберегти',variation:'Варіація донату',rulesHint:'перше співпадіння · за замовчуванням — решта',addRule:'+ Додати варіацію',from:'від',toInf:'до',allVoices:'Усі (обирає донор)',ttsMode:'Набір голосів',tmAzuk:'Azure UA (Поліна/Остап)',tmAzus:'Azure US (Дженні/Гай)',azKey:'Ключ Azure Speech',azRegion:'Регіон Azure',azWarn:'Заповніть ключ і регіон Azure нижче, щоб використати цей набір голосів.',azHelp:'Як отримати ключ Azure (безкоштовно, 500 тис. символів/міс): 1) увійдіть на portal.azure.com; 2) Create a resource, знайдіть Speech; 3) виберіть resource group + Region (запам’ятайте, напр. westeurope); 4) Pricing tier = Free F0; 5) Create, відкрийте ресурс, Keys and Endpoint, скопіюйте KEY 1 та Location. Вставте їх вище і натисніть Save.',tmDefault:'Типовий (усі голоси)',tmGuk:'Лише Google UA',tmGus:'Лише Google US',tmCustom:'Лише власні',tmOff:'Вимкнено (без голосу)',defVoice:'Голос за замовчуванням',readMode:'Озвучувати',rmAnn:'Лише оголошення',rmMsg:'Лише повідомлення',rmBoth:'Оголошення + повідомлення',ttsNote:'Застосовується до всіх варіацій. Донор може обрати інший голос у формі, якщо задано не один голос.',gText:'Текст',lineBlue:'Верхній рядок (блакитний)',lineGreen:'Рядок суми (зелений)',varsHint:'%donate% = імʼя · %money% = сума — працюють в обох рядках',gBlue:'Стиль верхнього рядка',gGreen:'Стиль рядка суми',gMsg:'Повідомлення',gWindow:'Фон вікна',font:'Шрифт',size:'Розмір (px)',weight:'Товщина',color:'Колір тексту',outline:'Колір обрису',outlineOp:'Прозорість обрису',maxw:'Макс. ширина (px)',maxh:'Макс. висота (px)',bgc:'Фон',bgo:'Прозорість фону',bgr:'Радіус фону (px)',winMaxH:'Макс. висота вікна (px, 0 = авто)',gDuration:'Тривалість',showMs:'Показ (мс, зображення/немає)',keepMedia:'Тримати, поки аудіо/відео грає',gAnim:'Анімація',animIn:'Поява',animOut:'Зникнення',speedMs:'Швидкість (мс)',aUp:'знизу',aFade:'прозоро',aZoom:'зум',aLeft:'зліва',aDown:'вниз',gMedia:'Медіа та звук',image:'Зображення (png/jpg/gif…)',video:'Відео (mp4/webm…)',sound:'Звук (mp3/…)',mPos:'Позиція відносно вікна',mpTop:'зверху',mpBottom:'знизу',mpLeft:'зліва',mpRight:'справа',mSize:'Розмір (px Ш×В)',mZoom:'Зум (%)',mRadius:'Радіус (px)',mediaHint:'тягни всередині медіа щоб зсунути · зум і розмір вище',gExport:'Експорт / імпорт',exportJson:'Експорт JSON',importJson:'Імпорт JSON',reset:'Скинути',defaultLabel:'За замовчуванням (решта)',saved:'збережено ✓',name:'Імʼя',confirmReset:'Скинути цю варіацію до стандартних налаштувань?',resetDone:'варіацію скинуто до стандартних'}
+};
+window.I18N = { en: DICT.en, ua: DICT.ua };
+let lang = localStorage.getItem('lm_lang') || 'en';
+const t = k => (DICT[lang] && DICT[lang][k]) || (DICT.en[k] || k);
+function applyLang() { lang = localStorage.getItem('lm_lang') || lang; document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('#langseg button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+  document.documentElement.lang = lang === 'ua' ? 'uk' : 'en'; renderRules(); refreshSelLabels(); }
+/* language is applied by applyLang() below (head.js calls window.applyLang) */
+
+let rules = [], sel = 0;
+function newId() { return 'r' + Math.random().toString(36).slice(2, 8); }
+function renderRules() { const box = $('rules'); box.innerHTML = '';
+  rules.forEach((r, i) => { const el = document.createElement('div'); el.className = 'rule' + (i === sel ? ' sel' : '');
+    el.onclick = () => { sel = i; loadStyleToUI(); renderRules(); };
+    const isDef = r.id === 'default'; const dot = document.createElement('span'); dot.className = 'dot';
+    const lab = document.createElement('div'); lab.className = 'lab'; lab.innerHTML = '<div class="nm"></div><div class="rng"></div>';
+    lab.querySelector('.nm').textContent = isDef ? t('defaultLabel') : (r.label || t('name') + ' ' + (i + 1));
+    const range = (r.max > 0 ? r.max + ' ₴' : '∞');
+    lab.querySelector('.rng').textContent = r.pool ? 'pool · equal chance' : `${r.min || 0} ₴ · ${range}`;
+    el.append(dot, lab);
+    if (!isDef) { const pc = document.createElement('span'); pc.className = 'sw'; pc.title = 'Add to pool';
+      pc.innerHTML = '<input type="checkbox"' + (r.pool ? ' checked' : '') + '><span class="track"></span>';
+      pc.querySelector('input').onclick = (e) => { e.stopPropagation(); r.pool = e.target.checked; renderRules(); if (sel === i) loadStyleToUI(); };
+      el.append(pc); }
+    const tb = document.createElement('button'); tb.className = 'del'; tb.textContent = '\u25B6'; tb.title = 'Test this variation';
+    tb.onclick = (e) => { e.stopPropagation(); testRule(r); };
+    el.append(tb);
+    if (!isDef) { const d = document.createElement('button'); d.className = 'del'; d.textContent = '✕'; d.onclick = (e) => { e.stopPropagation(); rules.splice(i, 1); if (sel >= rules.length) sel = 0; loadStyleToUI(); renderRules(); }; el.append(d); }
+    box.append(el); }); }
+function testRule(r) { fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: sampleAmount(r), name: 'Test Donor', ruleId: r.id }) }); }
+$('addrule').onclick = () => { const idx = Math.max(0, rules.length - 1); rules.splice(idx, 0, { id: newId(), label: '', min: 100, max: 100, pool: false, style: {} }); sel = idx; loadStyleToUI(); renderRules(); };
+const clampRange = v => Math.min(29999, Math.max(10, Math.round(Number(v)) || 10));
+['rule_min','rule_max'].forEach(id => $(id).addEventListener('input', () => { if (!rules[sel]) return; rules[sel].min = clampRange($('rule_min').value); rules[sel].max = clampRange($('rule_max').value); renderRules(); }));
+/* YouTube settings live on the Donate Page Customization page */
+/* add-to-pool is toggled in each rule row */
+function readStyle() { const s = {}; for (const k of STYLE_KEYS) { const el = $(k); if (!el) continue; if (BOOL.has(k)) s[k] = el.checked; else if (NUM.has(k)) s[k] = Number(el.value); else s[k] = el.value; }
+  const cur = (rules[sel] && rules[sel].style) || {};
+  s.media_pan_x = cur.media_pan_x || 0; s.media_pan_y = cur.media_pan_y || 0;
+  s.yt_min = cur.yt_min || 0; s.yt_views = cur.yt_views || 0; s.yt_max_min = cur.yt_max_min || 0; s.yt_playlists = !!cur.yt_playlists;
+  return s; }
+function writeStyle(s) { const m = Object.assign({}, DEFAULTS, s || {}); for (const k of STYLE_KEYS) { const el = $(k); if (!el) continue;
+  if (BOOL.has(k)) el.checked = !!m[k];
+  else if (k === 'media_w' || k === 'media_h') el.value = (Number(m[k]) > 0 ? m[k] : 320);
+  else el.value = (m[k] ?? ''); } }
+function updateRuleOpts() { const r = rules[sel]; if (!r) return; const isDef = r.id === 'default';
+  const lock = !isDef && r.pool;
+  $('rule_min').disabled = lock; $('rule_max').disabled = lock;
+  $('rulenote').textContent = isDef ? '' : (r.pool ? 'In the default pool — plays with an equal chance alongside the default.' : 'Fixed amount — plays only for this exact sum (from = to).');
+}
+function loadStyleToUI() { if (rules[sel]) { writeStyle(rules[sel].style || {});
+    $('rule_min').value = rules[sel].min || 0; $('rule_max').value = rules[sel].max || 0; } updateRuleOpts(); updateMediaLocks(); preview(); }
+
+function enablePan(box, s) {
+  const el = box.querySelector('img,video'); if (!el) return;
+  let drag=false, sx=0, sy=0, ox=0, oy=0;
+  box.addEventListener('pointerdown', e => { drag=true; sx=e.clientX; sy=e.clientY; ox=s.media_pan_x||0; oy=s.media_pan_y||0;
+    try { box.setPointerCapture(e.pointerId); } catch {} e.preventDefault(); e.stopPropagation(); });
+  box.addEventListener('pointermove', e => { if (!drag) return;
+    el.style.transform = `translate(${ox+(e.clientX-sx)}px, ${oy+(e.clientY-sy)}px) scale(${(s.media_zoom||100)/100})`; });
+  box.addEventListener('pointerup', e => { if (!drag) return; drag=false;
+    const st = rules[sel].style || {}; st.media_pan_x = Math.round(ox+(e.clientX-sx)); st.media_pan_y = Math.round(oy+(e.clientY-sy));
+    rules[sel].style = st; loadStyleToUI(); });
+}
+function preview() {
+  if (!rules[sel]) return;
+  const s = readStyle(); rules[sel].style = s;
+  const data = { name: t('name'), amount: 100, currency: '₴', message: lang==='ua' ? 'Приклад повідомлення в ефірі, який може бути довгим і переноситься на кілька рядків без обрізання' : 'Example on-stream message that can be long and wraps across several lines without being cut off' };
+  const stage = $('stage'); stage.innerHTML = '';
+  const r = Alert.build(data, s, { preview: true }); const el = r.notif;
+  el.style.transition = 'none'; el.style.opacity='0'; el.style.transform = Alert.animFrom(s.anim_in);
+  stage.append(el); void el.offsetWidth;
+  el.style.transition = `opacity ${s.anim_ms}ms ease, transform ${s.anim_ms}ms cubic-bezier(.2,.9,.3,1.2)`;
+  el.style.opacity='1'; el.style.transform='none';
+  if (r.red) requestAnimationFrame(() => Alert.fitMessage(r.red, r.msgH, r.msgBase));
+  const mbox = el.querySelector('.nmbox'); if (mbox) enablePan(mbox, s);
+  const mini = $('minibox');
+  if (mini) { const rm = Alert.build(data, s, { preview: true }); mini.innerHTML = ''; mini.append(rm.notif); if (rm.red) requestAnimationFrame(() => Alert.fitMessage(rm.red, rm.msgH, rm.msgBase)); }
+}
+function setDis(id, dis) { const inp = $(id); if (inp) inp.disabled = dis; const b = document.querySelector('[data-up="' + id.replace('_url', '') + '"]'); if (b) b.disabled = dis; }
+function updateMediaLocks() {
+  const img = ($('image_url').value || '').trim(), vid = ($('video_url').value || '').trim(), snd = ($('sound_url').value || '').trim();
+  const lockVideo = !!img || !!snd, lockImgSnd = !!vid;
+  setDis('video_url', lockVideo); setDis('image_url', lockImgSnd); setDis('sound_url', lockImgSnd);
+}
+['image_url', 'video_url', 'sound_url'].forEach(id => $(id).addEventListener('input', updateMediaLocks));
+let upKind = 'image';
+document.querySelectorAll('[data-up]').forEach(b => b.onclick = () => { upKind = b.dataset.up; $('file').click(); });
+$('file').onchange = async e => { const f = e.target.files && e.target.files[0]; if (!f) return; const safe = f.name.replace(/[^A-Za-z0-9._-]/g, '_');
+  try { const r = await fetch('/api/upload?name=' + encodeURIComponent(safe), { method: 'POST', body: f }); const d = await r.json();
+    if (d.ok) { $(upKind + '_url').value = d.url; preview(); $('status').textContent = '↑ ' + d.url; } else $('status').textContent = 'upload error'; } catch { $('status').textContent = 'upload error'; } };
+/* lang seg wired in extraTools */
+let TTS = null;
+function fillTtsVoices() {
+  const mode = $('tts_mode').value; const all = (TTS && TTS.voices) || [];
+  const azuk = all.filter(v => v.id === 'azure:uk-UA-PolinaNeural' || v.id === 'azure:uk-UA-OstapNeural').map(v => v.id);
+  const azus = all.filter(v => v.id === 'azure:en-US-JennyNeural' || v.id === 'azure:en-US-GuyNeural').map(v => v.id);
+  const az = azuk.concat(azus);
+  const custom = all.filter(v => !v.id.startsWith('google:') && !v.id.startsWith('azure:')).map(v => v.id);
+  const goog = all.filter(v => v.id.startsWith('google:')).map(v => v.id);
+  const hasKey = (TTS && TTS.tts && TTS.tts.hasAzure) || $('azure_key').value.trim() !== '';
+  const allow = mode === 'off' ? [] : mode === 'google:uk' ? ['google:uk'] : mode === 'google:us' ? ['google:us']
+    : mode === 'azure:uk' ? azuk : mode === 'azure:us' ? azus : mode === 'custom' ? custom : goog.concat(az, custom);
+  const sel = $('tts_voice'); const cell = sel.closest('.cell'); const prev = sel.value; sel.innerHTML = '';
+  const multi = (mode === 'default' || mode === 'custom' || mode === 'azure:uk' || mode === 'azure:us');
+  if (multi) sel.append(new Option(t('allVoices'), ''));
+  all.filter(v => allow.includes(v.id)).forEach(v => sel.append(new Option(v.label, v.id)));
+  if (prev && (prev === '' || allow.includes(prev))) sel.value = prev;
+  if (cell) cell.style.display = multi ? '' : 'none';
+  const isAz = (mode === 'azure:uk' || mode === 'azure:us' || mode === 'default');
+  $('azure_cell').style.display = isAz ? '' : 'none';
+  $('azure_reg_cell').style.display = isAz ? '' : 'none';
+  $('azure_help').style.display = isAz ? '' : 'none';
+  const warn = document.getElementById('azure_warn');
+  if (warn) { const need = (mode === 'azure:uk' || mode === 'azure:us') && !hasKey; warn.style.display = need ? '' : 'none'; }
+  if (typeof refreshSelLabels === 'function') refreshSelLabels();
+}
+async function loadTts() {
+  try { TTS = await (await fetch('/api/tts')).json(); const tc = TTS.tts || {};
+    $('tts_mode').value = tc.mode || 'default'; $('tts_read').value = tc.readMode || 'announcement';
+    if (tc.azureRegion) $('azure_region').value = tc.azureRegion;
+    if (tc.hasAzure) $('azure_key').placeholder = '•••••• saved';
+    fillTtsVoices(); if (tc.voice) $('tts_voice').value = tc.voice; refreshSelLabels(); } catch {}
+}
+$('tts_mode').addEventListener('change', fillTtsVoices);
+window.savePage = async () => { if (rules[sel]) rules[sel].style = readStyle();
+  try { const r = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rules }) }); const d = await r.json();
+    await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: $('tts_mode').value, voice: $('tts_voice').value, readMode: $('tts_read').value,
+        azureKey: $('azure_key').value, azureRegion: $('azure_region').value }) });
+    $('status').className = 'status' + (d.ok ? ' ok' : ' err'); $('status').textContent = d.ok ? t('saved') : ('error: ' + (d.error || ''));
+    if (d.ok) { const nr = await (await fetch('/api/notify')).json(); if (nr.rules) { rules = nr.rules; loadStyleToUI(); renderRules(); } } } catch { $('status').className='status err'; $('status').textContent = 'save error'; } };
+/* test wired in extraTools */
+function sampleAmount(r) { if (r.max > r.min && r.min > 0) return r.min; if (r.max > 0) return r.max; return r.min > 0 ? r.min : 100; }
+$('export').onclick = () => { const blob = new Blob([JSON.stringify({ rules }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'localmonodonate-alerts.json'; a.click(); };
+$('import').onclick = () => { const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange = () => { const f=inp.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ try{ const j=JSON.parse(rd.result); if (j.rules) { rules=j.rules; sel=0; loadStyleToUI(); renderRules(); } }catch{} }; rd.readAsText(f); }; inp.click(); };
+$('reset').onclick = () => { if (!rules[sel]) return; if (!confirm(t('confirmReset'))) return;
+  rules[sel].style = JSON.parse(JSON.stringify(DEFAULTS)); loadStyleToUI(); renderRules();
+  $('status').className = 'status ok'; $('status').textContent = t('resetDone'); };
+let pvT = null;
+document.querySelectorAll('input,select').forEach(el => { if (el.id && el.id !== 'file' && el.id !== 'bgfile') el.addEventListener('input', () => { clearTimeout(pvT); pvT = setTimeout(preview, 90); }); });
+function updMini() { const r = $('stage').getBoundingClientRect(); $('ministage').classList.toggle('show', r.bottom < 8); }
+window.addEventListener('scroll', updMini, { passive: true });
+window.addEventListener('resize', updMini);
+function enhanceSelects() {
+  document.querySelectorAll('select').forEach(s => {
+    if (s._enh) return; s._enh = 1;
+    const wrap = document.createElement('div'); wrap.className = 'selwrap';
+    s.parentNode.insertBefore(wrap, s); wrap.appendChild(s);
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'selbtn';
+    const pop = document.createElement('div'); pop.className = 'selpop';
+    wrap.append(btn, pop);
+    s._syncLabel = () => { btn.textContent = (s.options[s.selectedIndex] || {}).textContent || ''; };
+    const build = () => { pop.innerHTML = '';
+      Array.from(s.options).forEach((o, i) => { const it = document.createElement('div'); it.className = 'selopt' + (i === s.selectedIndex ? ' on' : ''); it.textContent = o.textContent;
+        it.onclick = e => { e.stopPropagation(); s.selectedIndex = i; s._syncLabel(); s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true })); wrap.classList.remove('open'); };
+        pop.appendChild(it); }); };
+    btn.onclick = e => { e.stopPropagation(); document.querySelectorAll('.selwrap.open').forEach(w => { if (w !== wrap) w.classList.remove('open'); }); build(); const open = wrap.classList.toggle('open');
+      if (open) { const r = btn.getBoundingClientRect(); pop.style.position = 'fixed'; pop.style.left = r.left + 'px'; pop.style.width = r.width + 'px'; pop.style.right = 'auto';
+        pop.style.top = (r.bottom + 4) + 'px'; pop.style.maxHeight = Math.max(120, window.innerHeight - r.bottom - 16) + 'px'; } };
+    s._syncLabel();
+  });
+}
+function refreshSelLabels() { document.querySelectorAll('select').forEach(s => { if (s._syncLabel) s._syncLabel(); }); }
+document.addEventListener('click', () => document.querySelectorAll('.selwrap.open').forEach(w => w.classList.remove('open')));
+(() => {
+  const m = $('ministage'), cap = m.querySelector('.cap');
+  try { const s = JSON.parse(localStorage.getItem('lm_mini') || 'null'); if (s) { m.style.left = s.x + 'px'; m.style.top = s.y + 'px'; m.style.right = 'auto'; } } catch {}
+  let drag = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  cap.addEventListener('pointerdown', e => { drag = true; sx = e.clientX; sy = e.clientY; const r = m.getBoundingClientRect(); ox = r.left; oy = r.top;
+    m.style.left = ox + 'px'; m.style.top = oy + 'px'; m.style.right = 'auto'; try { cap.setPointerCapture(e.pointerId); } catch {} e.preventDefault(); });
+  cap.addEventListener('pointermove', e => { if (!drag) return; m.style.left = (ox + e.clientX - sx) + 'px'; m.style.top = (oy + e.clientY - sy) + 'px'; });
+  cap.addEventListener('pointerup', () => { if (!drag) return; drag = false;
+    try { localStorage.setItem('lm_mini', JSON.stringify({ x: parseInt(m.style.left), y: parseInt(m.style.top) })); } catch {} });
+})();
+(async () => {
+  try { const fonts = await (await fetch('/api/fonts')).json(); const list = (fonts.fonts && fonts.fonts.length ? fonts.fonts : ['Segoe UI','Arial']);
+    ['blue_font','green_font','msg_font'].forEach(id => { const s2 = $(id); s2.innerHTML = ''; for (const f of list) { const o = document.createElement('option'); o.value = f; o.textContent = f; s2.append(o); } }); } catch {}
+  enhanceSelects();
+  try { const n = await (await fetch('/api/notify')).json(); rules = (n.rules && n.rules.length) ? n.rules : [ { id:'default', label:'', min:0, max:0, style:{} } ]; sel = 0; } catch { rules = [ { id:'default', label:'', min:0, max:0, style:{} } ]; }
+  applyLang(); loadStyleToUI(); loadTts(); })();
+window.refreshPreview = function () { try { preview(); } catch {} };
+function playRat() { const v = $('ratvid'); if (!v.getAttribute('src')) v.setAttribute('src', '/rat.mp4');
+  $('ratbox').classList.add('show'); try { v.currentTime = 0; } catch {} v.play().catch(() => {}); }
+function closeRat() { const v = $('ratvid'); $('ratbox').classList.remove('show'); try { v.pause(); } catch {} }
+$('logo').onclick = playRat;
+$('ratx').onclick = closeRat;
+$('ratbox').onclick = e => { if (e.target.id === 'ratbox') closeRat(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRat(); });
+</script>
+</body>
+</html>

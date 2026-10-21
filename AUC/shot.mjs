@@ -1,0 +1,13 @@
+import { chromium } from 'playwright-core';
+const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const route = process.argv[2] || 'auction';
+const out = process.argv[3] || 'mine.png';
+const b = await chromium.launch({ executablePath: CHROME, headless: true });
+const p = await (await b.newContext({ viewport: { width: 1440, height: 810 } })).newPage();
+const errs = [];
+p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
+await p.goto(`http://localhost:3000/#${route}`, { waitUntil: 'networkidle', timeout: 30000 }).catch((e) => console.log('goto:', e.message));
+await p.waitForTimeout(2000);
+await p.screenshot({ path: `capture/${out}` });
+console.log('saved capture/' + out + ' errors=' + errs.length + (errs[0] ? ' :: ' + errs[0] : ''));
+await b.close();

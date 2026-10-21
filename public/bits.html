@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="uk" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title data-i18n="title">Звукові сповіщення</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  body{background-size:cover;background-position:center;background-attachment:fixed;background-repeat:no-repeat;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .wrap{max-width:660px;width:100%}
+  .deck{display:grid;grid-template-columns:repeat(5,1fr);gap:14px 12px;background-size:cover;background-position:center;border-radius:var(--r-sm)}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit}
+  .cell .sq{width:100%;aspect-ratio:1/1;border:1px solid var(--line);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
+    font-size:22px;background-size:cover;background-position:center;overflow:hidden;transition:.12s}
+  .cell:hover .sq{border-color:var(--accent);transform:translateY(-2px)}
+  .cell.empty{cursor:default}
+  .cell.empty .sq{border-style:dashed;opacity:.35}
+  .cell.empty:hover .sq{transform:none;border-color:var(--line)}
+  .cell .lbl{font-size:12px;font-weight:600;line-height:1.15;color:var(--fg);text-align:center;word-break:break-word}
+  .cell .price{font-size:12px;color:var(--fg);font-variant-numeric:tabular-nums}
+  .cell{position:relative}
+  .pvbtn{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:rgba(0,0,0,.6);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:.12s;padding:0}
+  .cell:hover .pvbtn{opacity:1}
+  #pv{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  #pv.show{display:flex}
+  #pv .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px;display:flex;flex-direction:column;gap:12px;align-items:center;max-width:92vw;max-height:92vh}
+  #pv .media{display:flex;align-items:center;justify-content:center;max-width:84vw;max-height:64vh;overflow:hidden}
+  #pv .media img,#pv .media video{max-width:84vw;max-height:64vh;display:block}
+  #pv .ph{padding:28px 18px;color:var(--muted);font-size:14px}
+  #pv .ctl{display:flex;align-items:center;gap:10px}
+
+.credits{position:fixed;left:0;right:0;bottom:14px;margin:0 auto;max-width:560px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
+.credits a{color:inherit;text-decoration:underline}
+.credits b{font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel" id="win">
+    <div class="sec"><span class="n">01</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="h" data-i18n="title">Звукові сповіщення</span><span class="hint" id="sub" data-i18n="sub"></span></div><span class="sp"></span><span class="seg" id="langseg"></span></div>
+    <div class="body">
+      <div style="display:flex;gap:8px;align-items:center;margin:0 0 12px">
+        <label for="nick" data-i18n="nick" style="font-size:12px;opacity:.75;white-space:nowrap">Your nickname</label>
+        <input id="nick" maxlength="40" autocomplete="nickname" data-i18n-ph="nickPh" placeholder="nickname (optional)" style="flex:1;min-width:0;padding:8px 10px;font:inherit;font-size:13px;color:inherit;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:8px">
+      </div>
+      <div class="deck" id="deck"></div>
+    </div>
+  </div>
+</div>
+<div id="pv"><div class="box"><div class="media" id="pvMedia"></div><div class="ctl"><button id="pvPlay">▶</button><input type="range" id="pvVol" min="0" max="1" step="0.01" value="0.7" style="width:120px"><button id="pvClose">✕</button></div></div></div>
+<div class="credits" id="credits"></div>
+<script src="/i18n.js"></script>
+<script>
+window.I18N_DEFAULT = 'ua';
+window.I18N = {
+  en: { title: 'Sound Alerts', sub: 'Pick what plays on stream — payment opens in Monobank', empty: 'No alerts yet' },
+  ua: { title: 'Звукові сповіщення', sub: 'Обери, що зіграє в ефірі — оплата відкриється в Monobank', empty: 'Поки що немає жодного сповіщення' }
+};
+const $ = id => document.getElementById(id);
+Object.assign(window.I18N.en, { nick: 'Your nickname', nickPh: 'nickname (optional)' });
+Object.assign(window.I18N.ua, { nick: 'Твій нік', nickPh: 'нік (необовʼязково)' });
+try { $('nick').value = localStorage.getItem('lmd:nick') || ''; } catch (e) {}
+let BITS = [], JAR = '', GRID = 5;
+const fmt = n => Math.round(Number(n) || 0).toLocaleString('uk-UA') + ' \u20B4';
+const icon = k => k === 'video' ? '🎬' : k === 'sound' ? '🔊' : '✨';
+function render() {
+  const g = $('deck'); g.innerHTML = '';
+  const bits = BITS.slice().sort((a, b) => (Number(a.slot) || 0) - (Number(b.slot) || 0));
+  const cols = Math.max(1, Math.min(GRID, bits.length || 1));
+  g.style.gridTemplateColumns = 'repeat(' + cols + ',1fr)';
+  for (const bit of bits) {
+    const cell = document.createElement('div'); cell.className = 'cell';
+    const sq = document.createElement('div'); sq.className = 'sq';
+    if (bit.img) { sq.style.backgroundImage = 'url("' + bit.img + '")'; sq.style.backgroundSize = 'cover'; sq.style.backgroundPosition = 'center'; }
+    else sq.textContent = icon(bit.kind);
+    const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = bit.label || bit.kind;
+    const pr = document.createElement('span'); pr.className = 'price'; pr.textContent = fmt(bit.price);
+    cell.append(sq, lbl, pr);
+    const pb = document.createElement('button'); pb.className = 'pvbtn'; pb.type = 'button'; pb.textContent = '▶'; pb.title = 'Preview';
+    pb.onclick = e => { e.stopPropagation(); openPv(bit); };
+    cell.append(pb);
+    cell.onclick = () => {
+      if (!JAR) return;
+      const nick = (($('nick') && $('nick').value) || '').trim().slice(0, 40);
+      try { localStorage.setItem('lmd:nick', nick); } catch (e) {}
+      const comment = 'донат сповіщення ' + bit.code + (nick ? ' | name: ' + nick : '');
+      window.open('https://send.monobank.ua/jar/' + encodeURIComponent(JAR) + '?a=' + encodeURIComponent(bit.price) + '&t=' + encodeURIComponent(comment), '_blank', 'noopener');
+    };
+    g.append(cell);
+  }
+  if (!bits.length) $('sub').textContent = window.t('empty');
+}
+let pvEl = null;
+function openPv(bit) {
+  const m = $('pvMedia'); m.innerHTML = ''; pvEl = null;
+  const vol = Number($('pvVol').value) || 0.7;
+  const url = bit.url || bit.img || '';
+  const isAudio = bit.kind === 'sound' || /\.(mp3|wav|ogg|m4a|aac)(\?|$)/i.test(url);
+  const isVid = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+  const setBtn = () => { $('pvPlay').textContent = (pvEl && !pvEl.paused) ? '⏸' : '▶'; };
+  if (isAudio && url) {
+    const a = new Audio(url); a.loop = false; a.volume = vol; a.onended = setBtn; a.play().catch(() => {});
+    pvEl = a;
+    const ph = document.createElement('div'); ph.className = 'ph'; ph.textContent = '🔊 ' + (bit.label || ''); m.append(ph);
+  } else if (isVid) {
+    const v = document.createElement('video'); v.src = url; v.loop = false; v.controls = false; v.playsInline = true; v.volume = vol;
+    v.onended = setBtn; m.append(v); pvEl = v; v.play().catch(() => {});
+  } else if (url) {
+    const img = document.createElement('img'); img.src = url; m.append(img);
+    if (bit.sound) { const a = new Audio(bit.sound); a.loop = false; a.volume = vol; a.onended = setBtn; pvEl = a; a.play().catch(() => {}); }
+  }
+  setBtn();
+  $('pv').classList.add('show');
+}
+function closePv() { try { if (pvEl) pvEl.pause(); } catch {} pvEl = null; $('pv').classList.remove('show'); $('pvMedia').innerHTML = ''; }
+$('pvPlay').onclick = () => { if (!pvEl) return; if (pvEl.paused) { pvEl.play().catch(() => {}); } else { pvEl.pause(); } $('pvPlay').textContent = pvEl.paused ? '▶' : '⏸'; };
+$('pvVol').oninput = () => { if (pvEl) pvEl.volume = Number($('pvVol').value); };
+$('pvClose').onclick = closePv;
+$('pv').onclick = e => { if (e.target.id === 'pv') closePv(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePv(); });
+async function load() {
+  let bitsPageBg = '', bitsBg = '';
+  try { const b = await (await fetch('/api/bits')).json(); BITS = b.bits || []; JAR = (b.jars && b.jars[0]) || ''; GRID = b.grid || 5; } catch {}
+  try { const c = await (await fetch('/api/config')).json(); bitsPageBg = c.bitsPageBg || ''; bitsBg = c.bitsBg || ''; } catch {}
+  if (bitsPageBg) document.body.style.backgroundImage = 'url("' + bitsPageBg + '")';
+  const win = $('win');
+  const alpha = bitsBg ? 1 : (bitsPageBg ? 0.95 : 1);
+  if (bitsBg) win.style.backgroundImage = 'url("' + bitsBg + '")';
+  win.style.backgroundColor = 'color-mix(in srgb,var(--card) ' + (alpha * 100) + '%,transparent)';
+  const cellAlpha = bitsBg ? 1 : (bitsPageBg ? 0.95 : 1);
+  render();
+  document.querySelectorAll('.cell .sq').forEach(sq => { if (!sq.style.backgroundImage) sq.style.backgroundColor = 'color-mix(in srgb,var(--card2) ' + (cellAlpha * 100) + '%,transparent)'; });
+  window.mountLangSeg($('langseg')); window.applyI18n();
+}
+load();
+
+function renderCredits() {
+  const el = document.getElementById('credits'); if (!el) return;
+  const ua = window.getLang && window.getLang() === 'ua';
+  el.innerHTML = ua
+    ? 'Нічого тут не зроблено by <b>terriblefeelings</b> — код написали моделі opencode. Оригінальний код таймера марафону — <a href="https://github.com/stalexteam" target="_blank" rel="noopener">stalexteam</a>, перероблено моделями opencode.'
+    : 'Nothing here was made by <b>terriblefeelings</b> — the code was written by opencode models. The marathon timer\'s original code is by <a href="https://github.com/stalexteam" target="_blank" rel="noopener">stalexteam</a>, remade by opencode models.';
+}
+renderCredits();
+window.applyLang = renderCredits;
+</script>
+</body>
+</html>

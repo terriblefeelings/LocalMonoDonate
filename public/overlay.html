@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Donation overlay</title>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif; }
+  #stage { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); }
+  .notif { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .stack { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .nline, .nmsg { padding: 6px 14px; text-align: center; word-break: break-word; }
+  .nwin { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; }
+  .nmbox { overflow: hidden; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .nmbox img, .nmbox video { flex: 0 0 auto; max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="/alert.js"></script>
+<script>
+const CFG = { durationMs: 8000, videoMaxMs: 180000 };
+let RULES = [];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function pickStyle(amount, ruleId) {
+  if (ruleId) { const r = RULES.find(x => x.id === ruleId); if (r) return r.style || {}; }
+  for (const r of RULES) { if (r.id === 'default' || r.pool) continue; const mn = r.min || 0, mx = r.max || 0;
+    if (amount + 1e-9 >= mn && (mx <= 0 || amount <= mx + 1e-9)) return r.style || {}; }
+  const pool = RULES.filter(r => r.id === 'default' || r.pool);
+  if (!pool.length) return {};
+  return pool[Math.floor(Math.random() * pool.length)].style || {};
+}
+async function loadSettings() { try { const s = await (await fetch('/api/state')).json();
+  if (s.overlay) Object.assign(CFG, s.overlay); if (s.notify && s.notify.rules) RULES = s.notify.rules; } catch {} }
+loadSettings(); setInterval(loadSettings, 5000);
+
+/* Browsers block audible autoplay until the page has been interacted with once.
+   OBS browser sources allow it, so this only matters when testing in a browser. */
+let audioReady = false;
+const audioRetries = [];
+function markAudioReady() { if (audioReady) return; audioReady = true; const q = audioRetries.splice(0); q.forEach(fn => { try { fn(); } catch {} }); }
+['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, markAudioReady, { passive: true }));
+function safePlay(el) { const p = el.play(); if (p && p.catch) p.catch(() => { if (!audioReady) audioRetries.push(() => { el.play().catch(() => {}); }); }); return p; }
+
+let ytPromise = null;
+function loadYT() { if (ytPromise) return ytPromise;
+  ytPromise = new Promise(res => { if (window.YT && window.YT.Player) return res(); window.onYouTubeIframeAPIReady = () => res();
+    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s); }); return ytPromise; }
+async function playYT(host, id, maxMs) { await loadYT();
+  return new Promise(resolve => { let player, done = false;
+    const fin = () => { if (done) return; done = true; clearTimeout(timer); try { player && player.destroy(); } catch {} resolve(); };
+    const timer = setTimeout(fin, maxMs);
+    player = new YT.Player(host, { videoId: id, width: 560, height: 315, playerVars: { autoplay: 1, controls: 0, rel: 0, playsinline: 1, modestbranding: 1 },
+      events: { onReady: e => e.target.playVideo(), onStateChange: e => { if (e.data === YT.PlayerState.ENDED) fin(); }, onError: () => fin() } }); }); }
+function playTts(url) { const a = new Audio(url); safePlay(a); }
+function soundEnd(src, maxMs, fallbackMs) { if (!src) return Promise.resolve();
+  return new Promise(res => { const a = new Audio(src); let done = false; const fin = () => { if (done) return; done = true; res(); };
+    a.onended = fin; a.onerror = fin;
+    const p = a.play();
+    if (p && p.catch) p.catch(() => { if (!audioReady) audioRetries.push(() => { a.play().catch(() => {}); }); setTimeout(fin, fallbackMs || 1000); });
+    setTimeout(fin, maxMs); }); }
+
+const queue = []; let busy = false;
+function enqueue(d) { queue.push(d); if (!busy) pump(); }
+async function pump() { if (!queue.length) { busy = false; return; } busy = true; try { await play(queue.shift()); } catch (e) { console.warn(e); } pump(); }
+
+async function play(d) {
+  const N = Object.assign({}, Alert.DEFAULTS, pickStyle(d.amount || 0, d.ruleId));
+  const stage = document.getElementById('stage');
+  const { notif, red, msgBase, msgH } = Alert.build(d, N);
+  const hasSound = !!N.sound_url, hasVideo = !!N.video_url, hasYT = !!d.youtubeId && (d.amount || 0) >= (N.yt_min || 0);
+  let mediaPromise = Promise.resolve();
+  const v = notif.querySelector('.nmbox video'); if (v) mediaPromise = new Promise(res => { v.onended = res; v.onerror = res; setTimeout(res, CFG.videoMaxMs); });
+  let ytP = Promise.resolve();
+  if (hasYT) { const box = document.createElement('div'); box.className='nmbox'; box.style.width=(N.media_w||320)+'px'; box.style.height=(N.media_h||320)+'px'; box.style.borderRadius=(N.media_radius||0)+'px'; notif.prepend(box); ytP = playYT(box, d.youtubeId, CFG.videoMaxMs); }
+  const soundPromise = hasSound ? soundEnd(N.sound_url, CFG.videoMaxMs, N.duration_ms) : Promise.resolve();
+  const ttsPromise = d.ttsUrl ? soundEnd(d.ttsUrl, CFG.videoMaxMs, 20000) : Promise.resolve();
+
+  notif.style.transition = 'none'; notif.style.opacity = '0'; notif.style.transform = Alert.animFrom(N.anim_in);
+  stage.append(notif);
+  if (v) { const pp = v.play(); if (pp && pp.catch) pp.catch(() => { v.muted = true; v.play().catch(() => {}); if (!audioReady) audioRetries.push(() => { v.muted = false; v.play().catch(() => {}); }); }); }
+  void notif.offsetWidth;
+  notif.style.transition = `opacity ${N.anim_ms}ms ease, transform ${N.anim_ms}ms cubic-bezier(.2,.9,.3,1.2)`;
+  notif.style.opacity = '1'; notif.style.transform = 'none';
+  if (red) Alert.fitMessage(red, msgH, msgBase);
+
+  if (hasVideo || hasSound || hasYT || d.ttsUrl) {
+    await Promise.race([Promise.all([mediaPromise, soundPromise, ytP, ttsPromise]), sleep(CFG.videoMaxMs)]);
+    await sleep(300);
+  } else await sleep(N.duration_ms);
+  notif.style.transition = `opacity ${N.anim_ms}ms ease, transform ${N.anim_ms}ms ease`;
+  notif.style.opacity = '0'; notif.style.transform = Alert.animFrom(N.anim_out);
+  await sleep(N.anim_ms + 60); notif.remove();
+}
+
+let lastId = 0, firstPoll = true;
+async function tick() {
+  try {
+    const d = await (await fetch('/api/poll?since=' + lastId)).json();
+    if (typeof d.last === 'number') lastId = d.last;
+    // never replay history when the overlay is (re)opened — only new events play
+    if (firstPoll) { firstPoll = false; setTimeout(tick, 800); return; }
+    const parsed = (d.events || []).map(raw => { try { return JSON.parse(raw); } catch { return null; } }).filter(Boolean);
+    const donations = parsed.filter(e => e.type === 'donation');
+    if (donations.length) await loadSettings();
+    for (const ev of donations) enqueue(ev.data);
+    for (const ev of parsed) if (ev.type === 'tts' && ev.data && ev.data.url) playTts(ev.data.url);
+  } catch {}
+  setTimeout(tick, 800);
+}
+tick();
+</script>
+</body>
+</html>

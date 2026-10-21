@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timer — LocalMonoDonate</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  .wrap{max-width:900px}
+  .ctlrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .ctlrow select{width:auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .grid.two{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+  .cell{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .cell label{font-size:12px;color:var(--muted)}
+  .span2{grid-column:span 2}
+  .sep{height:1px;background:var(--line);margin:14px 0}
+  .sub{font-size:12px;color:var(--muted);margin:0 0 8px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  tr:last-child td{border-bottom:0}
+  .scroll{max-height:300px;overflow:auto}
+  .pill{font-family:var(--mono);font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .pill.run{color:#39d98a;border-color:#39d98a66}
+  .pill.bad{color:#ff6b6b;border-color:#ff6b6b66}
+  .preview{position:relative;height:230px;border-radius:12px;background:#0c0c10;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;container-type:size}
+  .pv-t{font-weight:700;letter-spacing:.02em;white-space:nowrap}
+  .pv-pop{position:absolute;left:50%;top:14%;transform:translateX(-50%);white-space:nowrap;font-weight:700;font-size:6cqh}
+  ol.guide{margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.9;color:var(--fg)}
+  ol.guide code{background:var(--field2);padding:1px 6px;border-radius:5px;font-family:var(--mono);font-size:12px}
+  .u{width:84px}
+  .masked{filter:blur(5px);user-select:none}
+</style>
+</head>
+<body>
+<div class="head">
+    <div class="brand">
+    <button class="logo" id="logo" type="button" title="🐀"><svg viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14,54c6.409,0,11.645-5.054,11.969-11.383c1.384,0.424,2.797,0.749,4.226,0.979C30.471,44.02,34,49.526,34,54v2.095  l-6.114,0.611C25.67,56.928,24,58.774,24,61c0,0.552,0.448,1,1,1h26c3.459,0,10-1.463,10-7V43c0-5.262-1.374-10.178-4.454-15.94  c-1.475-2.76-3.147-5.888-3.581-9.148c-0.317-2.381,0.135-4.744,1.239-6.481c0.602-0.947,1.501-1.55,2.406-1.615  c0.74-0.046,1.438,0.277,2.018,0.953c0.717,0.837,0.863,2.015,0.37,3l-0.392,0.783l1.789,0.895l0.392-0.783  c0.854-1.708,0.602-3.748-0.64-5.197c-0.994-1.16-2.302-1.74-3.678-1.646c-1.534,0.109-3.011,1.058-3.951,2.537  c-1.373,2.16-1.918,4.936-1.534,7.818c0.481,3.62,2.245,6.917,3.8,9.827C57.699,33.459,59,38.085,59,43v1.603  c-2.332-5.197-6.409-8.344-10.652-11.595c-1.547-1.186-3.147-2.412-4.689-3.761c-0.474-0.415-0.912-0.815-1.316-1.201  c-1.211-1.157-1.496-2.961-0.675-4.289c0.216-0.349,0.404-0.714,0.579-1.085C45.566,21.7,48,18.631,48,15c0-4.411-3.589-8-8-8  c-0.52,0-1.03,0.068-1.533,0.167C37.307,4.083,34.369,2,31,2c-4.411,0-8,3.589-8,8c0,0.596,0.095,1.204,0.241,1.812  c-0.183,0.267-0.373,0.528-0.534,0.813c-0.087,0.165-2.212,4.063-8.167,5.659c-1.545,0.414-2.527,1.148-2.916,2.181  c-0.353,0.936-0.16,2.033,0.544,3.089c2.422,3.634,6.231,5.038,14.557,5.365c1.729,0.068,3.38,0.854,4.527,2.156  c0.794,0.901,1.524,1.773,2.062,2.428c0.493,0.6,0.479,1.481-0.08,2.056c-0.286,0.284-0.665,0.438-1.094,0.43  c-2.415-0.061-4.544-0.371-7.347-1.072l-1.239-0.31c-0.047-0.012-0.094-0.014-0.141-0.024C21.146,31.714,17.666,30,14,30  C7.383,30,2,35.383,2,42S7.383,54,14,54z M31,4c2.497,0,4.672,1.531,5.562,3.801c-0.031,0.015-0.062,0.03-0.093,0.045  C35.133,7.295,33.735,7,32.298,7C29.574,7,27,8.036,25.01,9.807C25.113,6.588,27.756,4,31,4z M32.09,37.989  c0.938,0.033,1.881-0.345,2.546-1.004c0.006-0.006,0.075-0.075,0.081-0.081c1.229-1.264,1.289-3.271,0.142-4.669  c-0.549-0.668-1.296-1.56-2.106-2.48c-1.507-1.71-3.676-2.743-5.949-2.832c-0.953-0.038-1.823-0.093-2.637-0.16  c0.125-0.085,0.257-0.16,0.378-0.251c2.609-1.947,3.218-2.849,3.359-3.146l-1.778-0.913c-0.018,0.029-0.47,0.733-2.778,2.456  c-0.841,0.627-1.834,1.077-2.944,1.356c-3.736-0.742-5.384-2.037-6.573-3.82c-0.157-0.235-0.504-0.832-0.337-1.274  c0.145-0.385,0.7-0.724,1.563-0.955c6.849-1.835,9.321-6.47,9.406-6.634C26.061,10.755,29.063,9,32.298,9  c0.722,0,1.432,0.095,2.127,0.267c-0.49,0.474-0.923,1.013-1.282,1.609l1.713,1.032C35.954,10.087,37.876,9,40,9  c3.309,0,6,2.691,6,6s-2.691,6-6,6c-0.286,0-0.575-0.021-0.859-0.061l-0.281,1.98c0.32,0.045,0.644,0.061,0.967,0.068  c-1.118,2.093-0.676,4.777,1.135,6.506c0.424,0.404,0.883,0.824,1.38,1.259c1.591,1.393,3.218,2.638,4.791,3.843  C53.5,39.475,59,43.689,59,55c0,4.926-7.921,5-8,5H26.225c0.338-0.709,1.027-1.22,1.86-1.303l7.015-0.702  C35.611,57.944,36,57.514,36,57v-3.982c0-2.294,1.792-4.229,4.08-4.406l7.997-0.615l-0.153-1.994l-7.997,0.615  c-1.975,0.152-3.69,1.211-4.762,2.741c-0.713-2.201-1.728-4.188-2.455-5.464C33.509,43.957,34.308,44,35.109,44H37v-2h-1.891  c-4.496,0-8.999-1.063-13.02-3.074c-0.317-0.158-0.549-0.432-0.654-0.771c-0.105-0.34-0.065-0.706,0.114-1.029  c0.271-0.488,0.909-0.733,1.521-0.579l1.239,0.31C27.224,37.587,29.551,37.925,32.09,37.989z M14,32c2.653,0,5.188,1.081,7.049,2.93  c-0.516,0.284-0.956,0.697-1.251,1.227c-0.445,0.805-0.543,1.725-0.275,2.59c0.264,0.852,0.873,1.569,1.67,1.968  c0.912,0.456,1.85,0.856,2.803,1.219C23.998,41.957,24,41.978,24,42c0,5.514-4.486,10-10,10S4,47.514,4,42S8.486,32,14,32z"/><path d="M11,46h6c0.552,0,1-0.448,1-1v-6c0-0.552-0.448-1-1-1h-6c-0.552,0-1,0.448-1,1v6C10,45.552,10.448,46,11,46z M12,40h4v4h-4  V40z"/><rect height="2" width="2" x="28" y="16"/><rect height="2" width="2" x="4" y="22"/><rect height="2" width="2" x="2" y="24"/><rect height="2" width="2" x="6" y="24"/><rect height="2" width="2" x="4" y="26"/><rect height="2" width="2" x="12" y="56"/><rect height="2" width="2" x="10" y="58"/><rect height="2" width="2" x="14" y="58"/><rect height="2" width="2" x="12" y="60"/><rect height="2" width="2" x="11" y="2"/><rect height="2" width="2" x="9" y="4"/><rect height="2" width="2" x="13" y="4"/><rect height="2" width="2" x="11" y="6"/></svg></button>
+    <div class="t">LocalMonoDonate <span class="pg">- Marathon Customization</span></div>
+  </div>
+  <div class="tools"></div>
+</div>
+<div class="wrap">
+  <div class="status" id="status"></div>
+
+  <div class="panel">
+    <div class="sec"><span class="h" data-i18n="tPreview"></span><span class="sp"></span><span class="pill" id="state"></span></div>
+    <div class="body">
+      <div class="preview" id="preview">
+        <div class="pv-pop" id="pvPop">+5:00</div>
+        <div class="pv-t" id="pvT">--:--:--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec"><span class="n">01</span><span class="h" data-i18n="tTimer"></span></div>
+    <div class="body">
+      <div class="ctlrow">
+        <button id="start" data-i18n="tStart"></button>
+        <button id="pause" data-i18n="tPause"></button>
+        <button id="reset" data-i18n="tReset"></button>
+      </div>
+      <div class="sep"></div>
+      <div class="sub" data-i18n="tSetLbl"></div>
+      <div class="ctlrow">
+        <input type="number" id="setD" min="0" class="u" data-i18n-ph="uD">
+        <input type="number" id="setH" min="0" class="u" data-i18n-ph="uH">
+        <input type="number" id="setM" min="0" class="u" data-i18n-ph="uM">
+        <input type="number" id="setS" min="0" class="u" data-i18n-ph="uS">
+        <button id="setBtn" data-i18n="tSet"></button>
+      </div>
+      <div class="sep"></div>
+      <div class="sub" data-i18n="tAdjustLbl"></div>
+      <div class="ctlrow">
+        <input type="number" id="addN" min="0" value="5" class="u">
+        <select id="addU"><option value="86400" data-i18n="uD"></option><option value="3600" data-i18n="uH"></option><option value="60" selected data-i18n="uM"></option><option value="1" data-i18n="uS"></option></select>
+        <button id="addBtn" data-i18n="tAdd"></button>
+      </div>
+      <div class="ctlrow" style="margin-top:8px">
+        <input type="number" id="subN" min="0" value="5" class="u">
+        <select id="subU"><option value="86400" data-i18n="uD"></option><option value="3600" data-i18n="uH"></option><option value="60" selected data-i18n="uM"></option><option value="1" data-i18n="uS"></option></select>
+        <button id="subBtn" data-i18n="tSub"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec"><span class="n">02</span><span class="h" data-i18n="tRates"></span></div>
+    <div class="body">
+      <div class="grid">
+        <div class="cell"><label data-i18n="tPerAmount"></label><input type="number" id="perAmount" min="1"></div>
+        <div class="cell"><label data-i18n="tPerSeconds"></label><input type="number" id="perSeconds" min="0"></div>
+        <div class="cell"><label data-i18n="tMin"></label><input type="number" id="minDonation" min="0"></div>
+        <div class="cell"><label data-i18n="tPoll"></label><input type="number" id="pollSeconds" min="15"></div>
+        <div class="cell"><label data-i18n="tT1"></label><input type="number" id="twitchTier1" min="0"></div>
+        <div class="cell"><label data-i18n="tT2"></label><input type="number" id="twitchTier2" min="0"></div>
+        <div class="cell"><label data-i18n="tT3"></label><input type="number" id="twitchTier3" min="0"></div>
+      </div>
+      <div class="note" data-i18n="tRatesNote"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec"><span class="n">03</span><span class="h" data-i18n="tLook"></span></div>
+    <div class="body">
+      <div class="grid">
+        <div class="cell"><label data-i18n="tColor"></label><input type="color" id="color"></div>
+        <div class="cell"><label data-i18n="tAccent"></label><input type="color" id="accent"></div>
+        <div class="cell"><label data-i18n="tOutline"></label><input type="color" id="outline"></div>
+        <div class="cell"><label data-i18n="tSize"></label><input type="number" id="size" min="1"></div>
+        <div class="cell"><label data-i18n="tFont"></label><select id="font"></select></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="panel">
+    <div class="sec"><span class="h" data-i18n="tLog"></span><span class="sp"></span>
+      <span class="pill" id="statSubs">—</span><span class="pill" id="statMoney" style="margin-left:8px">—</span></div>
+    <div class="body"><div class="scroll"><table id="log">
+      <thead><tr><th data-i18n="tColSrc"></th><th data-i18n="tColWho"></th><th data-i18n="tColAmt"></th><th data-i18n="tColSec"></th><th data-i18n="tColAt"></th></tr></thead>
+      <tbody></tbody></table></div></div>
+  </div>
+</div>
+<script src="/i18n.js"></script>
+<script src="/head.js"></script>
+<script>
+window.I18N = {
+  en: { tPreview: 'Preview', tShow: 'Show', tHide: 'Hide', tTimer: 'Timer', tStart: 'Start', tPause: 'Pause', tReset: 'Reset',
+    tSetLbl: 'Set time', tSet: 'Set', tAdjustLbl: 'Add / subtract', tAdd: '+ Add', tSub: '- Subtract',
+    uD: 'd', uH: 'h', uM: 'min', uS: 's',
+    tRates: 'Rates', tPerAmount: 'Every N \u20B4', tPerSeconds: 'adds M seconds', tMin: 'Min donation \u20B4', tPoll: 'Monobank poll, s',
+    tT1: 'Twitch Tier 1, s', tT2: 'Twitch Tier 2, s', tT3: 'Twitch Tier 3, s',
+    tRatesNote: 'A donation adds time proportionally: amount / N \u2192 M seconds. Amounts below the minimum are ignored.',
+    tLook: 'Appearance', tColor: 'Digit color', tAccent: '+time color', tOutline: 'Outline', tSize: 'Size (vw)', tFont: 'Font', tFontDefault: 'Default',
+    tLog: 'Log', tStatSubs: 'Subs', tStatMoney: 'Donated', tColSrc: 'Source', tColWho: 'Who', tColAmt: 'Amount', tColSec: 'Time', tColAt: 'When',
+    tRunning: 'Running', tPaused: 'Paused' },
+  ua: { tPreview: '\u041f\u043e\u043f\u0435\u0440\u0435\u0434\u043d\u0456\u0439 \u043f\u0435\u0440\u0435\u0433\u043b\u044f\u0434', tShow: '\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u0438', tHide: '\u0421\u0445\u043e\u0432\u0430\u0442\u0438', tTimer: '\u0422\u0430\u0439\u043c\u0435\u0440', tStart: '\u0421\u0442\u0430\u0440\u0442', tPause: '\u041f\u0430\u0443\u0437\u0430', tReset: '\u0421\u043a\u0438\u043d\u0443\u0442\u0438',
+    tSetLbl: '\u0412\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u0438 \u0447\u0430\u0441', tSet: '\u0412\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u0438', tAdjustLbl: '\u0414\u043e\u0434\u0430\u0442\u0438 / \u0432\u0456\u0434\u043d\u044f\u0442\u0438', tAdd: '+ \u0414\u043e\u0434\u0430\u0442\u0438', tSub: '- \u0412\u0456\u0434\u043d\u044f\u0442\u0438',
+    uD: '\u0434', uH: '\u0433\u043e\u0434', uM: '\u0445\u0432', uS: '\u0441',
+    tRates: '\u0428\u0432\u0438\u0434\u043a\u043e\u0441\u0442\u0456', tPerAmount: '\u041a\u043e\u0436\u043d\u0456 N \u20B4', tPerSeconds: '\u0434\u043e\u0434\u0430\u044e\u0442\u044c M \u0441\u0435\u043a\u0443\u043d\u0434', tMin: '\u041c\u0456\u043d. \u0434\u043e\u043d\u0430\u0442 \u20B4', tPoll: '\u041e\u043f\u0438\u0442\u0443\u0432\u0430\u043d\u043d\u044f Monobank, \u0441',
+    tT1: 'Twitch Tier 1, \u0441', tT2: 'Twitch Tier 2, \u0441', tT3: 'Twitch Tier 3, \u0441',
+    tRatesNote: '\u0414\u043e\u043d\u0430\u0442 \u0434\u043e\u0434\u0430\u0454 \u0447\u0430\u0441 \u043f\u0440\u043e\u043f\u043e\u0440\u0446\u0456\u0439\u043d\u043e: \u0441\u0443\u043c\u0430 / N \u2192 M \u0441\u0435\u043a\u0443\u043d\u0434. \u0421\u0443\u043c\u0438 \u043c\u0435\u043d\u0448\u0456 \u0437\u0430 \u043c\u0456\u043d\u0456\u043c\u0443\u043c \u0456\u0433\u043d\u043e\u0440\u0443\u044e\u0442\u044c\u0441\u044f.',
+    tLook: '\u0412\u0438\u0433\u043b\u044f\u0434', tColor: '\u041a\u043e\u043b\u0456\u0440 \u0446\u0438\u0444\u0440', tAccent: '\u041a\u043e\u043b\u0456\u0440 +\u0447\u0430\u0441', tOutline: '\u041e\u0431\u0432\u0435\u0434\u0435\u043d\u043d\u044f', tSize: '\u0420\u043e\u0437\u043c\u0456\u0440 (vw)', tFont: '\u0428\u0440\u0438\u0444\u0442', tFontDefault: '\u0417\u0430 \u0437\u0430\u043c\u043e\u0432\u0447\u0443\u0432\u0430\u043d\u043d\u044f\u043c',
+    tLog: '\u0416\u0443\u0440\u043d\u0430\u043b', tStatSubs: '\u041f\u0456\u0434\u043f\u0438\u0441\u043a\u0438', tStatMoney: '\u0414\u043e\u043d\u0430\u0442\u0438', tColSrc: '\u0414\u0436\u0435\u0440\u0435\u043b\u043e', tColWho: '\u0425\u0442\u043e', tColAmt: '\u0421\u0443\u043c\u0430', tColSec: '\u0427\u0430\u0441', tColAt: '\u041a\u043e\u043b\u0438',
+    tRunning: '\u0410\u043a\u0442\u0438\u0432\u043d\u0438\u0439', tPaused: '\u041f\u0430\u0443\u0437\u0430' }
+};
+window.I18N_DEFAULT = 'en';
+const $ = id => document.getElementById(id);
+function status(m, err) { $('status').className = 'status' + (err ? ' err' : ' ok'); $('status').textContent = m; }
+function fmt(ms) { ms = Math.max(0, ms | 0); const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60, p = n => String(n).padStart(2, '0');
+  return (h > 0 ? p(h) + ':' : '') + p(m) + ':' + p(ss); }
+function hex(s, def) { return /^#[0-9a-fA-F]{6}$/.test(s || '') ? s : (def || '#ffffff'); }
+const uah = n => Math.round(Number(n) || 0).toLocaleString('uk-UA') + ' \u20B4';
+let last = null, lastAt = 0;
+
+function preview() {
+  const fam = ($('font').value ? '"' + $('font').value + '", monospace' : '"JetBrains Mono", ui-monospace, monospace');
+  const t = $('pvT');
+  const ms = last ? (last.running ? last.remainingMs - (Date.now() - lastAt) : last.remainingMs) : 0;
+  t.textContent = fmt(ms);
+  t.style.color = hex($('color').value);
+  t.style.fontSize = (Number($('size').value) || 22) + 'cqw';
+  t.style.textShadow = '3px 3px 0 ' + ($('outline').value || '#000');
+  t.style.fontFamily = fam;
+  const p = $('pvPop');
+  p.style.color = hex($('accent').value);
+  p.style.textShadow = '2px 2px 0 ' + ($('outline').value || '#000');
+  p.style.fontFamily = fam;
+}
+['color','accent','size','outline','font'].forEach(id => $(id).addEventListener('input', preview));
+async function loadFonts() {
+  try { const d = await (await fetch('/api/fonts')).json();
+    $('font').innerHTML = '<option value="">' + window.t('tFontDefault') + '</option>' + (d.fonts || []).map(f => '<option value="' + f + '">' + f + '</option>').join('');
+  } catch {}
+}
+function setFont(name) { const sel = $('font'); name = name || '';
+  if (name && ![...sel.options].some(o => o.value === name)) { const o = document.createElement('option'); o.value = name; o.textContent = name; sel.append(o); }
+  sel.value = name; }
+
+function applyCfg(c) {
+  $('perAmount').value = c.perAmount ?? 10; $('perSeconds').value = c.perSeconds ?? 60;
+  $('minDonation').value = c.minDonation ?? 10; $('pollSeconds').value = c.pollSeconds ?? 60;
+  $('twitchTier1').value = c.twitchTier1 ?? 0; $('twitchTier2').value = c.twitchTier2 ?? 0; $('twitchTier3').value = c.twitchTier3 ?? 0;
+  $('color').value = hex(c.color); $('accent').value = hex(c.accent); $('outline').value = hex(c.outline, '#000000');
+  $('size').value = c.size ?? 22; setFont(c.font);
+  preview();
+}
+function paint(d) {
+  $('state').textContent = d.running ? window.t('tRunning') : window.t('tPaused');
+  $('state').className = 'pill' + (d.running ? ' run' : '');
+  $('statSubs').textContent = window.t('tStatSubs') + ': ' + (d.subs || 0);
+  $('statMoney').textContent = window.t('tStatMoney') + ': ' + uah(d.money || 0);
+  preview();
+  const tb = $('log').querySelector('tbody'); tb.innerHTML = '';
+  for (const e of (d.log || []).slice(0, 60)) { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td><td></td><td></td><td></td>';
+    tr.children[0].textContent = e.source; tr.children[1].textContent = e.label || '—';
+    tr.children[2].textContent = e.amount ? e.amount + ' ?' : '·';
+    tr.children[3].textContent = (e.seconds > 0 ? '+' : '') + e.seconds + 's';
+    tr.children[4].textContent = new Date(e.at).toLocaleString(); tb.append(tr); }
+}
+async function act(action, seconds) {
+  try { const r = await fetch('/api/timer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, seconds }) });
+    const d = await r.json(); last = d; paint(d); } catch {}
+}
+async function poll() { try { const d = await (await fetch('/api/timer')).json(); last = d; lastAt = Date.now(); paint(d); } catch {} }
+async function init() {
+  let cfg = {};
+  try { const d = await (await fetch('/api/timer')).json(); last = d; cfg = d.cfg || {}; } catch {}
+  await loadFonts();
+  applyCfg(cfg); setFont(cfg.font);
+  if (last) paint(last);
+}
+$('start').onclick = () => act('resume');
+$('pause').onclick = () => act('pause');
+$('reset').onclick = () => act('reset');
+$('setBtn').onclick = () => act('set', (Number($('setD').value) || 0) * 86400 + (Number($('setH').value) || 0) * 3600 + (Number($('setM').value) || 0) * 60 + (Number($('setS').value) || 0));
+$('addBtn').onclick = () => act('add', (Number($('addN').value) || 0) * (Number($('addU').value) || 1));
+$('subBtn').onclick = () => act('sub', (Number($('subN').value) || 0) * (Number($('subU').value) || 1));
+
+// Twitch keys + guide moved to the Setup page
+window.savePage = async () => {
+  const body = { perAmount: Number($('perAmount').value) || 0, perSeconds: Number($('perSeconds').value) || 0,
+    minDonation: Number($('minDonation').value) || 0, pollSeconds: Number($('pollSeconds').value) || 60,
+    twitchTier1: Number($('twitchTier1').value) || 0, twitchTier2: Number($('twitchTier2').value) || 0, twitchTier3: Number($('twitchTier3').value) || 0,
+    color: $('color').value, accent: $('accent').value, outline: $('outline').value, size: Number($('size').value) || 22,
+    font: $('font').value };
+  try { const r = await fetch('/api/timer/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const x = await r.json(); status(x.ok ? 'saved' : 'save error', !x.ok); } catch { status('save error', true); }
+};
+window.applyLang = () => { if (last) paint(last); };
+init(); setInterval(poll, 2000); setInterval(preview, 500);</script>
+</body>
+</html>

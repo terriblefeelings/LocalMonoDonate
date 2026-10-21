@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="uk" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LocalMonoDonate — статистика</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  .wrap{max-width:1140px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .toolbar .grow{flex:1;min-width:200px;max-width:320px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .stat{background:var(--card2);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px}
+  .stat .k{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .stat .v{font-size:22px;font-weight:800;margin-top:6px}
+  .bar2{height:9px;border-radius:6px;background:var(--field2);overflow:hidden;margin:12px 0 2px}
+  .bar2>i{display:block;height:100%;background:var(--accent)}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:900px){.cols{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  tr:last-child td{border-bottom:0}
+  .scroll{max-height:420px;overflow:auto}
+  .mini{padding:5px 11px;font-size:13px}
+  .seg2{display:flex;gap:4px}
+  .seg2 button{padding:4px 10px;font-size:12px;border-radius:8px}
+  .seg2 button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .an-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:12px 0 4px}
+  .an-cards .v{font-size:20px}
+  .an-cards .d{font-size:11px;margin-top:5px;color:var(--muted)}
+  .an-cards .d.up{color:#39d98a}.an-cards .d.down{color:#ff6b6b}
+  .an-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:900px){.an-grid{grid-template-columns:1fr}}
+  .an-block{margin-top:18px}
+  .an-h{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+  .an-bars{display:flex;align-items:stretch;gap:5px;height:140px}
+  .an-bars .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;min-width:0}
+  .an-bars .b .col{flex:1;width:100%;display:flex;align-items:flex-end}
+  .an-bars .b .col i{width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
+  .an-bars .b span{font-size:9px;color:var(--muted);white-space:nowrap}
+  .an-rows .r{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px}
+  .an-rows .r .nm{width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+  .an-rows .r .tr{flex:1;height:8px;background:var(--field2);border-radius:5px;overflow:hidden}
+  .an-rows .r .tr i{display:block;height:100%;background:var(--accent)}
+  .an-rows .r .am{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;flex:none;min-width:96px;text-align:right}
+  .an-stack{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--field2)}
+  .an-stack i{height:100%}
+  .an-lg{font-size:12.5px;margin-top:8px;color:var(--muted)}
+  .an-lg b{color:var(--fg);font-variant-numeric:tabular-nums}
+  .an-heat{display:grid;grid-template-columns:auto repeat(24,1fr);gap:3px;max-width:640px}
+  .an-heat .hd,.an-heat .rl{font-size:9px;color:var(--muted);text-align:center}
+  .an-heat .rl{text-align:left;padding-right:4px}
+  .an-heat .c{aspect-ratio:1;border-radius:2px;background:var(--field2)}
+  .an-note{margin-top:14px;font-size:11.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <div class="sec"><span class="n">01</span><span class="h" data-i18n="stats">Статистика</span><span class="sp"></span><span class="seg" id="langseg"></span></div>
+    <div class="body">
+      <div class="toolbar" style="padding:10px 0">
+        <button id="test" data-i18n="bTest">Тест</button>
+        <button id="refresh" data-i18n="bRefresh">Оновити банку</button>
+        <select id="jarSel" class="grow"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec"><span class="n">02</span><span class="h" id="jarTitle">Банка</span><span class="sp"></span><span class="hint" id="goal">—</span></div>
+    <div class="body">
+      <div class="cards" style="margin-top:12px">
+        <div class="stat"><div class="k" data-i18n="stBal">Баланс банки</div><div class="v" id="bal">—</div></div>
+        <div class="stat"><div class="k" data-i18n="stTotal">Всього зібрано</div><div class="v" id="total">—</div></div>
+        <div class="stat"><div class="k" data-i18n="stCount">Кількість донатів</div><div class="v" id="count">—</div></div>
+        <div class="stat"><div class="k" data-i18n="stBigToday">Найбільший сьогодні</div><div class="v" id="bigToday">—</div></div>
+        <div class="stat"><div class="k" data-i18n="stBig">Найбільший (весь час)</div><div class="v" id="big">—</div></div>
+      </div>
+      <div class="bar2"><i id="bar" style="width:0%"></i></div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="panel"><div class="sec"><span class="h" data-i18n="hRecent">Останні донати</span></div>
+        <div class="body"><div class="scroll"><table id="hist">
+          <thead><tr><th data-i18n="thName">Ім'я</th><th data-i18n="thAmount">Сума</th><th data-i18n="thMessage">Повідомлення</th><th data-i18n="thYt">YouTube</th></tr></thead>
+          <tbody><tr><td colspan="4" style="color:var(--muted)" data-i18n="empty">' + window.t('empty') + '</td></tr></tbody></table></div></div></div>
+    </div>
+    <div>
+      <div class="panel"><div class="sec"><span class="h" data-i18n="hTop">Топ 20 донаторів (весь час)</span></div>
+        <div class="body"><div class="scroll"><table id="top">
+          <thead><tr><th>#</th><th data-i18n="thName">Ім'я</th><th data-i18n="thAmount">Сума</th><th data-i18n="thDonations">Донатів</th></tr></thead>
+          <tbody><tr><td colspan="4" style="color:var(--muted)" data-i18n="empty">' + window.t('empty') + '</td></tr></tbody></table></div></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec"><span class="n">03</span><span class="h" data-i18n="anTitle">Аналітика</span><span class="sp"></span>
+      <span class="seg2" id="pseg">
+        <button data-d="7" data-i18n="anD7">7 дн</button>
+        <button data-d="30" class="on" data-i18n="anD30">30 дн</button>
+        <button data-d="90" data-i18n="anD90">90 дн</button>
+        <button data-d="0" data-i18n="anAll">Весь час</button>
+      </span>
+    </div>
+    <div class="body">
+      <div class="an-cards" id="anCards"></div>
+      <div class="an-grid">
+        <div><div class="an-h" data-i18n="anBuckets">Розподіл сум</div><div class="an-bars" id="anBuckets"></div></div>
+        <div><div class="an-h" data-i18n="anDow">Активність по днях тижня</div><div class="an-bars" id="anDow"></div></div>
+      </div>
+      <div class="an-block"><div class="an-h" data-i18n="anHour">Активність по годинах</div><div class="an-bars" id="anHour"></div></div>
+      <div class="an-grid">
+        <div><div class="an-h" data-i18n="anTopP">Топ донатерів (період)</div><div class="an-rows" id="anTopP"></div></div>
+        <div>
+          <div class="an-h" data-i18n="anReturn">Нові та повторні донатери</div><div id="anReturn"></div>
+          <div class="an-h" style="margin-top:18px" data-i18n="anFreq">Частота донатів</div><div class="an-rows" id="anFreq"></div>
+        </div>
+      </div>
+      <div class="an-block"><div class="an-h" data-i18n="anHeat">Теплова карта (день × година)</div><div class="an-heat" id="anHeat"></div></div>
+      <div class="an-note" data-i18n="anNote">Суми показано в UAH. Дані — з історії донатів банки.</div>
+    </div>
+  </div>
+</div>
+
+<script src="/i18n.js"></script>
+<script>
+window.I18N_DEFAULT = 'ua';
+window.I18N = {
+  en: { stats: 'Stats', bTest: 'Test', bRefresh: 'Refresh jar', stBal: 'Jar balance', stTotal: 'Total raised', stCount: 'Donations', stBigToday: 'Biggest today', stBig: 'Biggest (all time)', hRecent: 'Recent donations', hTop: 'Top 20 donors (all time)', thName: 'Name', thAmount: 'Amount', thMessage: 'Message', thDonations: 'Donations', thYt: 'YouTube', yes: 'Yes', no: 'No', empty: 'Empty', jar: 'Jar', goal: 'goal', noGoal: 'no goal', notFound: 'jar not found',
+    anTitle: 'Analytics', anD7: '7 days', anD30: '30 days', anD90: '90 days', anAll: 'All time', anBuckets: 'Amount distribution', anDow: 'Activity by weekday', anHour: 'Activity by hour', anTopP: 'Top donors (period)', anReturn: 'New vs returning donors', anFreq: 'Donation frequency', anHeat: 'Heatmap (weekday × hour)', anNote: 'Amounts in UAH. Data from the jar donation history.', anCount: 'Donations', anSum: 'Total', anAvg: 'Average donation', anUniq: 'Unique donors', anMsg: 'With message', anBest: 'Best day', anOnce: 'Once', anFew: '2–4 times', anMany: '5+ times', anNew: 'New', anReturning: 'Returning', anNoData: 'No data for this period' },
+  ua: { stats: 'Статистика', bTest: 'Тест', bRefresh: 'Оновити банку', stBal: 'Баланс банки', stTotal: 'Всього зібрано', stCount: 'Кількість донатів', stBigToday: 'Найбільший сьогодні', stBig: 'Найбільший (весь час)', hRecent: 'Останні донати', hTop: 'Топ 20 донаторів (весь час)', thName: "Ім'я", thAmount: 'Сума', thMessage: 'Повідомлення', thDonations: 'Донатів', thYt: 'YouTube', yes: 'Так', no: 'Ні', empty: 'Порожньо', jar: 'Банка', goal: 'ціль', noGoal: 'без цілі', notFound: 'банку не знайдено',
+    anTitle: 'Аналітика', anD7: '7 дн', anD30: '30 дн', anD90: '90 дн', anAll: 'Весь час', anBuckets: 'Розподіл сум', anDow: 'Активність по днях тижня', anHour: 'Активність по годинах', anTopP: 'Топ донатерів (період)', anReturn: 'Нові та повторні донатери', anFreq: 'Частота донатів', anHeat: 'Теплова карта (день × година)', anNote: 'Суми показано в UAH. Дані — з історії донатів банки.', anCount: 'Донатів', anSum: 'Загальна сума', anAvg: 'Середній донат', anUniq: 'Унікальних донатерів', anMsg: 'З повідомленням', anBest: 'Найкращий день', anOnce: 'Один раз', anFew: '2–4 рази', anMany: '5+ разів', anNew: 'Нові', anReturning: 'Повторні', anNoData: 'Немає даних за цей період' }
+};
+const $ = id => document.getElementById(id);
+Object.assign(window.I18N.ua, { thName: "Ім'я" });
+const uah = n => { n = Number(n) || 0; if (Math.abs(n) < 0.005) n = 0; return Math.round(n).toLocaleString('uk-UA') + ' \u20B4'; };
+let JARS = [], SEL = 0;
+function render() {
+  const j = JARS[SEL]; if (!j) return;
+  $('jarSel').innerHTML = JARS.map((x, i) => `<option value="${i}" ${i === SEL ? 'selected' : ''}>${(x.title || x.code || (window.t('jar') + ' ' + (i + 1)))}</option>`).join('');
+  $('jarTitle').textContent = j.title || j.code || window.t('jar');
+  $('bal').textContent = j.accountResolved ? uah((j.balance || 0) / 100) : '—';
+  const goal = (j.goal || 0) / 100;
+  $('goal').textContent = goal ? window.t('goal') + ' ' + uah(goal) : (j.accountResolved ? window.t('noGoal') : window.t('notFound'));
+  $('bar').style.width = (goal ? Math.min(100, (j.balance / j.goal) * 100) : 0).toFixed(1) + '%';
+  $('total').textContent = uah(j.stats.total); $('count').textContent = j.stats.count;
+  $('bigToday').textContent = uah(j.stats.biggestToday); $('big').textContent = uah(j.stats.biggest);
+  const htb = $('hist').querySelector('tbody'); htb.innerHTML = j.history.length ? '' : '<tr><td colspan="4" style="color:var(--muted)">' + window.t('empty') + '</td></tr>';
+  for (const h of j.history) { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td><td></td><td></td>';
+    const mc = tr.children[2];
+    mc.textContent = (h.message || '');
+    mc.style.whiteSpace = 'normal'; mc.style.wordBreak = 'break-word'; mc.style.maxWidth = '360px'; mc.style.verticalAlign = 'top';
+    tr.children[0].textContent = h.name; tr.children[1].textContent = uah(h.amount);
+    if (h.youtubeId) { const a = document.createElement('a'); a.href = 'https://youtu.be/' + h.youtubeId; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = window.t('yes'); a.style.color = 'var(--accent)'; tr.children[3].append(a); }
+    else { tr.children[3].textContent = window.t('no'); }
+    htb.append(tr); }
+  const ttb = $('top').querySelector('tbody'); ttb.innerHTML = j.top.length ? '' : '<tr><td colspan="4" style="color:var(--muted)">' + window.t('empty') + '</td></tr>';
+  j.top.forEach((x, i) => { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td><td></td><td></td>';
+    tr.children[0].textContent = (i + 1); tr.children[1].textContent = x.name; tr.children[2].textContent = uah(x.total); tr.children[3].textContent = x.count; ttb.append(tr); });
+}
+/* ---------------------------------------------------------------- analytics */
+const DAY = 86400000, DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+let PD = 30, HIST = [];
+const key = n => (n || '').trim().toLowerCase();
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+const dayKey = at => { const d = new Date(at); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const pct = (c, p) => p > 0 ? (c - p) / p * 100 : null;
+function bars(el, rows) { const mx = Math.max(1, ...rows.map(r => r.v));
+  el.innerHTML = rows.map(r => `<div class="b"><div class="col"><i style="height:${(r.v/mx*100).toFixed(1)}%"></i></div><span>${r.k}</span></div>`).join(''); }
+function card(k, v, delta, sub) {
+  let d = '';
+  if (delta !== undefined && delta !== null) { const up = delta >= 0;
+    d = `<div class="d ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(delta).toFixed(0)}%</div>`; }
+  else if (sub) { d = `<div class="d">${esc(sub)}</div>`; }
+  return `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div>${d}</div>`;
+}
+function row(name, val, max, right) {
+  return `<div class="r"><div class="nm">${esc(name)}</div><div class="tr"><i style="width:${(val/max*100).toFixed(1)}%"></i></div><div class="am">${right}</div></div>`;
+}
+function anRender() {
+  const now = Date.now(), from = PD ? now - PD * DAY : 0;
+  const items = (HIST || []).filter(h => h.at >= from);
+  const prev = PD ? (HIST || []).filter(h => h.at >= now - 2*PD*DAY && h.at < from) : [];
+  const scope = PD ? items : (HIST || []);
+  const sum = items.reduce((a,h) => a + h.amount, 0), cnt = items.length;
+  const pSum = prev.reduce((a,h) => a + h.amount, 0), pCnt = prev.length;
+  const uniq = new Set(items.map(h => key(h.name))).size;
+  const pUniq = new Set(prev.map(h => key(h.name))).size;
+  const msg = items.filter(h => (h.message || '').trim()).length;
+  const D = (c, p) => PD ? pct(c, p) : undefined;
+  const byDay = {}; for (const h of scope) { const k = dayKey(h.at); byDay[k] = (byDay[k] || 0) + h.amount; }
+  let bk = '', bv = 0; for (const k in byDay) if (byDay[k] > bv) { bv = byDay[k]; bk = k; }
+  $('anCards').innerHTML =
+    card(window.t('anCount'), cnt, D(cnt, pCnt)) +
+    card(window.t('anSum'), uah(sum), D(sum, pSum)) +
+    card(window.t('anAvg'), uah(cnt ? sum / cnt : 0)) +
+    card(window.t('anUniq'), uniq, D(uniq, pUniq)) +
+    card(window.t('anMsg'), cnt ? Math.round(msg / cnt * 100) + '%' : '—') +
+    card(window.t('anBest'), bv ? uah(bv) : '—', undefined, bk);
+  const B = [50,200,500,2000], bl = ['<50','50–200','200–500','500–2000','2000+'], bc = [0,0,0,0,0];
+  for (const h of items) { let i = B.findIndex(x => h.amount < x); if (i < 0) i = 4; bc[i]++; }
+  bars($('anBuckets'), bl.map((k,i) => ({ k, v: bc[i] })));
+  const dw = [0,0,0,0,0,0,0]; for (const h of items) dw[(new Date(h.at).getDay() + 6) % 7]++;
+  bars($('anDow'), DOW.map((k,i) => ({ k, v: dw[i] })));
+  const hw = new Array(24).fill(0); for (const h of items) hw[new Date(h.at).getHours()]++;
+  bars($('anHour'), hw.map((v,i) => ({ k: String(i).padStart(2,'0'), v })));
+  const tp = {}; for (const h of items) { const k = key(h.name); const e = tp[k] || (tp[k] = { n: h.name, t: 0, c: 0 }); e.t += h.amount; e.c++; }
+  const tv = Object.values(tp), tpl = tv.slice().sort((a,b) => b.t - a.t).slice(0,8);
+  const tmax = Math.max(1, ...tpl.map(x => x.t));
+  $('anTopP').innerHTML = tpl.length ? tpl.map(x => row(x.n, x.t, tmax, uah(x.t) + ' · ' + x.c)).join('')
+    : `<div class="an-lg">${window.t('anNoData')}</div>`;
+  const first = {}; for (const h of (HIST || [])) { const k = key(h.name); if (!(k in first) || h.at < first[k]) first[k] = h.at; }
+  let nw = 0, rt = 0; for (const h of items) (first[key(h.name)] >= from ? nw++ : rt++);
+  const tot = (nw + rt) || 1;
+  $('anReturn').innerHTML = items.length
+    ? `<div class="an-stack"><i style="width:${(nw/tot*100).toFixed(1)}%;background:var(--accent)"></i><i style="width:${(rt/tot*100).toFixed(1)}%;background:var(--field2)"></i></div>
+       <div class="an-lg"><b>${nw}</b> ${window.t('anNew')} · <b>${rt}</b> ${window.t('anReturning')}</div>`
+    : `<div class="an-lg">${window.t('anNoData')}</div>`;
+  const once = tv.filter(x => x.c === 1).length, few = tv.filter(x => x.c >= 2 && x.c <= 4).length, many = tv.filter(x => x.c >= 5).length;
+  const fmax = Math.max(1, once, few, many);
+  $('anFreq').innerHTML = [[window.t('anOnce'),once],[window.t('anFew'),few],[window.t('anMany'),many]].map(([k,v]) => row(k, v, fmax, v)).join('');
+  const heat = Array.from({ length: 7 }, () => new Array(24).fill(0));
+  for (const h of items) { const d = new Date(h.at); heat[(d.getDay()+6)%7][d.getHours()]++; }
+  const hmax = Math.max(1, ...heat.flat());
+  let html = '<div class="hd"></div>' + hw.map((_,i) => `<div class="hd">${i}</div>`).join('');
+  for (let r = 0; r < 7; r++) { html += `<div class="rl">${DOW[r]}</div>`;
+    for (let c = 0; c < 24; c++) { const v = heat[r][c];
+      const bg = v ? `color-mix(in srgb, var(--accent) ${Math.round(15 + 85*v/hmax)}%, var(--field2))` : 'var(--field2)';
+      html += `<div class="c" title="${DOW[r]} ${c}:00 — ${v}" style="background:${bg}"></div>`; } }
+  $('anHeat').innerHTML = html;
+}
+async function anLoad() { try { const r = await (await fetch('/api/history?jar=' + SEL)).json(); HIST = r.items || []; anRender(); } catch {} }
+window.applyLang = anRender;
+
+async function load() { try { const s = await (await fetch('/api/state')).json(); JARS = s.jars || []; if (SEL >= JARS.length) SEL = 0; render(); } catch {} }
+$('jarSel').onchange = e => { SEL = Number(e.target.value) || 0; render(); anLoad(); };
+$('test').onclick = async () => { await fetch('/api/test', { method: 'POST' }); };
+$('refresh').onclick = async () => { await fetch('/api/refresh', { method: 'POST' }); load(); anLoad(); };
+$('pseg').querySelectorAll('button').forEach(b => b.onclick = () => {
+  PD = Number(b.dataset.d) || 0;
+  $('pseg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  anRender();
+});
+window.mountLangSeg($('langseg')); window.applyI18n();
+load().then(anLoad); setInterval(load, 4000);
+</script>
+</body>
+</html>

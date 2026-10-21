@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>YouTube overlay</title>
+<style>html,body{margin:0;height:100%;background:transparent;overflow:hidden}#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}#stage>div{width:100%;height:100%}</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+const CFG = { videoMaxMs: 180000 };
+let RULES = [];
+async function loadSettings() { try { const s = await (await fetch('/api/state')).json(); if (s.overlay) Object.assign(CFG, s.overlay); if (s.notify && s.notify.rules) RULES = s.notify.rules; } catch {} }
+loadSettings(); setInterval(loadSettings, 5000);
+function pickStyle(amount, ruleId) {
+  if (ruleId) { const r = RULES.find(x => x.id === ruleId); if (r) return r.style || {}; }
+  for (const r of RULES) { if (r.id === 'default' || r.pool) continue; const mn = r.min || 0, mx = r.max || 0; if (amount + 1e-9 >= mn && (mx <= 0 || amount <= mx + 1e-9)) return r.style || {}; }
+  const pool = RULES.filter(r => r.id === 'default' || r.pool);
+  if (!pool.length) return {};
+  return pool[Math.floor(Math.random() * pool.length)].style || {};
+}
+let ytPromise = null;
+function loadYT() { if (ytPromise) return ytPromise;
+  ytPromise = new Promise(res => { if (window.YT && window.YT.Player) return res(); window.onYouTubeIframeAPIReady = () => res();
+    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s); }); return ytPromise; }
+async function playYT(host, id, maxMs) { await loadYT();
+  return new Promise(resolve => { let player, done = false;
+    const fin = () => { if (done) return; done = true; clearTimeout(timer); try { player && player.destroy(); } catch {} resolve(); };
+    const timer = setTimeout(fin, maxMs);
+    player = new YT.Player(host, { videoId: id, width: '100%', height: '100%', playerVars: { autoplay: 1, controls: 0, rel: 0, playsinline: 1, modestbranding: 1 },
+      events: { onReady: e => e.target.playVideo(), onStateChange: e => { if (e.data === YT.PlayerState.ENDED) fin(); }, onError: () => fin() } }); }); }
+const queue = []; let busy = false;
+function enqueue(d) { queue.push(d); if (!busy) pump(); }
+async function pump() { if (!queue.length) { busy = false; return; } busy = true; try { await play(queue.shift()); } catch (e) { console.warn(e); } pump(); }
+async function play(d) {
+  if (!d.youtubeId) return;
+  const N = pickStyle(d.amount || 0, d.ruleId);
+  if ((d.amount || 0) < (N.yt_min || 0)) return;   // youtube only above the threshold
+  const stage = document.getElementById('stage');
+  const host = document.createElement('div'); stage.append(host);
+  await playYT(host, d.youtubeId, CFG.videoMaxMs);
+  stage.innerHTML = '';
+}
+let lastId = 0, firstPoll = true;
+async function tick() {
+  try {
+    const d = await (await fetch('/api/poll?since=' + lastId)).json();
+    if (typeof d.last === 'number') lastId = d.last;
+    if (firstPoll) { firstPoll = false; setTimeout(tick, 800); return; }
+    const dons = (d.events || []).map(raw => { try { return JSON.parse(raw); } catch { return null; } }).filter(e => e && e.type === 'donation');
+    if (dons.length) await loadSettings();
+    for (const ev of dons) enqueue(ev.data);
+  } catch {}
+  setTimeout(tick, 800);
+}
+tick();
+</script>
+</body>
+</html>
