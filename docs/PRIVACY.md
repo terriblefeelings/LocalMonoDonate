@@ -1,101 +1,101 @@
-# Privacy policy — LocalMonoDonate
+# Політика приватності — LocalMonoDonate
 
-**Short version:** LocalMonoDonate runs entirely on your own Windows PC. There is **no backend
-server**, no account, no cloud sync and no telemetry. Everything it knows is stored in a folder on your
-computer, and the only network traffic is the requests needed to fetch your donations, deliver alerts
-and (optionally) talk to Twitch, StreamElements, Tailscale or a TTS provider.
+**Коротко:** LocalMonoDonate працює повністю на вашому Windows-ПК. **Сервера немає**, немає акаунта,
+хмарної синхронізації чи телеметрії. Усе, що застосунок знає, лежить у папці на вашому компʼютері, а
+мережеві запити — лише ті, що потрібні для отримання донатів, показу алертів і (опційно) роботи з
+Twitch, StreamElements, Tailscale чи TTS-провайдером.
 
-Last updated: 2026-10-21
+Оновлено: 2026-10-21
 
 ---
 
-## 1. Local by design
+## 1. Локальність за задумом
 
-- The application is a single executable. It starts a web server bound to `127.0.0.1` (and optionally a
-  public port through Tailscale) on your machine.
-- All state is written to `%APPDATA%\LocalMonoDonate\` on the same computer.
-- Nothing is uploaded to the author, to GitHub, or to any “LocalMonoDonate cloud”. There is no such
-  service.
-- Uninstalling = closing the app and deleting that folder.
+- Застосунок — один виконуваний файл. Він піднімає веб-сервер на `127.0.0.1` (і, за бажанням, публічний
+  порт через Tailscale) на вашій машині.
+- Увесь стан пишеться в `%APPDATA%\LocalMonoDonate\` на цьому ж компʼютері.
+- Нічого не надсилається авторові, у GitHub чи в «хмару LocalMonoDonate». Такої служби не існує.
+- Видалення = закрити застосунок і видалити цю папку.
 
-## 2. What is stored, where, and why
+## 2. Що зберігається, де і навіщо
 
-| Data | Location | Why it is needed |
+| Дані | Розташування | Навіщо потрібно |
 |---|---|---|
-| Nickname, overlay name, jar codes/names, feature switches, alert rules, timer/auction/bits settings, TTS mode, StreamElements account id and on/off state | `config.json` | to run the app the way you configured it |
-| Donation history: donor nickname (as typed or bank sender name), amount, message, matched code, timestamps | `data.json` | alerts, stats, top donors, replays |
-| Pending donations and their codes | `data.json` | to match a bank payment to the form it belongs to |
-| Timer and auction state (bids, lots, history) | `data.json` | to resume after a restart |
-| Images/videos you upload in the editors | `media\` | your own overlay/background assets |
-| Monobank API token | `<port>\token` | read-only access to your jars’ statements |
-| Twitch client id/secret + OAuth tokens | `<port>\twitch.json` | subs/channel-point events for the timer and auction |
-| StreamElements JWT | `<port>\streamelements.json` | posting tips/activities when enabled |
-| Operational log | `LocalMonoDonate.log` | debugging failed requests; contains donation events (name/amount) and HTTP errors |
+| Нік, назва оверлея, коди/назви банок, перемикачі функцій, правила алертів, налаштування таймера/аукціону/бітів, режим TTS, account id StreamElements і стан увімкнення | `config.json` | щоб застосунок працював так, як ви налаштували |
+| Історія донатів: нік донатера (як введено або імʼя відправника з банку), сума, повідомлення, код зіставлення, час | `data.json` | алерти, статистика, топ-донатери, replay |
+| Незавершені заявки та їхні коди | `data.json` | щоб зіставити банківський платіж із формою |
+| Стан таймера й аукціону (ставки, лоти, історія) | `data.json` | щоб продовжити після перезапуску |
+| Зображення/відео, завантажені в редакторах | `media\` | ваші власні ресурси оверлея/фону |
+| API-токен Monobank | `<port>\token` | доступ лише на читання до виписок ваших банок |
+| Twitch client id/secret + OAuth-токени | `<port>\twitch.json` | події сабів/channel points для таймера й аукціону |
+| StreamElements JWT | `<port>\streamelements.json` | надсилання тіпів/activity, коли увімкнено |
+| Операційний лог | `LocalMonoDonate.log` | діагностика невдалих запитів; містить події донатів (нік/сума) та HTTP-помилки |
 
-There is no database of “users”, no address book, no payment card data and no bank login. Monobank’s
-API only exposes statements for the jars you explicitly add, through the token you create.
+Тут немає бази «користувачів», адресної книги, даних платіжних карток чи банківського логіна. API
+Monobank віддає виписки лише за банками, які ви явно додали, через токен, який ви створили.
 
-## 3. What leaves your computer
+## 3. Що залишає ваш компʼютер
 
-The app contacts a service only for the feature that needs it:
+Застосунок звертається до сервісу лише тоді, коли цього потребує відповідна функція:
 
-| Destination | When | What is sent |
+| Призначення | Коли | Що надсилається |
 |---|---|---|
-| **Monobank API** (`api.monobank.ua`) | always (polling) | your `X-Token`, jar/statement requests |
-| **Tailscale** (`tailscale.com`, local CLI) | only if you press *Connect Tailscale* | device login; the app runs `tailscale up`/`funnel` locally |
-| **Twitch** (`id.twitch.tv`, `api.twitch.tv`, EventSub WebSocket) | only if Twitch is configured and enabled | client id/secret + OAuth token, EventSub subscriptions |
-| **StreamElements** (`api.streamelements.com`) | only if the SE switch is on | JWT, donation/sound-alert tip and activity data |
-| **Exchange-rate API** (`open.er-api.com`) | only if StreamElements is on | a plain rate request (no personal data) to convert UAH → USD for SE totals |
-| **Google Translate TTS** (via `gtts`) | only when a Google voice is used | the text to be spoken (donor name/amount/message per your read mode) |
-| **Azure Speech** (`*.tts.speech.microsoft.com`) | only if you configured Azure voices | text + your Azure key/region |
-| **Microsoft WebView2 bootstrapper** | only if WebView2 is missing on first start | a request to download the WebView2 runtime installer |
+| **Monobank API** (`api.monobank.ua`) | завжди (опитування) | ваш `X-Token`, запити виписок по банках |
+| **Tailscale** (`tailscale.com`, локальний CLI) | лише після *Connect Tailscale* | вхід пристрою; застосунок виконує `tailscale up`/`funnel` локально |
+| **Twitch** (`id.twitch.tv`, `api.twitch.tv`, EventSub WebSocket) | лише якщо Twitch налаштований і увімкнений | client id/secret + OAuth-токен, підписки EventSub |
+| **StreamElements** (`api.streamelements.com`) | лише з увімкненим перемикачем SE | JWT, дані тіпа/activity про донат чи звукове сповіщення |
+| **Сервіс курсів** (`open.er-api.com`) | лише з увімкненим StreamElements | звичайний запит курсу (без персональних даних) для конвертації UAH → USD |
+| **Google Translate TTS** (через `gtts`) | лише для голосу Google | текст, який треба озвучити (нік/сума/повідомлення згідно з read mode) |
+| **Azure Speech** (`*.tts.speech.microsoft.com`) | лише якщо налаштовано Azure | текст + ваш ключ/регіон Azure |
+| **Інсталятор WebView2 від Microsoft** | лише якщо WebView2 відсутній під час першого запуску | запит на завантаження інсталятора WebView2 |
 
-All requests use HTTPS (except the local Tailscale CLI). No request contains anything that is not
-listed above.
+Усі запити йдуть через HTTPS (крім локального Tailscale CLI). Жоден запит не містить нічого, крім
+переліченого вище.
 
-## 4. Tokens and credentials
+## 4. Токени та credentials
 
-- **Are they stored?** Yes — a credential has to be kept so the app can poll the bank and refresh Twitch
-  tokens after a restart. It is saved **only** in `%APPDATA%\LocalMonoDonate\<port>\`
-  (`token`, `twitch.json`, `streamelements.json`), per instance/port, on this computer.
-- **Where they are never stored:** `config.json` (it is written with an empty `token` field by design),
-  the project folder, the release zip, HTML/JS/CSS files, generated links, logs, or any server.
-- They are shown in the local admin page (`/setup`) as blurred text with a Show/Hide button. That page is
-  bound to `127.0.0.1` by default and is never part of the public listener.
-- They are sent **only** to the service they belong to (Monobank/Twitch/StreamElements/Azure), over
-  HTTPS, and are not forwarded anywhere else.
-- Deleting the matching file removes the app’s copy; revoke the token itself in the provider’s dashboard
-  if you want to invalidate it completely.
+- **Чи зберігаються вони?** Так — credential потрібно тримати, щоб застосунок міг опитувати банк і
+  оновлювати Twitch-токени після перезапуску. Він зберігається **лише** в
+  `%APPDATA%\LocalMonoDonate\<port>\` (`token`, `twitch.json`, `streamelements.json`), для кожного
+  інстансу/порту, на цьому компʼютері.
+- **Де вони ніколи не зберігаються:** `config.json` (записується з порожнім полем `token` — так задумано),
+  папка проєкту, релізний архів, HTML/JS/CSS-файли, згенеровані посилання, логи чи будь-який сервер.
+- Вони показуються на локальній адмін-сторінці (`/setup`) як розмитий текст із кнопкою Show/Hide. Ця
+  сторінка слухає `127.0.0.1` за замовчуванням і ніколи не входить до публічного слухача.
+- Вони надсилаються **лише** тому сервісу, якому належать (Monobank/Twitch/StreamElements/Azure), через
+  HTTPS, і не передаються нікуди більше.
+- Видалення відповідного файлу прибирає копію застосунку; щоб повністю анулювати токен — відкличте його
+  в панелі провайдера. Кожен credential можна видалити окремо.
 
-## 5. What is never collected
+## 5. Що ніколи не збирається
 
-- No analytics, telemetry, crash reporting, advertising IDs or fingerprinting.
-- No accounts, email addresses or phone numbers.
-- No browsing history, clipboard content, keystrokes or screenshots.
-- No card numbers, bank credentials, passwords or Monobank login.
-- No usage data sent to the author or to GitHub.
+- Без аналітики, телеметрії, звітів про збої, рекламних ідентифікаторів чи фінгерпринтингу.
+- Без акаунтів, email чи номерів телефону.
+- Без історії браузера, вмісту буфера обміну, натискань клавіш чи скріншотів.
+- Без номерів карток, банківських паролів чи логіна Monobank.
+- Без даних про використання, що надсилаються авторові чи в GitHub.
 
-## 6. Public exposure
+## 6. Публічний доступ
 
-If you connect Tailscale, the public listener serves **only** the donation page and the sound-alert
-deck. Admin pages are bound to `127.0.0.1` by default; overlays, the stats page and every credential
-stay local. The stats page is protected by a random code in its URL and is also not part of the public
-listener.
+Якщо ви підключили Tailscale, публічний слухач віддає **лише** сторінку донатів і колоду звукових
+сповіщень. Адмін-сторінки слухають `127.0.0.1` за замовчуванням; оверлеї, сторінка статистики та всі
+credentials лишаються локальними. Сторінка статистики захищена випадковим кодом у URL і також не входить
+до публічного слухача.
 
-## 7. Retention and deletion
+## 7. Зберігання та видалення
 
-- Data stays until you delete it. There is no remote copy.
-- Reset: close the app and delete `%APPDATA%\LocalMonoDonate\`.
-- Delete a single credential: remove the matching file in `<port>\`.
-- Logs: `LocalMonoDonate.log` is a plain text file you can delete at any time.
+- Дані лежать, доки ви їх не видалите. Віддаленої копії немає.
+- Скидання: закрийте застосунок і видаліть `%APPDATA%\LocalMonoDonate\`.
+- Видалити окремий credential: приберіть відповідний файл у `<port>\`.
+- Логи: `LocalMonoDonate.log` — звичайний текстовий файл, його можна видалити будь-коли.
 
-## 8. Third-party services
+## 8. Треті сторони
 
-Monobank, Twitch, StreamElements, Tailscale, Google, Microsoft and the exchange-rate service process
-requests under their own privacy policies. LocalMonoDonate cannot control what those providers log;
-it only sends what is described above, and only when the corresponding feature is used.
+Monobank, Twitch, StreamElements, Tailscale, Google, Microsoft і сервіс курсів обробляють запити за
+власними політиками приватності. LocalMonoDonate не контролює, що саме вони логують; він надсилає лише
+описане вище і лише тоді, коли відповідна функція використовується.
 
-## 9. Changes
+## 9. Зміни
 
-This document lives in the repository. Material changes to what the app stores or sends will be
-reflected here and noted in the release notes.
+Цей документ живе в репозиторії. Суттєві зміни в тому, що застосунок зберігає чи надсилає, будуть
+відображені тут і в нотатках до релізу.

@@ -1,329 +1,329 @@
 # LocalMonoDonate
 
-A local Windows app for **Monobank donation alerts** — it watches your Monobank jar(s) and turns
-incoming payments into on-stream alerts, a sound-alert deck, a marathon timer, an auction and
-StreamElements tips. Single Rust executable with a WebView2 UI; no cloud service, no account,
-nothing leaves your machine except the requests the app itself makes.
+Локальний Windows-застосунок для **донат-алертів Monobank**: він слідкує за вашою банкою (або кількома)
+і перетворює вхідні платежі на алерти в ефірі, колоду звукових сповіщень, таймер марафону, аукціон і
+тіпи в StreamElements. Один Rust-виконуваний файл із WebView2-інтерфейсом; без хмари, без акаунта —
+назовні йдуть лише ті запити, які робить сам застосунок.
 
-> Monobank is a Ukrainian bank. Amounts are shown in the jar's own currency (`₴`, `$`, `€`, …).
+> Monobank — український банк. Суми показуються у валюті банки (`₴`, `$`, `€`, …).
 
-## Quick start (2 minutes)
+## Швидкий старт (2 хвилини)
 
-1. Download **`MONOBANK-lite-*.zip`** from [Releases](../../releases), unpack it anywhere.
-2. Run **`LocalMonoDonate.exe`** — the Setup page opens.
-3. Paste your **Monobank API token** (<https://api.monobank.ua>) and **jar code**
-   (`send.monobank.ua/jar/<CODE>`), pick a **nickname**, press **Save**.
-4. OBS → Browser source → `http://<nickname>.overlay.localhost:8787/main` (alerts).
-5. Viewers → Setup → **Connect Tailscale** (installer included) and share
-   `https://<tailnet>/<nickname>/donation`.
-6. Optional: **Twitch** (Client ID/Secret → Authorize) and **StreamElements**
-   (account id + JWT → Test → enable in *Links*).
+1. Завантажте **`MONOBANK-lite-*.zip`** з [Releases](../../releases) і розпакуйте будь-де.
+2. Запустіть **`LocalMonoDonate.exe`** — відкриється сторінка налаштувань.
+3. Вставте **API-токен Monobank** (<https://api.monobank.ua>) і **код банки**
+   (`send.monobank.ua/jar/<CODE>`), задайте **нік**, натисніть **Зберегти**.
+4. OBS → Browser source → `http://<нік>.overlay.localhost:8787/main` (алерти).
+5. Для глядачів → Setup → **Підключити Tailscale** (інсталятор у комплекті) і поділіться
+   `https://<tailnet>/<нік>/donation`.
+6. За бажанням: **Twitch** (Client ID/Secret → Authorize) і **StreamElements**
+   (account id + JWT → Test → увімкнути в *Links*).
 
-> **Short on time?** Steps 1–3 are enough for local alerts; step 5 is what makes the page reachable by
-> viewers. Full walkthrough and every feature explained: **[FAQ — feature by feature](docs/FAQ.md)**.
+> **Немає часу?** Кроків 1–3 достатньо для локальних алертів; крок 5 робить сторінку донатів
+> доступною для глядачів. Повний посібник і опис кожної функції: **[FAQ](docs/FAQ.md)**.
 
-## Screenshots
+## Скріншоти
 
-| Setup | Donation page |
+| Налаштування | Сторінка донатів |
 |---|---|
-| ![Setup](docs/screenshots/setup.png) | ![Donation page](docs/screenshots/donation-page.png) |
+| ![Налаштування](docs/screenshots/setup.png) | ![Сторінка донатів](docs/screenshots/donation-page.png) |
 
-| Sound alerts (bits) | Alert styles |
+| Звукові сповіщення | Стилі алертів |
 |---|---|
-| ![Sound alerts](docs/screenshots/sound-alerts.png) | ![Alert styles](docs/screenshots/alert-styles.png) |
+| ![Звукові сповіщення](docs/screenshots/sound-alerts.png) | ![Стилі алертів](docs/screenshots/alert-styles.png) |
+
+![Адмінка таймера](docs/screenshots/timer-admin.png)
+![Аукціон](docs/screenshots/auction.png)
 
 ---
 
-## Features
+## Функції
 
-### Donations
-- Watches one or several Monobank jars (up to 5) using your personal API token.
-- Matches a payment to a pending donation **by code** embedded in the comment, or **by amount + recency**.
-- Pending donations are created by the public donation page (name, amount, message, YouTube link, voice, sound alert).
-- Every positive transaction is stored in local history and stats, matched or not.
-- Anonymous donations are supported (`Anonymous` when no nickname is given).
+### Донати
+- Слідкує за однією або кількома банками Monobank (до 5) через ваш персональний API-токен.
+- Зіставляє платіж із заявкою **за кодом** у коментарі або **за сумою + часом**.
+- Заявки створює публічна сторінка донатів (імʼя, сума, повідомлення, YouTube-посилання, голос, звукове сповіщення).
+- Кожна позитивна транзакція потрапляє в локальну історію та статистику — незалежно від зіставлення.
+- Анонімні донати підтримуються (`Anonymous`, якщо нік не вказано).
 
-### Alerts
-- Full-screen overlay (`/main`) with your own background image/video and alert styles per amount range.
-- Optional announcement voice and a sound/voice clip on the overlay.
-- Notify rules editor (`/notify`) — several amount ranges, each with its own style, timings and TTS text.
-- Optional YouTube request: a donation with a YouTube link plays the video in the overlay after the alert.
+### Алерти
+- Повноекранний оверлей (`/main`) з власним фоном (зображення/відео) і стилями за діапазонами сум.
+- Озвучення донату та звук/голос на оверлеї.
+- Редактор правил (`/notify`) — кілька діапазонів сум, у кожного свій стиль, тайминги й текст TTS.
+- YouTube-запит: донат із посиланням відтворює відео на оверлеї після алерта.
 
-### Sound alerts (bits)
-- A deck page (`/bits`) where viewers buy a sound/video/image "bit" for a fixed price.
-- Optional nickname field on that page: the alert is counted as `<nick> SA`, or `Anonymous SA` when empty — sound-alert spend stays separate from normal donations in stats and StreamElements.
-- Bits can also be attached to a normal donation on the donation page.
+### Звукові сповіщення (біти)
+- Сторінка колоди (`/bits`), де глядач купує звук/відео/зображення за фіксованою ціною.
+- Необовʼязкове поле ніка: алерт зараховується як `<нік> SA`, без ніка — `Anonymous SA`. Так витрати на
+  звукові сповіщення не змішуються зі звичайними донатами в статистиці та StreamElements.
+- Біт можна додати й до звичайного донату на сторінці донатів.
 
-### Marathon timer
-- Adds time per donation (`amount / per_amount * per_seconds`).
-- Adds time for Twitch subs, gifted subs and resubs (tiers 1/2/3 configurable).
-- Start / pause / add / subtract / reset from the admin page (`/timeradmin`); overlay at `/timer`.
+### Таймер марафону
+- Додає час за донат (`сума / per_amount * per_seconds`).
+- Додає час за Twitch-саби, подарункові саби та ресаби (тайми для тірів 1/2/3 налаштовуються).
+- Керування: старт / пауза / додати / відняти / скинути на `/timeradmin`; оверлей — `/timer`.
 
-### Auction
-- Bids from donations, channel-point redemptions and manual entries.
-- Optional lots, pinning, adjustments, source filter and dedup; separate auction UI (`/auction`).
-- Winner picking, timers and history are kept locally.
+### Аукціон
+- Ставки з донатів, Twitch channel points і вручну.
+- Лоти, закріплення, коригування, фільтр джерел і дедуплікація; окремий інтерфейс (`/auction`).
+- Переможець, таймери й історія зберігаються локально.
 
 ### Twitch
-- Local OAuth (no public redirect needed) + EventSub over WebSocket — **no Cloudflare worker**.
-- Reads subs/gifted subs/resubs for the timer and channel-point redemptions for the auction.
-- Can create the channel-point reward(s) for you.
+- Локальний OAuth (публічний редірект не потрібен) + EventSub через WebSocket — **без Cloudflare worker**.
+- Читає саби/подарункові саби/ресаби для таймера та channel-point редемпшени для аукціону.
+- Може сам створити нагороди channel points.
 
 ### StreamElements
-- Mirrors every live donation and sound alert as a StreamElements **tip** (right currency) so the SE
-  alert box can play, plus a matching activity so it appears in the **Activity feed** and dashboard
-  stats (converted to USD, since SE totals are USD-only).
-- Tippers are grouped by **nickname only**: the same nickname is one tipper regardless of card or
-  email, and two different nicknames never merge.
-- Hard on/off switch — disabled means the app sends StreamElements nothing at all.
+- Кожен живий донат і звукове сповіщення дублюються як **тіп** у StreamElements (у реальній валюті),
+  щоб грав алерт-бокс SE, плюс activity — для стрічки активності та статистики дашборда
+  (у USD, бо підсумки SE ведуться лише в USD).
+- Тіпери групуються **лише за ніком**: один нік — один тіпер, різні ніки ніколи не зливаються.
+- Жорсткий перемикач: вимкнено — застосунок не надсилає в StreamElements нічого.
 
-### Voices (TTS)
-- **Default: Google Ukrainian + Google English** — free, no key, needs internet.
-- **Azure (optional):** paste your own Speech key and region in *Alerts → voice set*; Azure voices
-  only appear in the picker when both are filled in.
-- **Custom StyleTTS2-UA voices:** only in full builds that include the ~157 MB StyleTTS2 model.
-  The lite release ships Google/Azure only, so the “custom” voice set is hidden automatically.
+### Голоси (TTS)
+- **За замовчуванням: Google українська + Google англійська** — безкоштовно, без ключа, потрібен інтернет.
+- **Azure (опційно):** вставте власний ключ Speech і регіон у *Alerts → voice set*; голоси Azure
+  зʼявляться у списку лише після цього.
+- **Кастомні голоси StyleTTS2-UA:** лише в повних збірках із моделлю StyleTTS2 (~157 МБ). У lite-релізі
+  є тільки Google/Azure, тому набір «custom» автоматично ховається.
 
-### Publishing & helpers
-- **Tailscale is the supported way to make the donation page public** (see below), bundled installer included.
-- Local `*.localhost` links for every page, so OBS can use clean URLs.
-- EN / UA interface, switchable at runtime.
-- Background media, custom fonts, grid sizes for the deck, etc.
+### Публікація та помічники
+- **Tailscale — рекомендований спосіб зробити сторінку донатів публічною** (інсталятор у комплекті).
+- Локальні `*.localhost`-посилання для кожної сторінки — зручно для OBS.
+- Інтерфейс EN / UA з перемиканням на ходу.
+- Фони, шрифти, розмір сітки колоди тощо.
 
 ---
 
-## Install (Windows 10/11 x64)
+## Встановлення (Windows 10/11 x64)
 
-Grab the latest **MONOBANK-lite-*.zip** from [Releases](../../releases), unpack it anywhere and run
+Візьміть останній **MONOBANK-lite-*.zip** з [Releases](../../releases), розпакуйте будь-де та запустіть
 `LocalMonoDonate.exe`.
 
-The zip is self-contained:
+Архів самодостатній:
 
-| Included | Why |
+| Що всередині | Навіщо |
 |---|---|
-| `LocalMonoDonate.exe` | the app |
-| `WebView2Loader.dll` | WebView2 hosting |
-| `MicrosoftEdgeWebview2Setup.exe` | silent install if WebView2 is missing |
-| `tailscale-setup.msi` | one-click public donation page |
-| `tts-engine\` | portable Python + Google/Azure voices (no custom StyleTTS voices) |
-| `config.example.json` | shape reference only — the app never reads it |
+| `LocalMonoDonate.exe` | застосунок |
+| `WebView2Loader.dll` | хостинг WebView2 |
+| `MicrosoftEdgeWebview2Setup.exe` | тихе встановлення WebView2, якщо його немає |
+| `tailscale-setup.msi` | публічна сторінка донатів одним кліком |
+| `tts-engine\` | портативний Python + голоси Google/Azure (без кастомних StyleTTS) |
+| `config.example.json` | лише приклад структури — застосунок його не читає |
 
-No Node, no Python, no Rust, no installer. Settings and tokens are created on first run in
-`%APPDATA%\LocalMonoDonate\` — never in the app folder.
+Node, Python, Rust та інсталятор не потрібні. Налаштування й токени створюються під час першого запуску
+в `%APPDATA%\LocalMonoDonate\` — ніколи в папці застосунку.
 
-> SmartScreen may warn because the exe is unsigned. “More info → Run anyway”.
-
----
-
-## First-time setup
-
-1. **Monobank token** — get a personal token at <https://api.monobank.ua> (Monobank app → Settings → API).
-   Paste it into *Setup → Monobank API token*.
-2. **Jar** — copy only the code from your jar link: `send.monobank.ua/jar/<CODE>`. Add it under
-   *Setup → Jar code(s)*. Mark it “My jar” (third-party jars only get a payment link, no tracking).
-3. **Nickname** — used in every local link (`<nickname>.localhost`). Only links with this exact prefix
-   work; rename it and old links stop working (404).
-4. **Save**. The donation page is at `http://<nickname>.donate.localhost:8787/banka`.
-5. **Tailscale — required for viewers.** A page on your PC is not reachable from a phone or another
-   network. Press *Connect Tailscale* (the installer ships next to the exe), log in once, and the
-   donation page is published at `https://<tailnet>/<nickname>/donation`.
-6. *(Optional)* **Twitch** — create an app at <https://dev.twitch.tv/console/apps> (confidential),
-   add the redirect URL shown in Setup, paste Client ID/Secret, press *Authorize Twitch*.
-7. *(Optional)* **StreamElements** — Settings → Account → copy the account id and the JWT (API token).
-   Paste both into the StreamElements panel and press *Test connection*; enable the switch in *Links*.
-
-Without a token/jar the app still runs, but the donor page shows “No jar configured” and keeps the
-Pay button disabled.
-
-### Why Tailscale is required
-
-`*.localhost` links only resolve on the streamer's own PC — OBS can use them, viewers cannot.
-Tailscale Funnel gives you a free public HTTPS URL with no domain, no port forwarding and no CGNAT
-problems. The app drives the Tailscale CLI: one click installs (bundled MSI), one login, and it keeps
-the funnel pointed at the public port. Advanced users can replace it with their own reverse proxy and
-`publicBase`/`publicPort` settings, but Tailscale is what the UI and links are built around.
+> SmartScreen може попередити, бо exe не підписаний. «Докладніше → Виконати все одно».
 
 ---
 
-## Pages
+## Перше налаштування
 
-| Page | Local link | Public via Tailscale |
+1. **Токен Monobank** — отримайте персональний токен на <https://api.monobank.ua> (Monobank → Налаштування → API).
+   Вставте його в *Setup → Monobank API token*.
+2. **Банка** — скопіюйте лише код із посилання `send.monobank.ua/jar/<CODE>`. Додайте його в
+   *Setup → Jar code(s)*. Позначте «My jar» (для сторонніх банок буде лише посилання на оплату, без трекінгу).
+3. **Нік** — використовується в усіх локальних посиланнях (`<нік>.localhost`). Працюють лише посилання
+   з цим префіксом; після зміни ніка старі посилання дають 404.
+4. **Збережіть**. Сторінка донатів: `http://<нік>.donate.localhost:8787/banka`.
+5. **Tailscale — обовʼязково для глядачів.** Сторінка на вашому ПК недоступна з телефона чи іншої мережі.
+   Натисніть *Підключити Tailscale* (інсталятор лежить поруч із exe), увійдіть один раз — і сторінка
+   донатів стане доступною за `https://<tailnet>/<нік>/donation`.
+6. *(Опційно)* **Twitch** — створіть застосунок на <https://dev.twitch.tv/console/apps> (confidential),
+   додайте редірект із Setup, вставте Client ID/Secret і натисніть *Authorize Twitch*.
+7. *(Опційно)* **StreamElements** — Settings → Account → скопіюйте account id і JWT (API token).
+   Вставте в панель StreamElements, натисніть *Test connection*, увімкніть перемикач у *Links*.
+
+Без токена/банки застосунок теж запускається, але сторінка донатів покаже «No jar configured», а кнопка
+оплати буде неактивною.
+
+### Чому Tailscale обовʼязковий
+
+Посилання `*.localhost` резолвляться лише на ПК стрімера — OBS їх бачить, глядачі ні. Tailscale Funnel
+дає безкоштовну публічну HTTPS-адресу без домену, пробросу портів і проблем із CGNAT. Застосунок керує
+Tailscale CLI: один клік на встановлення (MSI у комплекті), один вхід — і він тримає funnel на
+публічному порту. Досвідчені користувачі можуть замінити це власним реверс-проксі та `publicBase`/`publicPort`,
+але UI й посилання розраховані саме на Tailscale.
+
+---
+
+## Сторінки
+
+| Сторінка | Локальне посилання | Публічно через Tailscale |
 |---|---|---|
-| Setup | `http://localhost:8787/setup` | – |
-| Donation page | `http://<nick>.donate.localhost:8787/banka` | `https://<tailnet>/<nick>/donation` |
-| Sound alerts (bits) | `http://<nick>.donate.localhost:8787/bits` | `https://<tailnet>/<nick>/soundalerts` |
-| Alert overlay (OBS) | `http://<nick>.overlay.localhost:8787/main` | – |
-| Bits overlay | `http://<nick>.overlay.localhost:8787/bits` | – |
-| Timer overlay | `http://<nick>.overlay.localhost:8787/timer` | – |
-| YouTube overlay | `http://<nick>.overlay.localhost:8787/youtube` | – |
-| Auction UI | `http://<nick>.auction.localhost:8787/` | – |
-| Stats page | `http://<nick>.<statsCode>.localhost:8787/stats` | – |
-| Notify rules | `http://localhost:8787/notify` | – |
-| Auction settings | `http://localhost:8787/auctionsettings` | – |
-| Timer admin | `http://localhost:8787/timeradmin` | – |
-| Donation page editor | `http://localhost:8787/donateedit` | – |
-| Bits editor | `http://localhost:8787/bitsedit` | – |
+| Налаштування | `http://localhost:8787/setup` | – |
+| Сторінка донатів | `http://<нік>.donate.localhost:8787/banka` | `https://<tailnet>/<нік>/donation` |
+| Звукові сповіщення | `http://<нік>.donate.localhost:8787/bits` | `https://<tailnet>/<нік>/soundalerts` |
+| Оверлей алертів (OBS) | `http://<нік>.overlay.localhost:8787/main` | – |
+| Оверлей бітів | `http://<нік>.overlay.localhost:8787/bits` | – |
+| Оверлей таймера | `http://<нік>.overlay.localhost:8787/timer` | – |
+| Оверлей YouTube | `http://<нік>.overlay.localhost:8787/youtube` | – |
+| Аукціон | `http://<нік>.auction.localhost:8787/` | – |
+| Статистика | `http://<нік>.<statsCode>.localhost:8787/stats` | – |
+| Правила алертів | `http://localhost:8787/notify` | – |
+| Налаштування аукціону | `http://localhost:8787/auctionsettings` | – |
+| Адмінка таймера | `http://localhost:8787/timeradmin` | – |
+| Редактор сторінки донатів | `http://localhost:8787/donateedit` | – |
+| Редактор бітів | `http://localhost:8787/bitsedit` | – |
 
-The public listener only serves the donation page and the sound-alert deck — no admin pages.
+Публічний слухач віддає лише сторінку донатів і колоду звукових сповіщень — жодних адмін-сторінок.
 
 ---
 
-## Configuration
+## Конфігурація
 
-`config.json` (in `%APPDATA%\LocalMonoDonate\`) keeps non-secret settings: nickname, overlay name,
-jar list/names/“mine” flags, alert rules, timer, auction, bits, features, StreamElements account id
-and on/off state, TTS mode/voice.
+`config.json` (у `%APPDATA%\LocalMonoDonate\`) зберігає **не секретні** налаштування: нік, назву оверлея,
+список банок/назви/прапорці «моя», правила алертів, таймер, аукціон, біти, перемикачі функцій,
+account id StreamElements і стан увімкнення, режим/голос TTS.
 
-**Secrets are stored separately, per instance/port — this is where the app keeps them so it can poll
-and authorise without asking again:**
+**Секрети зберігаються окремо, для кожного інстансу/порту — саме там застосунок тримає їх, щоб
+працювати після перезапуску без повторного вводу:**
 
 ```
-%APPDATA%\LocalMonoDonate\<port>\token                 Monobank API token
-%APPDATA%\LocalMonoDonate\<port>\twitch.json           Twitch client id/secret + OAuth tokens
+%APPDATA%\LocalMonoDonate\<port>\token                 API-токен Monobank
+%APPDATA%\LocalMonoDonate\<port>\twitch.json           Twitch client id/secret + OAuth-токени
 %APPDATA%\LocalMonoDonate\<port>\streamelements.json   StreamElements JWT
 ```
 
-The setup page shows every credential as text, blurred by default, with a Show/Hide button.
-Deleting one of those files resets just that credential.
+Сторінка налаштувань показує кожен credential як текст, розмитий за замовчуванням, із кнопкою Show/Hide.
+Видалення файлу скидає лише цей credential.
 
-Other paths:
+Інші шляхи:
 
 ```
-%APPDATA%\LocalMonoDonate\data.json    local state: jars, history, timer, auction
-%APPDATA%\LocalMonoDonate\media\       images/videos uploaded in the editors
+%APPDATA%\LocalMonoDonate\data.json    стан: банки, історія, таймер, аукціон
+%APPDATA%\LocalMonoDonate\media\       зображення/відео, завантажені в редакторах
 %APPDATA%\LocalMonoDonate\LocalMonoDonate.log
 ```
 
-Ports: `8787` (app), `8788` (auction), `8080` (public/Tailscale).
+Порти: `8787` (застосунок), `8788` (аукціон), `8080` (публічний/Tailscale).
 
 ---
 
-## Build from source
+## Збірка з вихідного коду
 
-Requirements: Rust (stable), MSVC build tools, WebView2 runtime, Node 18+ only for the HTTP tests.
+Потрібні: Rust (stable), MSVC build tools, WebView2 runtime; Node 18+ — лише для HTTP-тестів.
 
 ```powershell
 cargo build --release
-# stage a clean distributable (exe + WebView2 + tailscale msi + tts-engine; no secrets/config)
-powershell -File pack.ps1 -WithTts -TtsEngine <path-to-lite-tts-engine>
-# output: dist\MONOBANK-lite-<version>.zip
+# чиста збірка для роздачі (exe + WebView2 + tailscale msi + tts-engine; без секретів/конфігу)
+powershell -File pack.ps1 -WithTts -TtsEngine <шлях-до-lite-tts-engine>
+# результат: dist\MONOBANK-lite-<version>.zip
 ```
 
-`include_str!` embeds every file in `public/` into the exe — **rebuild after editing HTML/JS/CSS**.
+`include_str!` вбудовує всі файли з `public/` у exe — **після редагування HTML/JS/CSS потрібна перезбірка**.
 
-The portable `tts-engine` (venv2 + ffmpeg + serve.py, ~260 MB) and the Tailscale MSI are not stored in
-git; the release zip contains them.
+Портативний `tts-engine` (venv2 + ffmpeg + serve.py, ~260 МБ) і Tailscale MSI не зберігаються в git —
+вони є в релізному архіві.
 
-### Tests
+### Тести
 
 ```powershell
 cargo test --release
 
 cd AUC
-$env:LMD_DATA = "$env:TEMP\lmd-tests"   # keep tests off the real profile
-node _alltest.mjs       # 179 HTTP assertions: pages, APIs, auction, donations, timer, bits
-node combotest.mjs      # 33 auction/timer combinations
-node _deeptest.mjs      # browser click-through (needs playwright-core installed)
-node capture_pages.mjs  # screenshots
+$env:LMD_DATA = "$env:TEMP\lmd-tests"   # щоб тести не чіпали реальний профіль
+node _alltest.mjs       # 179 HTTP-перевірок: сторінки, API, аукціон, донати, таймер, біти
+node combotest.mjs      # 33 комбінації аукціону/таймера
+node _deeptest.mjs      # кліки в браузері (потрібен playwright-core)
+node capture_pages.mjs  # скріншоти
 ```
 
 ---
 
-## Project layout
+## Структура проєкту
 
 ```
-src/main.rs            window, WebView2, startup wiring
-src/app.rs             Ctx: donations, matching, alerts, timer/auction hooks
-src/model.rs           config/state models, paths, secrets, links, routing
-src/web.rs             tiny_http server, pages and /api routes
-src/mono.rs            Monobank client-info + statement client
-src/twitch.rs          OAuth + EventSub (subs, channel points)
-src/streamelements.rs  tips + activity (nickname-based identity, USD conversion)
-src/tts.rs             TTS daemon client (Google/Azure/StyleTTS)
-src/auction.rs         auction engine
-src/tailscale.rs       funnel/public link helper
-public/                embedded pages, overlays and assets
-AUC/                   Node HTTP test-suite
-pack.ps1               clean distributable builder
-docs/screenshots/      README images
+src/main.rs            вікно, WebView2, запуск сервісів
+src/app.rs             Ctx: донати, зіставлення, алерти, таймер/аукціон
+src/model.rs           конфіг/стан, шляхи, секрети, посилання, роутинг
+src/web.rs             tiny_http сервер, сторінки та /api
+src/mono.rs            клієнт Monobank (client-info + statements)
+src/twitch.rs          OAuth + EventSub (саби, channel points)
+src/streamelements.rs  тіпи + activity (ідентичність за ніком, конвертація в USD)
+src/tts.rs             клієнт TTS-демона (Google/Azure/StyleTTS)
+src/auction.rs         рушій аукціону
+src/tailscale.rs       допоміжник для funnel/публічного посилання
+public/                вбудовані сторінки, оверлеї та ресурси
+AUC/                   Node-набір HTTP-тестів
+pack.ps1               збірка чистого дистрибутива
+docs/screenshots/      зображення для README
 ```
 
 ---
 
-## Troubleshooting
+## Проблеми та рішення
 
-| Symptom | Fix |
+| Симптом | Що робити |
 |---|---|
-| `Unknown 'X-Token'` in the log | the Monobank token is wrong/revoked — paste a fresh one |
-| Donation page says “No jar configured” | add a jar under Setup and Save |
-| Old link opens after renaming the nick | by design it now returns 404 — copy the new link |
-| Viewers can't open the donation page | connect Tailscale (public URL), `*.localhost` is local-only |
-| No StreamElements tips | enable the StreamElements switch in *Links*, run *Test connection* |
-| No voice | TTS engine missing or Google is unreachable; Azure needs a key + region |
-| WebView2 error on start | install the WebView2 runtime (the app runs the bundled bootstrapper silently) |
-| Port already in use | change `port` in `config.json` |
+| `Unknown 'X-Token'` у лозі | токен Monobank неправильний/відкликаний — вставте новий |
+| Сторінка донатів каже «No jar configured» | додайте банку в Setup і збережіть |
+| Старе посилання відкривається після зміни ніка | так і має бути — 404; скопіюйте нове посилання |
+| Глядачі не можуть відкрити сторінку донатів | підключіть Tailscale (публічна адреса), `*.localhost` — лише локально |
+| Немає тіпів у StreamElements | увімкніть перемикач у *Links*, натисніть *Test connection*, перевірте лог |
+| Немає голосу | немає TTS-рушія або Google недоступний; для Azure потрібні ключ і регіон |
+| Помилка WebView2 під час старту | встановіть WebView2 (застосунок запускає вбудований інсталятор тихо) |
+| Порт зайнятий | змініть `port` у `config.json` |
 
-Logs: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.
+Логи: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.
 
 ---
 
-## Privacy
+## Приватність
 
-**There is no server.** LocalMonoDonate is a local application: everything it knows — settings, jar list,
-donation history, timer/auction state, uploaded media — is stored in `%APPDATA%\LocalMonoDonate\` on
-your own computer and is never uploaded to the author or to any cloud service.
+**Сервера немає.** LocalMonoDonate — локальний застосунок: усе, що він знає (налаштування, банки,
+історія донатів, стан таймера/аукціону, завантажені медіа), зберігається в `%APPDATA%\LocalMonoDonate\`
+на вашому компʼютері й нікуди не вивантажується.
 
-- It contacts **only the APIs required for the features you enable**: Monobank (statements) and,
-  optionally, Tailscale, Twitch, StreamElements, an exchange-rate service and Google/Azure TTS.
-- It stores **only what is needed to show alerts and stats**: donor nickname, amount, message, matched
-  code and timestamps — no user profiles, no browsing data, no card or bank credentials, no analytics,
-  no telemetry.
-- **Credentials are stored locally** so the app can keep working after a restart — Monobank token,
-  Twitch client secret/tokens and StreamElements JWT live only in `%APPDATA%\LocalMonoDonate\<port>\`
-  (never in `config.json`, the project folder, HTML/JS, links, logs or any server). They appear in the
-  local admin page as blurred text with Show/Hide and are sent only to the service they belong to, over
-  HTTPS.
-- The **public listener** exposes only the donation page and the sound-alert deck; admin pages, overlays
-  and every token stay local.
-- **Delete everything** by closing the app and removing `%APPDATA%\LocalMonoDonate\`.
+- Застосунок звертається **лише до API, потрібних для увімкнених функцій**: Monobank (виписки) і, за
+  бажанням, Tailscale, Twitch, StreamElements, сервіс курсів валют і Google/Azure TTS.
+- Зберігає **лише те, що потрібно для алертів і статистики**: нік донатера, суму, повідомлення, код
+  зіставлення й час — без профілів, історії браузера, даних карток чи банківських паролів, без аналітики
+  й телеметрії.
+- **Credentials** (токен Monobank, Twitch secret/токени, StreamElements JWT) зберігаються локально в
+  `%APPDATA%\LocalMonoDonate\<port>\` (ніколи в `config.json`, папці проєкту, HTML/JS, посиланнях, логах
+  чи на сервері), показуються в адмінці розмитими з Show/Hide і надсилаються лише відповідному API через HTTPS.
+- **Публічний слухач** віддає лише сторінку донатів і колоду звукових сповіщень; адмінка, оверлеї та
+  всі токени залишаються локальними.
+- **Видалити все** — закрити застосунок і видалити `%APPDATA%\LocalMonoDonate\`.
 
-Full statement — what is stored, what is sent where, retention and third parties:
+Повна політика — що зберігається, куди надсилається, строки зберігання:
 **[docs/PRIVACY.md](docs/PRIVACY.md)**.
 
 ---
 
 ## FAQ
 
-The complete guide for every feature is in **[docs/FAQ.md](docs/FAQ.md)**. The most common questions:
+Повний посібник за кожною функцією — **[docs/FAQ.md](docs/FAQ.md)**. Найчастіші питання:
 
-| Question | Answer |
+| Питання | Відповідь |
 |---|---|
-| Minimum setup? | Monobank token + one jar code in *Setup*, then Save. |
-| Which link do I give viewers? | `https://<tailnet>/<nick>/donation` (Tailscale). `*.localhost` is local-only. |
-| How is a payment matched? | Code in the comment (`донат сповіщення <code>`), else amount + last hour. |
-| No alert on the overlay? | Overlay enabled in *Links*, correct OBS URL, browser source 1920×1080. |
-| Donation page says “No jar configured”? | Add a jar and press Save; the Pay button stays disabled otherwise. |
-| No sound / voice? | `tts-engine` next to the exe; Google needs internet, Azure needs key + region. |
-| Nothing in StreamElements? | Enable the switch in *Links*, run *Test connection*, check the log. |
-| Same person counts twice in SE? | SE groups by nickname only; `pendra` and `pependra` are two donors by design. |
-| Sound alerts count separately? | Yes — they are recorded as `<nick> SA` / `Anonymous SA`. |
-| Where are my settings/secrets? | `%APPDATA%\LocalMonoDonate\config.json` and `<port>\token`, `twitch.json`, `streamelements.json`. |
-| How do I update? | Replace the exe (and `tts-engine` if changed); settings stay in `%APPDATA%`. |
-| How do I reset? | Close the app, delete `%APPDATA%\LocalMonoDonate`. |
+| Мінімум для роботи? | Токен Monobank + код банки в *Setup*, потім Зберегти. |
+| Яке посилання давати глядачам? | `https://<tailnet>/<нік>/donation` (Tailscale). `*.localhost` — лише локально. |
+| Як зіставляється платіж? | Код у коментарі (`донат сповіщення <code>`), інакше — сума + остання година. |
+| Немає алерта на оверлеї? | Оверлей увімкнено в *Links*, правильний URL в OBS, джерело 1920×1080. |
+| «No jar configured»? | Додайте банку й натисніть Зберегти; інакше кнопка оплати неактивна. |
+| Немає звуку/голосу? | `tts-engine` поруч із exe; Google потребує інтернету, Azure — ключа й регіону. |
+| Нічого в StreamElements? | Увімкніть перемикач у *Links*, натисніть *Test connection*, перевірте лог. |
+| Один донатер рахується двічі? | SE групує лише за ніком: `pendra` і `pependra` — різні донатери. |
+| Звукові сповіщення окремо? | Так — вони записуються як `<нік> SA` / `Anonymous SA`. |
+| Де налаштування й секрети? | `%APPDATA%\LocalMonoDonate\config.json` та `<port>\token`, `twitch.json`, `streamelements.json`. |
+| Як оновити? | Замініть exe (і `tts-engine`, якщо змінився); налаштування лишаються в `%APPDATA%`. |
+| Як скинути? | Закрийте застосунок і видаліть `%APPDATA%\LocalMonoDonate`. |
 
-## Credits & disclaimer
+## Автори та застереження
 
-This is a hobby, fan-made tool. **Nothing here was made by `terriblefeelings`** — the code was written
-by **opencode**. The marathon timer's original code is by
-[**stalexteam**](https://github.com/stalexteam) and was reworked for this app.
-The same note is shown at the bottom of the donation page.
+Це аматорський фанатський інструмент. **Нічого тут не зроблено `terriblefeelings`** — код написали
+моделі **opencode**. Оригінальний код таймера марафону — [**stalexteam**](https://github.com/stalexteam),
+перероблено для цього застосунку. Той самий текст показано внизу сторінки донатів.
 
-Contributors: **terriblefeelings** (idea, testing, stream feedback) · **opencode** (implementation).
+Автори: **terriblefeelings** (ідея, тестування, фідбек зі стрімів) · **opencode** (реалізація).
 
-Not affiliated with Monobank, Twitch, StreamElements or Tailscale.
+Не повʼязано з Monobank, Twitch, StreamElements чи Tailscale.
 
-## License
+## Ліцензія
 
-Released under the **MIT License** — see [LICENSE](LICENSE).
+Поширюється за **MIT License** — див. [LICENSE](LICENSE).
 
-Copyright © 2026 [terriblefeelings](https://github.com/terriblefeelings).
+© 2026 [terriblefeelings](https://github.com/terriblefeelings).

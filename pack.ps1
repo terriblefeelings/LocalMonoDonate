@@ -53,40 +53,7 @@ if ($WithTts) {
 }
 '@ | Set-Content (Join-Path $app 'config.example.json') -Encoding UTF8
 
-@'
-LocalMonoDonate - local Monobank donation alerts
-===============================================
-
-START
-  Double-click LocalMonoDonate.exe. The setup page opens; fill in your nickname,
-  jar code and Monobank token, then press Save.
-
-PUBLIC DONATION PAGE
-  Viewers cannot reach a page running on your PC. Open Tailscale in Setup and press
-  Connect (the installer, tailscale-setup.msi, is in this folder). After one login
-  the donation page is live at https://<tailnet>/<nickname>/donation.
-
-WHAT IS NOT INCLUDED
-  Your personal data is never shipped: there is no config.json, no Monobank token,
-  no Twitch/StreamElements secrets and no saved jars in this folder. The app keeps
-  them in your own profile:
-    %APPDATA%\LocalMonoDonate\config.json          nickname, jars, links, settings
-    %APPDATA%\LocalMonoDonate\<port>\token         Monobank API token
-    %APPDATA%\LocalMonoDonate\<port>\twitch.json   Twitch client id/secret + tokens
-    %APPDATA%\LocalMonoDonate\<port>\streamelements.json   StreamElements JWT
-
-  config.example.json shows the shape only; the app builds its own config on first
-  run. Deleting a file above resets just that part.
-
-LINKS
-  Only links built from your nickname work: <nickname>.donate.localhost:8787/banka,
-  <nickname>.<overlay>.localhost:8787/main, ... A host with a different prefix returns
-  404 even if the nickname is changed later.
-
-DONATIONS
-  With no jar added the donation page shows "No jar configured" and the Pay button
-  stays disabled; the Donate link in Setup is greyed out until a jar is present.
-'@ | Set-Content (Join-Path $app 'README.txt') -Encoding UTF8
+Copy-Item (Join-Path $root 'README.md') (Join-Path $app 'README.md')
 
 # zip can not store pre-1980 timestamps (WebView2Loader.dll ships with one)
 Get-ChildItem $app -Recurse -File | ForEach-Object { $_.LastWriteTime = Get-Date }
