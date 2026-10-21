@@ -32,8 +32,6 @@ nothing leaves your machine except the requests the app itself makes.
 |---|---|
 | ![Sound alerts](docs/screenshots/sound-alerts.png) | ![Alert styles](docs/screenshots/alert-styles.png) |
 
-![Donation alert overlay](docs/screenshots/overlay.png)
-
 ---
 
 ## Features
@@ -176,7 +174,8 @@ The public listener only serves the donation page and the sound-alert deck — n
 jar list/names/“mine” flags, alert rules, timer, auction, bits, features, StreamElements account id
 and on/off state, TTS mode/voice.
 
-**Secrets are stored separately, per instance/port:**
+**Secrets are stored separately, per instance/port — this is where the app keeps them so it can poll
+and authorise without asking again:**
 
 ```
 %APPDATA%\LocalMonoDonate\<port>\token                 Monobank API token
@@ -279,9 +278,11 @@ your own computer and is never uploaded to the author or to any cloud service.
 - It stores **only what is needed to show alerts and stats**: donor nickname, amount, message, matched
   code and timestamps — no user profiles, no browsing data, no card or bank credentials, no analytics,
   no telemetry.
-- **Credentials** (Monobank token, Twitch client secret/tokens, StreamElements JWT) appear in the local
-  admin page as blurred text with Show/Hide, are never embedded in HTML or links, are sent only to the
-  service they belong to over HTTPS, and persist only in `%APPDATA%\LocalMonoDonate\<port>\` on your PC.
+- **Credentials are stored locally** so the app can keep working after a restart — Monobank token,
+  Twitch client secret/tokens and StreamElements JWT live only in `%APPDATA%\LocalMonoDonate\<port>\`
+  (never in `config.json`, the project folder, HTML/JS, links, logs or any server). They appear in the
+  local admin page as blurred text with Show/Hide and are sent only to the service they belong to, over
+  HTTPS.
 - The **public listener** exposes only the donation page and the sound-alert deck; admin pages, overlays
   and every token stay local.
 - **Delete everything** by closing the app and removing `%APPDATA%\LocalMonoDonate\`.

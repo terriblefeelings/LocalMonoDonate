@@ -55,13 +55,17 @@ listed above.
 
 ## 4. Tokens and credentials
 
-- Tokens are **never** written into `config.json`, the project folder, HTML/JS files or links.
-- They are shown in the local admin page (`/setup`) as blurred text with a Show/Hide button — that page
-  is only reachable on your own machine, never through the public listener.
+- **Are they stored?** Yes — a credential has to be kept so the app can poll the bank and refresh Twitch
+  tokens after a restart. It is saved **only** in `%APPDATA%\LocalMonoDonate\<port>\`
+  (`token`, `twitch.json`, `streamelements.json`), per instance/port, on this computer.
+- **Where they are never stored:** `config.json` (it is written with an empty `token` field by design),
+  the project folder, the release zip, HTML/JS/CSS files, generated links, logs, or any server.
+- They are shown in the local admin page (`/setup`) as blurred text with a Show/Hide button. That page is
+  bound to `127.0.0.1` by default and is never part of the public listener.
 - They are sent **only** to the service they belong to (Monobank/Twitch/StreamElements/Azure), over
-  HTTPS, and are not forwarded to any other endpoint.
-- They persist only in `%APPDATA%\LocalMonoDonate\<port>\` on your computer. Deleting the file revokes
-  the app’s copy; revoke the token itself in the provider’s dashboard if needed.
+  HTTPS, and are not forwarded anywhere else.
+- Deleting the matching file removes the app’s copy; revoke the token itself in the provider’s dashboard
+  if you want to invalidate it completely.
 
 ## 5. What is never collected
 
@@ -74,8 +78,9 @@ listed above.
 ## 6. Public exposure
 
 If you connect Tailscale, the public listener serves **only** the donation page and the sound-alert
-deck. Admin pages, overlays, the stats page and every credential stay local. The stats page is
-protected by a random code in its URL and is also not part of the public listener.
+deck. Admin pages are bound to `127.0.0.1` by default; overlays, the stats page and every credential
+stay local. The stats page is protected by a random code in its URL and is also not part of the public
+listener.
 
 ## 7. Retention and deletion
 

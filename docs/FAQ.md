@@ -28,6 +28,8 @@ Quick answers and the exact knobs for every part of LocalMonoDonate. Everything 
 
 ## 1. First run & links
 
+![Setup](screenshots/setup.png)
+
 **What do I absolutely need for the app to work?**
 Monobank API token + at least one jar. Everything else is optional; without a jar the donation page
 shows “No jar configured” and the Pay button stays disabled.
@@ -103,7 +105,9 @@ On `/notify` use the preview/test button, or `POST /api/test` with `{ "name": "T
 ## 4. Alert styles / notify rules
 
 **Where do I edit how alerts look?**
-`/notify` — it previews on the left and edits on the right. Each rule has an amount range
+`/notify` — it previews on the left and edits on the right.
+
+![Alert styles](screenshots/alert-styles.png) Each rule has an amount range
 (`from`/`to`), timings, text template, image/background and TTS behaviour.
 
 **How does rule selection work?**
@@ -125,7 +129,9 @@ Upload them in the editors (`/donateedit`, `/notify`); files are copied to
 ## 5. Sound alerts (bits)
 
 **What is a “bit”?**
-A purchasable sound/video/image alert with a fixed price and a code. Viewers buy it on
+A purchasable sound/video/image alert with a fixed price and a code.
+
+![Sound alerts](screenshots/sound-alerts.png) Viewers buy it on
 `/bits`; the payment comment carries the code, the app plays it on the bits overlay.
 
 **How do I create bits?**
@@ -161,6 +167,8 @@ subs multiply by the gift count.
 **Where do I control it?**
 `/timeradmin` — start/pause/add/subtract/reset and edit the rules; overlay at `<nick>.overlay.localhost/timer`.
 
+![Timer admin](screenshots/timer-admin.png)
+
 **The timer stops after a restart.**
 By design: a running countdown is frozen on shutdown and resumes only after you press Start.
 
@@ -174,6 +182,8 @@ Yes — add time manually in `/timeradmin`; donations are just the automatic sou
 **Where is the auction?**
 Standalone page on its own port: `http://<nick>.auction.localhost:8788/` (settings at
 `/auctionsettings`, which also runs on the main app port).
+
+![Auction](screenshots/auction.png)
 
 **Where do bids come from?**
 Donations (amount ≥ `min_bid`), Twitch channel-point redemptions, and manual entries in the auction UI.
@@ -192,6 +202,8 @@ They are separate: no donation alert, no timer time, no StreamElements tip.
 ---
 
 ## 8. Twitch
+
+![Twitch and StreamElements panels](screenshots/integrations.png)
 
 **What do I need?**
 A Twitch application (confidential) with the redirect URL shown in Setup:
@@ -326,6 +338,7 @@ No — `/stats` is not on the public listener. Keep the code private; it is a se
 Nothing is stored in the app folder.
 
 **Where are credentials?**
+Yes, they are stored — locally, so the app can poll and refresh tokens without asking again:
 `%APPDATA%\LocalMonoDonate\<port>\`:
 
 ```
@@ -334,7 +347,8 @@ twitch.json           client id/secret + OAuth tokens
 streamelements.json   StreamElements JWT
 ```
 
-They are shown in the UI as blurred text with Show/Hide. Deleting a file resets only that credential.
+They are never in `config.json`, the project folder, HTML/JS, links, logs or any server. In the UI they
+are blurred text with Show/Hide; deleting a file resets only that credential.
 
 **How do I change ports?**
 Edit `port`, `auctionPort`, `publicPort` in `config.json` and restart. Every local link follows `port`.
@@ -395,10 +409,11 @@ no telemetry.
 Only what an alert needs: nickname, amount, message, matched code and timestamp — the same data that is
 already in your bank statement. No profiles, no emails, no card data.
 
-**Are tokens ever sent to the browser?**
-Only to the local admin page (`/setup`), blurred by default with Show/Hide, so the owner can edit
-them. They are never embedded in HTML/links, never served to the public listener, and never leave
-`%APPDATA%\LocalMonoDonate\<port>\` except to the matching API over HTTPS.
+**Where are tokens stored, and are they sent anywhere?**
+They are saved locally in `%APPDATA%\LocalMonoDonate\<port>\` so the app can keep polling/refreshing
+after a restart — never in `config.json`, the project folder, HTML/JS, links, logs or any server. In the
+UI they are shown only on the local admin page (`/setup`), blurred with Show/Hide. They leave the machine
+only towards the matching API over HTTPS.
 
 **How do I remove everything?**
 Close the app and delete `%APPDATA%\LocalMonoDonate\`.
