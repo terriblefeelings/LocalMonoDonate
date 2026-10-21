@@ -171,6 +171,11 @@ Tailscale один раз.
 8. Хочете хост із ніком: `tailscale set --hostname <нік>`, потім перепідключіться — сертифікат
    перевипуститься, і посилання стане `<нік>.<tailnet>.ts.net`.
 
+Застосунок робить це автоматично: виставляє імʼя вузла `ratcorporation` (посилання
+`https://ratcorporation.<tailnet>.ts.net/<нік>/donation`), скидає старі funnel-правила (саме через них
+зʼявлялася помилка `Host header is specified…` від Chrome DevTools) і публікує `publicPort`. Якщо
+Tailscale піднявся пізніше за застосунок — він повторить спробу протягом хвилини.
+
 **Готовий скрипт:** у релізі є `enable-funnel.ps1`. Запустіть
 
 ```powershell

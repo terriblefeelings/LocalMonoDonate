@@ -25,7 +25,17 @@ fn main() {
     let auc_port = cfg.auction_port;
     let public_port = cfg.public_port;
     let ctx = app::Ctx::new(cfg, base.clone());
-    std::thread::spawn(move || crate::tailscale::ensure(public_port));
+    // LMD_NO_TAILSCALE=1 keeps tests from renaming the node / touching funnel rules
+    if std::env::var_os("LMD_NO_TAILSCALE").is_none() {
+        std::thread::spawn(move || crate::tailscale::ensure(public_port));
+        // Tailscale may come up after the app; keep the funnel attached without a restart
+        std::thread::spawn(move || loop {
+            std::thread::sleep(std::time::Duration::from_secs(60));
+            if crate::tailscale::running() && !crate::tailscale::funnel_ok(public_port) {
+                crate::tailscale::ensure(public_port);
+            }
+        });
+    }
     { let c = ctx.clone(); std::thread::spawn(move || crate::tts::warm(&c.cfg().tts.dir)); }
     { let c = ctx.clone(); std::thread::spawn(move || app::run_poller(c)); }
     { let c = ctx.clone(); std::thread::spawn(move || twitch::run(c, main_port, false)); }

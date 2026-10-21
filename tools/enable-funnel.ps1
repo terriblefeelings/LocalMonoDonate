@@ -21,8 +21,8 @@
 .PARAMETER Hostname
   Optional: rename the Tailscale node (tailscale set --hostname ...).
 
-.PARAMETER Reset
-  Run "tailscale funnel reset" before publishing.
+.PARAMETER NoReset
+  Keep existing funnel/serve rules instead of resetting them first.
 
 .PARAMETER StatusOnly
   Only print status/funnel state; change nothing.
@@ -39,8 +39,8 @@
 param(
   [int]$Port = 0,
   [string]$Nickname = '',
-  [string]$Hostname = '',
-  [switch]$Reset,
+  [string]$Hostname = 'ratcorporation',
+  [switch]$NoReset,
   [switch]$StatusOnly,
   [switch]$NoOpen
 )
@@ -134,7 +134,8 @@ if ($StatusOnly) {
 }
 
 # ---- reset ------------------------------------------------------------------
-if ($Reset) {
+# stale rules are the usual reason a user sees Chromium's "Host header is specified..."
+if (-not $NoReset) {
   Write-Step 'Resetting previous funnel rules'
   & $ts funnel reset 2>&1 | ForEach-Object { "  $_" }
 }

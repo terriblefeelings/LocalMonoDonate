@@ -282,6 +282,10 @@ Alerts → voice set → Azure, вставте власний ключ Speech і
 `*.localhost` існує лише локально. Використовуйте Tailscale: Setup → *Connect Tailscale* (інсталятор у
 релізі), увійдіть один раз — і публічна адреса стане `https://<tailnet>/<нік>/donation`.
 
+**Чи можна змінити імʼя вузла?**
+Застосунок сам виставляє `ratcorporation` і скидає старі funnel-правила, тож посилання має вигляд
+`https://ratcorporation.<tailnet>.ts.net/<нік>/donation`. Вручну: `tailscale set --hostname ratcorporation`.
+
 **Застосунок сам створює тунель?**
 Він запускає `tailscale up` для входу й тримає `tailscale funnel` на публічному порту (`8080` типово),
 з hostname = ваш нік.
