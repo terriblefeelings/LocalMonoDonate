@@ -381,6 +381,7 @@ streamelements.json   StreamElements JWT
 | `streamelements: HTTP 401` | JWT SE прострочений — вставте новий |
 | `tts daemon unavailable` | немає `tts-engine` або його заблоковано |
 | Порожня сторінка донатів | немає банки / сторінку вимкнено в *Links* |
+| `Host header is specified and is not an IP address or localhost` | Funnel веде на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 8080` |
 
 **Помилка WebView2 під час старту?**
 Встановіть WebView2 (застосунок запускає вбудований інсталятор тихо).

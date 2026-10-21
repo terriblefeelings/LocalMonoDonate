@@ -321,6 +321,7 @@ docs/screenshots/      зображення для README
 | Немає голосу | немає TTS-рушія або Google недоступний; для Azure потрібні ключ і регіон |
 | Помилка WebView2 під час старту | встановіть WebView2 (застосунок запускає вбудований інсталятор тихо) |
 | Порт зайнятий | змініть `port` у `config.json` |
+| `Host header is specified and is not an IP address or localhost` | Funnel дивиться на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 8080` |
 
 Логи: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.
 

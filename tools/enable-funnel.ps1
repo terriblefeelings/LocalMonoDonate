@@ -149,8 +149,45 @@ if ($Hostname) {
 }
 
 # ---- the app must listen on the public port ---------------------------------
+# ---- the app must listen on the public port ---------------------------------
+function Get-PortOwner([int]$port) {
+  try {
+    $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction Stop | Select-Object -First 1
+    if ($conn) {
+      $p = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
+      if ($p) { return "$($p.ProcessName) (PID $($p.Id))" }
+      return "PID $($conn.OwningProcess)"
+    }
+  } catch { }
+  return ""
+}
+
 if (Test-LocalPort $Port) {
   Write-Ok "local port $Port is listening"
+  $owner = Get-PortOwner $Port
+  if ($owner) { Write-Host "      owner: $owner" }
+
+  # Chrome/Chromium DevTools answers with this exact 500 on a public host - it means
+  # the funnel points at a browser debugging port, not at LocalMonoDonate.
+  $body = ""
+  try {
+    $resp = Invoke-WebRequest "http://127.0.0.1:$Port/" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+    $body = [string]$resp.Content
+  } catch {
+    try {
+      $sr = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+      $body = $sr.ReadToEnd()
+    } catch { }
+  }
+  if ($body -match "Host header is specified and is not an IP address or localhost") {
+    Write-Err "Port $Port is served by Chrome/Chromium DevTools, not LocalMonoDonate."
+    Write-Host "      Use the publicPort of the app (default 8080), not the browser debugging port (9222/9223)."
+    Write-Host "      Owner: $owner"
+    Write-Host "      Fix: close the browser debugging instance or change publicPort in config.json, then:"
+    Write-Host "        & $ts funnel reset"
+    Write-Host "        & $ts funnel --bg 8080"
+    exit 1
+  }
 } else {
   Write-Warn "local port $Port is not listening - start LocalMonoDonate.exe first."
   Write-Host "         Funnel can be created anyway; the page will be 502 until the app runs."
