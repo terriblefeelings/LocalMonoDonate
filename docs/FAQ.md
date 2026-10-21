@@ -382,13 +382,28 @@ Close the app and delete that folder; the next start is a fresh install.
 
 ## 17. Privacy
 
+**Is there a server that stores my data?**
+No. The app is fully local: settings, history, timer/auction state and media live in
+`%APPDATA%\LocalMonoDonate\` on your PC. Nothing is uploaded to the author or to any cloud.
+
 **What leaves my machine?**
-Monobank API, Tailscale (if connected), Twitch/StreamElements (if enabled), and Google/Azure for TTS.
-Nothing else; no analytics, no telemetry.
+Only the requests needed for the features you enable: Monobank API, and optionally Tailscale, Twitch,
+StreamElements, an exchange-rate service (USD conversion for SE) and Google/Azure TTS. No analytics,
+no telemetry.
+
+**What exactly is stored about viewers?**
+Only what an alert needs: nickname, amount, message, matched code and timestamp — the same data that is
+already in your bank statement. No profiles, no emails, no card data.
 
 **Are tokens ever sent to the browser?**
-Only to the local admin page (so you can see/edit them), blurred by default, never to the public
-listener or embedded in HTML files.
+Only to the local admin page (`/setup`), blurred by default with Show/Hide, so the owner can edit
+them. They are never embedded in HTML/links, never served to the public listener, and never leave
+`%APPDATA%\LocalMonoDonate\<port>\` except to the matching API over HTTPS.
+
+**How do I remove everything?**
+Close the app and delete `%APPDATA%\LocalMonoDonate\`.
+
+Full policy: [docs/PRIVACY.md](PRIVACY.md).
 
 ---
 

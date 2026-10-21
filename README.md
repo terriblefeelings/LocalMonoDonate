@@ -270,9 +270,24 @@ Logs: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.
 
 ## Privacy
 
-All data stays on the machine. The app talks only to: Monobank API, Tailscale, Twitch/StreamElements
-APIs you enable, and Google/Azure TTS when you use those voices. Tokens never appear in `config.json`,
-never in URLs and never in the UI source.
+**There is no server.** LocalMonoDonate is a local application: everything it knows — settings, jar list,
+donation history, timer/auction state, uploaded media — is stored in `%APPDATA%\LocalMonoDonate\` on
+your own computer and is never uploaded to the author or to any cloud service.
+
+- It contacts **only the APIs required for the features you enable**: Monobank (statements) and,
+  optionally, Tailscale, Twitch, StreamElements, an exchange-rate service and Google/Azure TTS.
+- It stores **only what is needed to show alerts and stats**: donor nickname, amount, message, matched
+  code and timestamps — no user profiles, no browsing data, no card or bank credentials, no analytics,
+  no telemetry.
+- **Credentials** (Monobank token, Twitch client secret/tokens, StreamElements JWT) appear in the local
+  admin page as blurred text with Show/Hide, are never embedded in HTML or links, are sent only to the
+  service they belong to over HTTPS, and persist only in `%APPDATA%\LocalMonoDonate\<port>\` on your PC.
+- The **public listener** exposes only the donation page and the sound-alert deck; admin pages, overlays
+  and every token stay local.
+- **Delete everything** by closing the app and removing `%APPDATA%\LocalMonoDonate\`.
+
+Full statement — what is stored, what is sent where, retention and third parties:
+**[docs/PRIVACY.md](docs/PRIVACY.md)**.
 
 ---
 
