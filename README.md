@@ -7,6 +7,21 @@ nothing leaves your machine except the requests the app itself makes.
 
 > Monobank is a Ukrainian bank. Amounts are shown in the jar's own currency (`₴`, `$`, `€`, …).
 
+## Quick start (2 minutes)
+
+1. Download **`MONOBANK-lite-*.zip`** from [Releases](../../releases), unpack it anywhere.
+2. Run **`LocalMonoDonate.exe`** — the Setup page opens.
+3. Paste your **Monobank API token** (<https://api.monobank.ua>) and **jar code**
+   (`send.monobank.ua/jar/<CODE>`), pick a **nickname**, press **Save**.
+4. OBS → Browser source → `http://<nickname>.overlay.localhost:8787/main` (alerts).
+5. Viewers → Setup → **Connect Tailscale** (installer included) and share
+   `https://<tailnet>/<nickname>/donation`.
+6. Optional: **Twitch** (Client ID/Secret → Authorize) and **StreamElements**
+   (account id + JWT → Test → enable in *Links*).
+
+> **Short on time?** Steps 1–3 are enough for local alerts; step 5 is what makes the page reachable by
+> viewers. Full walkthrough and every feature explained: **[FAQ — feature by feature](docs/FAQ.md)**.
+
 ## Screenshots
 
 | Setup | Donation page |
@@ -261,6 +276,25 @@ never in URLs and never in the UI source.
 
 ---
 
+## FAQ
+
+The complete guide for every feature is in **[docs/FAQ.md](docs/FAQ.md)**. The most common questions:
+
+| Question | Answer |
+|---|---|
+| Minimum setup? | Monobank token + one jar code in *Setup*, then Save. |
+| Which link do I give viewers? | `https://<tailnet>/<nick>/donation` (Tailscale). `*.localhost` is local-only. |
+| How is a payment matched? | Code in the comment (`донат сповіщення <code>`), else amount + last hour. |
+| No alert on the overlay? | Overlay enabled in *Links*, correct OBS URL, browser source 1920×1080. |
+| Donation page says “No jar configured”? | Add a jar and press Save; the Pay button stays disabled otherwise. |
+| No sound / voice? | `tts-engine` next to the exe; Google needs internet, Azure needs key + region. |
+| Nothing in StreamElements? | Enable the switch in *Links*, run *Test connection*, check the log. |
+| Same person counts twice in SE? | SE groups by nickname only; `pendra` and `pependra` are two donors by design. |
+| Sound alerts count separately? | Yes — they are recorded as `<nick> SA` / `Anonymous SA`. |
+| Where are my settings/secrets? | `%APPDATA%\LocalMonoDonate\config.json` and `<port>\token`, `twitch.json`, `streamelements.json`. |
+| How do I update? | Replace the exe (and `tts-engine` if changed); settings stay in `%APPDATA%`. |
+| How do I reset? | Close the app, delete `%APPDATA%\LocalMonoDonate`. |
+
 ## Credits & disclaimer
 
 This is a hobby, fan-made tool. **Nothing here was made by `terriblefeelings`** — the code was written
@@ -274,4 +308,6 @@ Not affiliated with Monobank, Twitch, StreamElements or Tailscale.
 
 ## License
 
-MIT
+Released under the **MIT License** — see [LICENSE](LICENSE).
+
+Copyright © 2026 [terriblefeelings](https://github.com/terriblefeelings).
