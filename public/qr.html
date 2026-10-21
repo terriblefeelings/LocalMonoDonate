@@ -19,13 +19,15 @@
     box-shadow: 0 18px 50px rgba(0,0,0,.45); backdrop-filter: blur(10px);
   }
   .jar-card h2 { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
-  .raised { font-size: 30px; font-weight: 800; letter-spacing: .01em; line-height: 1.15; }
-  .raised small { font-size: 15px; font-weight: 600; opacity: .7; margin-left: 4px; }
-  .bar { height: 10px; border-radius: 6px; background: var(--track, rgba(255,255,255,.14)); overflow: hidden; margin: 14px 0 8px; }
+  .bar { height: 10px; border-radius: 6px; background: var(--track, rgba(255,255,255,.14)); overflow: hidden; }
   .bar i { display: block; height: 100%; width: 0; border-radius: 6px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width .4s ease; }
-  .goal-line { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted, rgba(233,237,243,.62)); }
-  .goal-line b { font-size: 14px; letter-spacing: 0; text-transform: none; color: inherit; }
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6); box-shadow: 0 0 12px rgba(139,92,246,.55);
+    transition: width .4s ease; }
+  .bottom { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 10px; }
+  .bottom .raised { font-size: 24px; font-weight: 800; letter-spacing: .01em; line-height: 1.1; }
+  .bottom .raised small { font-size: 13px; font-weight: 600; opacity: .7; margin-left: 3px; }
+  .bottom .goal { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted, rgba(233,237,243,.62)); }
+  .bottom .goal b { font-size: 14px; letter-spacing: 0; text-transform: none; color: inherit; }
 </style>
 </head>
 <body>
@@ -33,20 +35,24 @@
   <div class="qr-card" id="qrCard"><div id="qr"></div></div>
   <div class="jar-card" id="jarCard">
     <h2 id="title">—</h2>
-    <div class="raised"><span id="raised">0</span><small id="cur"></small></div>
     <div class="bar"><i id="fill"></i></div>
-    <div class="goal-line" id="goalLine">of <b id="goal">—</b></div>
+    <div class="bottom">
+      <span class="raised"><span id="raised">0</span><small id="cur"></small></span>
+      <span class="goal">of <b id="goal">—</b></span>
+    </div>
   </div>
 </div>
 <script src="/qrcode.js"></script>
 <script>
   const $ = id => document.getElementById(id);
   const fmt = n => Math.round(Number(n) || 0).toLocaleString('uk-UA');
-  const qrCard = $('qrCard'), jarCard = $('jarCard'), wrap = $('wrap');
+  const qrCard = $('qrCard'), jarCard = $('jarCard');
   const idx = (() => {
     const m = location.pathname.match(/^\/qr(\d*)/);
     return m && m[1] ? Math.max(0, Number(m[1]) - 1) : 0;
   })();
+  const demo = new URLSearchParams(location.search).has('demo');
+  const demoJar = { code: 'demo', title: 'TEST JAR', balance: 500000, goal: 1000000, currency: '₴' };
   let cfg = {}, cfgLoaded = false, widget = null, lastUrl = '';
 
   function luminance(hex) {
@@ -75,7 +81,6 @@
       qr.make();
       $('qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, alt: 'Donate' });
     } catch (e) { console.warn(e); }
-    requestAnimationFrame(align);
   }
 
   function setWidget(w) {
@@ -86,13 +91,16 @@
     jarCard.style.display = style === 'qr' ? 'none' : '';
     applyColor(w.color);
     renderQr(cfg.publicDonate || (cfg.links && cfg.links.donate) || '');
-    requestAnimationFrame(align);
   }
 
   async function loadCfg() {
     try {
       cfg = await (await fetch('/api/config')).json();
       cfgLoaded = true;
+      if (demo) {
+        setWidget({ jar: '', color: '#101217', style: 'both' });
+        return;
+      }
       const widgets = (cfg.qrWidgets && cfg.qrWidgets.length)
         ? cfg.qrWidgets
         : [{ jar: cfg.widgetJar || '', color: '#101217', style: 'both' }];
@@ -100,46 +108,34 @@
     } catch (e) { cfgLoaded = false; }
   }
 
-  // keep the actual QR code's bottom edge on the goal card's bottom edge
-  function align() {
-    qrCard.style.transform = '';
-    if (!widget || widget.style === 'qr' || widget.style === 'goal') return;
-    const q = $('qr').getBoundingClientRect();
-    const g = jarCard.getBoundingClientRect();
-    if (!q.height || !g.height) return;
-    qrCard.style.transform = 'translateY(' + Math.round(g.bottom - q.bottom) + 'px)';
+  function paint(jar) {
+    if (!jar) {
+      $('title').textContent = 'No jar';
+      $('raised').textContent = '—'; $('cur').textContent = '';
+      $('goal').textContent = '—'; $('fill').style.width = '0%';
+      return;
+    }
+    const cur = jar.currency || '';
+    const bal = Number(jar.balance || 0) / 100;
+    const goal = Number(jar.goal || 0) / 100;
+    $('title').textContent = jar.title || jar.code || 'Jar';
+    $('raised').textContent = fmt(bal);
+    $('cur').textContent = cur;
+    $('goal').textContent = goal > 0 ? fmt(goal) + ' ' + cur : '—';
+    $('fill').style.width = (goal > 0 ? Math.max(0, Math.min(100, bal / goal * 100)) : 0) + '%';
   }
 
   async function refresh() {
     if (!cfgLoaded) await loadCfg();
     if (!widget) return;
+    if (demo) { paint(demoJar); return; }
     try {
       const s = await (await fetch('/api/state')).json();
       const jars = s.jars || [];
-      const jar = jars.find(j => j.code === widget.jar) || jars[0];
-      if (!jar) {
-        $('title').textContent = 'No jar';
-        $('raised').textContent = '—';
-        $('cur').textContent = '';
-        $('fill').style.width = '0%';
-        $('goal').textContent = '—';
-        requestAnimationFrame(align);
-        return;
-      }
-      const cur = jar.currency || '';
-      const bal = Number(jar.balance || 0) / 100;
-      const goal = Number(jar.goal || 0) / 100;
-      $('title').textContent = jar.title || jar.code || 'Jar';
-      $('raised').textContent = fmt(bal);
-      $('cur').textContent = cur;
-      $('goal').textContent = goal > 0 ? fmt(goal) + ' ' + cur : '—';
-      const pct = goal > 0 ? Math.max(0, Math.min(100, bal / goal * 100)) : 0;
-      $('fill').style.width = pct + '%';
+      paint(jars.find(j => j.code === widget.jar) || jars[0]);
     } catch (e) { /* keep the last rendered state */ }
-    requestAnimationFrame(align);
   }
 
-  window.addEventListener('resize', align);
   refresh();
   setInterval(refresh, 4000);
 </script>
