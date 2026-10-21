@@ -122,8 +122,8 @@ fn state_json(ctx: &Ctx) -> serde_json::Value {
         "minAmount": cfg.min_amount,
         "maxAmount": cfg.max_amount,
         "tts": { "mode": cfg.tts.mode, "voice": cfg.tts.default_voice(), "readMode": cfg.tts.read_mode,
-                 "allowed": cfg.tts.allowed(), "picks": cfg.tts.donor_picks() },
-        "voices": crate::tts::voices(),
+                 "allowed": cfg.tts.allowed_in(&cfg.tts.dir), "picks": cfg.tts.donor_picks() },
+        "voices": crate::tts::voices(&cfg.tts.dir, cfg.tts.has_azure()),
         "limits": { "nameMax": cfg.limits.name_max, "messageMax": cfg.limits.message_max },
         "overlay": { "durationMs": cfg.overlay.duration_ms, "videoMaxMs": cfg.overlay.video_max_ms },
         "jars": jars,
@@ -224,7 +224,7 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
     let cfg = ctx.cfg();
     let mut tts_url = String::new();
     if cfg.tts.enabled() {
-        let allowed = cfg.tts.allowed();
+        let allowed = cfg.tts.allowed_in(&cfg.tts.dir);
         let voice = v.get("voice").and_then(|x| x.as_str()).filter(|s| allowed.contains(&s.to_string()))
             .map(|s| s.to_string())
             .unwrap_or_else(|| { let d = cfg.tts.default_voice(); if d.is_empty() { allowed.first().cloned().unwrap_or_default() } else { d } });
@@ -912,10 +912,13 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
     if path == "/api/tailscale/install" {
         if method == Method::Post {
             // bundled installer next to the exe => zero-step install for other users
-            let msi = ctx.paths.base.join("tailscale-setup.msi");
+            let msi = std::env::current_exe().ok()
+                .and_then(|p| p.parent().map(|d| d.join("tailscale-setup.msi")))
+                .filter(|p| p.exists())
+                .unwrap_or_else(|| ctx.paths.base.join("tailscale-setup.msi"));
             if msi.exists() {
                 let _ = std::process::Command::new("msiexec")
-                    .args(["/i", &msi.to_string_lossy()])
+                    .args(["/i", &msi.to_string_lossy(), "/qb"])
                     .spawn();
                 let _ = request.respond(json_resp(200, json!({ "ok": true, "started": true })));
             } else {
@@ -1071,7 +1074,7 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
     if path == "/api/tts" {
         if method == Method::Get {
             let c = ctx.cfg();
-            let _ = request.respond(json_resp(200, json!({ "tts": { "mode": c.tts.mode, "voice": c.tts.default_voice(), "readMode": c.tts.read_mode, "dir": c.tts.dir, "allowed": c.tts.allowed(), "picks": c.tts.donor_picks(), "hasAzure": c.tts.has_azure(), "azureRegion": c.tts.azure_region }, "voices": crate::tts::voices() })));
+            let _ = request.respond(json_resp(200, json!({ "tts": { "mode": c.tts.mode, "voice": c.tts.default_voice(), "readMode": c.tts.read_mode, "dir": c.tts.dir, "allowed": c.tts.allowed_in(&c.tts.dir), "picks": c.tts.donor_picks(), "hasAzure": c.tts.has_azure(), "azureRegion": c.tts.azure_region }, "voices": crate::tts::voices(&c.tts.dir, c.tts.has_azure()) })));
         }
         else if method == Method::Post { tts_post(&ctx, request); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }

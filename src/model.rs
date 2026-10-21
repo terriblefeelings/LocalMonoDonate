@@ -599,9 +599,15 @@ pub struct TtsCfg {
 impl TtsCfg {
     pub fn enabled(&self) -> bool { self.mode != "off" }
     pub fn has_azure(&self) -> bool { !self.azure_key.is_empty() && !self.azure_region.is_empty() }
-    /// voice ids the donor may pick for this mode (empty = no picker shown)
+    /// voice ids the donor may pick for this mode (empty = no picker shown).
+    /// Google UA/EN always; Azure only with keys; StyleTTS2 only when its model exists.
     pub fn allowed(&self) -> Vec<String> {
-        let custom = || crate::tts::CUSTOM_VOICES.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        self.allowed_in(&self.dir)
+    }
+    pub fn allowed_in(&self, dir: &str) -> Vec<String> {
+        let custom = || if crate::tts::style_available(dir) {
+            crate::tts::CUSTOM_VOICES.iter().map(|s| s.to_string()).collect::<Vec<_>>()
+        } else { Vec::new() };
         let azure = |list: &[&str]| list.iter().map(|s| format!("azure:{}", s)).collect::<Vec<_>>();
         match self.mode.as_str() {
             "off" => vec![],

@@ -28,6 +28,8 @@ Copy-Item (Join-Path $root 'target\release\LocalMonoDonate.exe') $app
 Copy-Item (Join-Path $root 'WebView2Loader.dll') $app
 $boot = Join-Path $root 'MicrosoftEdgeWebview2Setup.exe'
 if (Test-Path $boot) { Copy-Item $boot $app }
+$ts = Join-Path $root 'tailscale-setup.msi'
+if (Test-Path $ts) { Copy-Item $ts $app }
 if ($WithTts) {
   if (-not (Test-Path (Join-Path $TtsEngine 'serve.py'))) {
     throw "tts-engine not found at '$TtsEngine' (pass -TtsEngine <folder>)"
@@ -58,6 +60,11 @@ LocalMonoDonate - local Monobank donation alerts
 START
   Double-click LocalMonoDonate.exe. The setup page opens; fill in your nickname,
   jar code and Monobank token, then press Save.
+
+PUBLIC DONATION PAGE
+  Viewers cannot reach a page running on your PC. Open Tailscale in Setup and press
+  Connect (the installer, tailscale-setup.msi, is in this folder). After one login
+  the donation page is live at https://<tailnet>/<nickname>/donation.
 
 WHAT IS NOT INCLUDED
   Your personal data is never shipped: there is no config.json, no Monobank token,

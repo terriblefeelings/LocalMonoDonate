@@ -249,7 +249,18 @@ $('file').onchange = async e => { const f = e.target.files && e.target.files[0];
     if (d.ok) { $(upKind + '_url').value = d.url; preview(); $('status').textContent = '↑ ' + d.url; } else $('status').textContent = 'upload error'; } catch { $('status').textContent = 'upload error'; } };
 /* lang seg wired in extraTools */
 let TTS = null;
+function hideUnavailableTts() {
+  const all = (TTS && TTS.voices) || [];
+  const custom = all.filter(v => !v.id.startsWith('google:') && !v.id.startsWith('azure:'));
+  const sel = $('tts_mode');
+  if (sel) {
+    const opt = sel.querySelector('option[value="custom"]');
+    if (opt) opt.style.display = custom.length ? '' : 'none';
+    if (!custom.length && sel.value === 'custom') sel.value = 'default';
+  }
+}
 function fillTtsVoices() {
+  hideUnavailableTts();
   const mode = $('tts_mode').value; const all = (TTS && TTS.voices) || [];
   const azuk = all.filter(v => v.id === 'azure:uk-UA-PolinaNeural' || v.id === 'azure:uk-UA-OstapNeural').map(v => v.id);
   const azus = all.filter(v => v.id === 'azure:en-US-JennyNeural' || v.id === 'azure:en-US-GuyNeural').map(v => v.id);

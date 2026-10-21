@@ -5,7 +5,19 @@ incoming payments into on-stream alerts, a sound-alert deck, a marathon timer, a
 StreamElements tips. Single Rust executable with a WebView2 UI; no cloud service, no account,
 nothing leaves your machine except the requests the app itself makes.
 
-> Monobank is a Ukrainian bank. Prices/amounts are shown in the jar's own currency (`₴`, `$`, `€`, …).
+> Monobank is a Ukrainian bank. Amounts are shown in the jar's own currency (`₴`, `$`, `€`, …).
+
+## Screenshots
+
+| Setup | Donation page |
+|---|---|
+| ![Setup](docs/screenshots/setup.png) | ![Donation page](docs/screenshots/donation-page.png) |
+
+| Sound alerts (bits) | Alert styles |
+|---|---|
+| ![Sound alerts](docs/screenshots/sound-alerts.png) | ![Alert styles](docs/screenshots/alert-styles.png) |
+
+![Donation alert overlay](docs/screenshots/overlay.png)
 
 ---
 
@@ -19,14 +31,14 @@ nothing leaves your machine except the requests the app itself makes.
 - Anonymous donations are supported (`Anonymous` when no nickname is given).
 
 ### Alerts
-- Full-screen overlay (`/main`) with your own background image/video, alert styles per amount range.
-- Optional announcement voice (see TTS) and a sound/voice clip on the overlay.
+- Full-screen overlay (`/main`) with your own background image/video and alert styles per amount range.
+- Optional announcement voice and a sound/voice clip on the overlay.
 - Notify rules editor (`/notify`) — several amount ranges, each with its own style, timings and TTS text.
 - Optional YouTube request: a donation with a YouTube link plays the video in the overlay after the alert.
 
 ### Sound alerts (bits)
 - A deck page (`/bits`) where viewers buy a sound/video/image "bit" for a fixed price.
-- Optional nickname field on that page: the alert is counted as `<nick> SA`, or `Anonymous SA` when empty — this keeps sound-alert spend separate from normal donations in stats and StreamElements.
+- Optional nickname field on that page: the alert is counted as `<nick> SA`, or `Anonymous SA` when empty — sound-alert spend stays separate from normal donations in stats and StreamElements.
 - Bits can also be attached to a normal donation on the donation page.
 
 ### Marathon timer
@@ -52,10 +64,16 @@ nothing leaves your machine except the requests the app itself makes.
   email, and two different nicknames never merge.
 - Hard on/off switch — disabled means the app sends StreamElements nothing at all.
 
-### Streaming helpers
-- Tailscale integration: one click and the donation page is public at `<nickname>.<tailnet>.ts.net`
-  (no domain, no port forwarding).
-- Local "*.localhost" links for every page, so OBS can use clean URLs.
+### Voices (TTS)
+- **Default: Google Ukrainian + Google English** — free, no key, needs internet.
+- **Azure (optional):** paste your own Speech key and region in *Alerts → voice set*; Azure voices
+  only appear in the picker when both are filled in.
+- **Custom StyleTTS2-UA voices:** only in full builds that include the ~157 MB StyleTTS2 model.
+  The lite release ships Google/Azure only, so the “custom” voice set is hidden automatically.
+
+### Publishing & helpers
+- **Tailscale is the supported way to make the donation page public** (see below), bundled installer included.
+- Local `*.localhost` links for every page, so OBS can use clean URLs.
 - EN / UA interface, switchable at runtime.
 - Background media, custom fonts, grid sizes for the deck, etc.
 
@@ -63,8 +81,8 @@ nothing leaves your machine except the requests the app itself makes.
 
 ## Install (Windows 10/11 x64)
 
-Grab the latest **LocalMonoDonate-……-lite.zip** from [Releases](../../releases), unpack it anywhere and
-run `LocalMonoDonate.exe`.
+Grab the latest **MONOBANK-lite-*.zip** from [Releases](../../releases), unpack it anywhere and run
+`LocalMonoDonate.exe`.
 
 The zip is self-contained:
 
@@ -73,10 +91,11 @@ The zip is self-contained:
 | `LocalMonoDonate.exe` | the app |
 | `WebView2Loader.dll` | WebView2 hosting |
 | `MicrosoftEdgeWebview2Setup.exe` | silent install if WebView2 is missing |
+| `tailscale-setup.msi` | one-click public donation page |
 | `tts-engine\` | portable Python + Google/Azure voices (no custom StyleTTS voices) |
 | `config.example.json` | shape reference only — the app never reads it |
 
-No Node, no Python, no Rust, no installer. Your settings and tokens are created on first run in
+No Node, no Python, no Rust, no installer. Settings and tokens are created on first run in
 `%APPDATA%\LocalMonoDonate\` — never in the app folder.
 
 > SmartScreen may warn because the exe is unsigned. “More info → Run anyway”.
@@ -92,14 +111,24 @@ No Node, no Python, no Rust, no installer. Your settings and tokens are created 
 3. **Nickname** — used in every local link (`<nickname>.localhost`). Only links with this exact prefix
    work; rename it and old links stop working (404).
 4. **Save**. The donation page is at `http://<nickname>.donate.localhost:8787/banka`.
-5. *(Optional)* **Tailscale** — press *Connect Tailscale* to publish the page on your tailnet.
+5. **Tailscale — required for viewers.** A page on your PC is not reachable from a phone or another
+   network. Press *Connect Tailscale* (the installer ships next to the exe), log in once, and the
+   donation page is published at `https://<tailnet>/<nickname>/donation`.
 6. *(Optional)* **Twitch** — create an app at <https://dev.twitch.tv/console/apps> (confidential),
    add the redirect URL shown in Setup, paste Client ID/Secret, press *Authorize Twitch*.
 7. *(Optional)* **StreamElements** — Settings → Account → copy the account id and the JWT (API token).
    Paste both into the StreamElements panel and press *Test connection*; enable the switch in *Links*.
 
-Everything is optional except the token/jar: without them the app still runs, but the donor page shows
-“No jar configured” and keeps the Pay button disabled.
+Without a token/jar the app still runs, but the donor page shows “No jar configured” and keeps the
+Pay button disabled.
+
+### Why Tailscale is required
+
+`*.localhost` links only resolve on the streamer's own PC — OBS can use them, viewers cannot.
+Tailscale Funnel gives you a free public HTTPS URL with no domain, no port forwarding and no CGNAT
+problems. The app drives the Tailscale CLI: one click installs (bundled MSI), one login, and it keeps
+the funnel pointed at the public port. Advanced users can replace it with their own reverse proxy and
+`publicBase`/`publicPort` settings, but Tailscale is what the UI and links are built around.
 
 ---
 
@@ -122,15 +151,15 @@ Everything is optional except the token/jar: without them the app still runs, bu
 | Donation page editor | `http://localhost:8787/donateedit` | – |
 | Bits editor | `http://localhost:8787/bitsedit` | – |
 
-The public listener (Tailscale) only serves the donation page and the sound-alert deck — no admin pages.
+The public listener only serves the donation page and the sound-alert deck — no admin pages.
 
 ---
 
 ## Configuration
 
 `config.json` (in `%APPDATA%\LocalMonoDonate\`) keeps non-secret settings: nickname, overlay name,
-jar list/names/“mine” flags, alert rules, timer, auction, bits, features, StreamElements account id and
-on/off state.
+jar list/names/“mine” flags, alert rules, timer, auction, bits, features, StreamElements account id
+and on/off state, TTS mode/voice.
 
 **Secrets are stored separately, per instance/port:**
 
@@ -151,8 +180,7 @@ Other paths:
 %APPDATA%\LocalMonoDonate\LocalMonoDonate.log
 ```
 
-Port defaults: `8787` (app), `8788` (auction), `8080` (public/Tailscale). Change `port`, `auctionPort`,
-`publicPort` in `config.json` if something is already using them.
+Ports: `8787` (app), `8788` (auction), `8080` (public/Tailscale).
 
 ---
 
@@ -162,12 +190,15 @@ Requirements: Rust (stable), MSVC build tools, WebView2 runtime, Node 18+ only f
 
 ```powershell
 cargo build --release
-# optional: stage a clean distributable (exe + WebView2 + tts-engine, no secrets/config)
-powershell -File pack.ps1 -WithTts
+# stage a clean distributable (exe + WebView2 + tailscale msi + tts-engine; no secrets/config)
+powershell -File pack.ps1 -WithTts -TtsEngine <path-to-lite-tts-engine>
 # output: dist\MONOBANK-lite-<version>.zip
 ```
 
 `include_str!` embeds every file in `public/` into the exe — **rebuild after editing HTML/JS/CSS**.
+
+The portable `tts-engine` (venv2 + ffmpeg + serve.py, ~260 MB) and the Tailscale MSI are not stored in
+git; the release zip contains them.
 
 ### Tests
 
@@ -200,6 +231,7 @@ src/tailscale.rs       funnel/public link helper
 public/                embedded pages, overlays and assets
 AUC/                   Node HTTP test-suite
 pack.ps1               clean distributable builder
+docs/screenshots/      README images
 ```
 
 ---
@@ -211,8 +243,9 @@ pack.ps1               clean distributable builder
 | `Unknown 'X-Token'` in the log | the Monobank token is wrong/revoked — paste a fresh one |
 | Donation page says “No jar configured” | add a jar under Setup and Save |
 | Old link opens after renaming the nick | by design it now returns 404 — copy the new link |
+| Viewers can't open the donation page | connect Tailscale (public URL), `*.localhost` is local-only |
 | No StreamElements tips | enable the StreamElements switch in *Links*, run *Test connection* |
-| No voice | `tts-engine` missing/blocked; Google voices need internet |
+| No voice | TTS engine missing or Google is unreachable; Azure needs a key + region |
 | WebView2 error on start | install the WebView2 runtime (the app runs the bundled bootstrapper silently) |
 | Port already in use | change `port` in `config.json` |
 
@@ -222,9 +255,22 @@ Logs: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.
 
 ## Privacy
 
-All data stays on the machine. The app calls only: Monobank API, Steam/Twitch/StreamElements APIs you
-enable, Google/Azure TTS if you use those voices, and Tailscale if you connect it. Tokens never appear
-in `config.json`, never in URLs and never in the UI source.
+All data stays on the machine. The app talks only to: Monobank API, Tailscale, Twitch/StreamElements
+APIs you enable, and Google/Azure TTS when you use those voices. Tokens never appear in `config.json`,
+never in URLs and never in the UI source.
+
+---
+
+## Credits & disclaimer
+
+This is a hobby, fan-made tool. **Nothing here was made by `terriblefeelings`** — the code was written
+by **opencode / DeepSeek** models. The marathon timer's original code is by
+[**stalexteam**](https://github.com/stalexteam) and was reworked for this app.
+The same note is shown at the bottom of the donation page.
+
+Contributors: **terriblefeelings** (idea, testing, stream feedback) · **opencode / DeepSeek** (implementation).
+
+Not affiliated with Monobank, Twitch, StreamElements or Tailscale.
 
 ## License
 

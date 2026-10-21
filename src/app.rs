@@ -234,7 +234,7 @@ impl Ctx {
                 let money = format!("{:.0} {}", uah, cur);
                 let money_text = pick_style(&cfg.notify.rules, uah).money_text;
                 let spoken = crate::tts::spoken_text(&cfg.tts.read_mode, &name, &money, &message, &money_text);
-                let allowed = cfg.tts.allowed();
+                let allowed = cfg.tts.allowed_in(&cfg.tts.dir);
                 let eff_voice = if cfg.tts.donor_picks() && !voice.is_empty() && allowed.contains(&voice) {
                     voice.clone()
                 } else {
