@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Widget Customization — LocalMonoDonate</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  .wrap{max-width:760px}
+  .qrrow{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .qrrow .tag{font-size:11px;color:var(--muted);min-width:30px}
+  .qrrow select{min-width:140px}
+  .qrrow .del{flex:0 0 34px;justify-content:center}
+  .range{display:flex;align-items:center;gap:12px}
+  .range input[type=range]{width:260px;max-width:100%}
+  .range output{min-width:48px;font-variant-numeric:tabular-nums;color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="brand"><div class="t">LocalMonoDonate <span class="pg">- QR Widget Customization</span></div></div>
+  <div class="tools"></div>
+</div>
+<div class="wrap">
+  <div class="status" id="status"></div>
+
+  <div class="panel">
+    <div class="sec"><span class="n">01</span><span class="h" data-i18n="qrWidgets">QR widgets</span></div>
+    <div class="body">
+      <div id="qrWidgets"></div>
+      <button class="add" id="addQr" data-i18n="addQr">+ Add QR widget</button>
+      <div class="note" data-i18n="qrWidgetsNote">Up to 5 overlays: /qr, /qr2 … /qr5. Each has its own jar, background color and style.</div>
+      <div class="note"><a id="qrDemo" target="_blank" rel="noopener" data-i18n="qrDemo">Test QR: 5 000 / 10 000</a></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec"><span class="n">02</span><span class="h" data-i18n="qrLayout">Layout</span></div>
+    <div class="body">
+      <div class="row"><label data-i18n="qrAlign">Alignment</label><div class="ctl">
+        <select id="qrAlign">
+          <option value="top" data-i18n="qrAlignTop">Top</option>
+          <option value="mid" data-i18n="qrAlignMid">Middle</option>
+          <option value="bottom" data-i18n="qrAlignBottom">Bottom</option>
+        </select>
+        <div class="note" data-i18n="qrAlignNote">How the QR card and the goal card line up vertically.</div>
+      </div></div>
+      <div class="row"><label data-i18n="qrSize">QR size</label><div class="ctl">
+        <div class="range"><input type="range" id="qrSize" min="0" max="200" step="1" value="100"><output id="qrSizeVal">100%</output></div>
+        <div class="note" data-i18n="qrSizeNote">0–200%. 100% is the default 220 px QR code; 0 hides it.</div>
+      </div></div>
+    </div>
+  </div>
+</div>
+<script src="/i18n.js"></script>
+<script src="/head.js"></script>
+<script>
+window.I18N = {
+  en: {
+    qrWidgets: 'QR widgets', addQr: '+ Add QR widget',
+    qrWidgetsNote: 'Up to 5 overlays: /qr, /qr2 … /qr5. Each has its own jar, background color and style.',
+    qrDemo: 'Test QR: 5 000 / 10 000', qrLayout: 'Layout', qrAlign: 'Alignment',
+    qrAlignTop: 'Top', qrAlignMid: 'Middle', qrAlignBottom: 'Bottom',
+    qrAlignNote: 'How the QR card and the goal card line up vertically.',
+    qrSize: 'QR size', qrSizeNote: '0–200%. 100% is the default 220 px QR code; 0 hides it.',
+    qrStyleBoth: 'QR + goal', qrStyleQr: 'QR only', qrStyleGoal: 'Goal only',
+    qrColor: 'Background color', qrJar: 'Jar', qrRemove: 'Remove widget',
+    saved: 'saved', saveFailed: 'save failed', noJars: 'Add a jar in Setup first'
+  },
+  ua: {
+    qrWidgets: 'QR-віджети', addQr: '+ Додати QR-віджет',
+    qrWidgetsNote: 'До 5 оверлеїв: /qr, /qr2 … /qr5. У кожного своя банка, колір фону та стиль.',
+    qrDemo: 'Тестовий QR: 5 000 / 10 000', qrLayout: 'Розміщення', qrAlign: 'Вирівнювання',
+    qrAlignTop: 'Верх', qrAlignMid: 'Середина', qrAlignBottom: 'Низ',
+    qrAlignNote: 'Як QR-картка та картка цілі вирівнюються по вертикалі.',
+    qrSize: 'Розмір QR', qrSizeNote: '0–200%. 100% — типовий QR 220 px; 0 ховає його.',
+    qrStyleBoth: 'QR + ціль', qrStyleQr: 'Лише QR', qrStyleGoal: 'Лише ціль',
+    qrColor: 'Колір фону', qrJar: 'Банка', qrRemove: 'Видалити віджет',
+    saved: 'збережено', saveFailed: 'не вдалося зберегти', noJars: 'Спочатку додайте банку в Setup'
+  }
+};
+const $ = id => document.getElementById(id);
+let CFG = {}, WIDGETS = [], ALIGN = 'bottom', SIZE = 100;
+
+function jars() {
+  const codes = CFG.jars || [], names = CFG.jarNames || [];
+  return codes.map((code, i) => ({ code, name: names[i] || code }));
+}
+function styleLabel(v) { return window.t(v === 'qr' ? 'qrStyleQr' : v === 'goal' ? 'qrStyleGoal' : 'qrStyleBoth'); }
+function renderWidgets() {
+  const box = $('qrWidgets'); box.innerHTML = '';
+  const list = jars();
+  if (!list.length) { box.innerHTML = '<div class="note">' + window.t('noJars') + '</div>'; $('addQr').style.display = 'none'; return; }
+  WIDGETS.forEach((w, i) => {
+    if (!list.some(j => j.code === w.jar)) w.jar = list[0].code;
+    const row = document.createElement('div'); row.className = 'qrrow';
+    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'QR ' + (i + 1);
+    const jar = document.createElement('select'); jar.title = window.t('qrJar');
+    list.forEach(j => jar.add(new Option(j.name, j.code)));
+    jar.value = w.jar;
+    jar.onchange = () => { WIDGETS[i].jar = jar.value; };
+    const color = document.createElement('input'); color.type = 'color'; color.className = 'qr-color';
+    color.value = /^#[0-9a-f]{6}$/i.test(w.color || '') ? w.color : '#101217';
+    color.title = window.t('qrColor');
+    color.oninput = () => { WIDGETS[i].color = color.value; };
+    const style = document.createElement('select'); style.className = 'qr-style';
+    ['both', 'qr', 'goal'].forEach(v => style.add(new Option(styleLabel(v), v)));
+    style.value = ['both', 'qr', 'goal'].includes(w.style) ? w.style : 'both';
+    style.onchange = () => { WIDGETS[i].style = style.value; };
+    const del = document.createElement('button'); del.className = 'del'; del.type = 'button';
+    del.textContent = '✕'; del.title = window.t('qrRemove'); del.disabled = WIDGETS.length <= 1;
+    del.onclick = () => { if (WIDGETS.length > 1) { WIDGETS.splice(i, 1); renderWidgets(); } };
+    row.append(tag, jar, color, style, del); box.append(row);
+  });
+  $('addQr').style.display = WIDGETS.length >= 5 ? 'none' : 'inline-flex';
+}
+$('addQr').onclick = () => {
+  if (WIDGETS.length >= 5) return;
+  const list = jars(); if (!list.length) return;
+  WIDGETS.push({ jar: list[0].code, color: '#101217', style: 'both' });
+  renderWidgets();
+};
+$('qrSize').oninput = () => { SIZE = Number($('qrSize').value) || 0; $('qrSizeVal').textContent = SIZE + '%'; };
+$('qrAlign').onchange = () => { ALIGN = $('qrAlign').value; };
+
+async function load() {
+  try { CFG = await (await fetch('/api/config')).json(); } catch { CFG = {}; }
+  WIDGETS = (CFG.qrWidgets && CFG.qrWidgets.length ? CFG.qrWidgets
+    : [{ jar: CFG.widgetJar || '', color: '#101217', style: 'both' }]).slice(0, 5).map(w => ({
+      jar: w.jar || '', color: w.color || '#101217', style: w.style || 'both'
+    }));
+  ALIGN = ['top', 'mid', 'bottom'].includes(CFG.qrAlign) ? CFG.qrAlign : 'bottom';
+  SIZE = Math.max(0, Math.min(200, Number(CFG.qrSize ?? 100)));
+  $('qrAlign').value = ALIGN;
+  $('qrSize').value = SIZE;
+  $('qrSizeVal').textContent = SIZE + '%';
+  const qr = (CFG.qrLinks && CFG.qrLinks[0]) || (CFG.links && CFG.links.qr) || '';
+  const demo = $('qrDemo'); if (demo) { if (qr) demo.href = qr + '?demo=1'; else demo.removeAttribute('href'); }
+  renderWidgets();
+  if (window.applyI18n) window.applyI18n();
+}
+
+window.savePage = async () => {
+  const sb = $('save'); if (sb) sb.disabled = true;
+  try {
+    const r = await fetch('/api/qr', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ qrWidgets: WIDGETS, qrAlign: ALIGN, qrSize: SIZE }) });
+    const d = await r.json();
+    $('status').className = 'status ' + (d.ok ? 'ok' : 'err');
+    $('status').textContent = d.ok ? window.t('saved') : (window.t('saveFailed') + (d.error ? ': ' + d.error : ''));
+    if (d.ok) await load();
+  } catch (e) {
+    $('status').className = 'status err';
+    $('status').textContent = window.t('saveFailed');
+  }
+  if (sb) sb.disabled = false;
+};
+
+load();
+</script>
+</body>
+</html>

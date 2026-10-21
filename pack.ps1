@@ -51,6 +51,8 @@ if ($WithTts) {
   "token": "",
   "features": { "donate": true, "stats": true, "overlay": true, "bits": true, "bitsOverlay": true, "youtube": true, "timer": true, "auction": true, "qr": true },
   "widgetJar": "",
+  "qrAlign": "bottom",
+  "qrSize": 100,
   "streamelements": { "enabled": false, "accountId": "" }
 }
 '@ | Set-Content (Join-Path $app 'config.example.json') -Encoding UTF8
@@ -59,7 +61,7 @@ Copy-Item (Join-Path $root 'README.md') (Join-Path $app 'README.md')
 
 # zip can not store pre-1980 timestamps (WebView2Loader.dll ships with one)
 Get-ChildItem $app -Recurse -File | ForEach-Object { $_.LastWriteTime = Get-Date }
-$zip = Join-Path $dist ($(if ($WithTts) { 'MONOBANK-lite-0.2.8-dev.zip' } else { 'LocalMonoDonate-0.2.8-dev.zip' }))
+$zip = Join-Path $dist ($(if ($WithTts) { 'MONOBANK-lite-0.2.9-dev.zip' } else { 'LocalMonoDonate-0.2.9-dev.zip' }))
 Push-Location $dist
 & tar.exe -a -c -f $zip 'LocalMonoDonate'
 if ($LASTEXITCODE -ne 0) { throw 'zip failed' }

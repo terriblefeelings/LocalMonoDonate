@@ -676,6 +676,31 @@ fn se_test(ctx: &Ctx, mut request: tiny_http::Request, port: u16) {
 
 /* ---------------------------------------------------------------- config */
 
+fn qr_get(ctx: &Ctx, request: tiny_http::Request) {
+    let cfg = ctx.cfg();
+    let _ = request.respond(json_resp(200, json!({
+        "qrWidgets": cfg.qr_widgets, "qrAlign": cfg.qr_align, "qrSize": cfg.qr_size
+    })));
+}
+
+fn qr_post(ctx: &Ctx, mut request: tiny_http::Request) {
+    let v = read_body(&mut request);
+    let mut cfg = ctx.cfg();
+    if let Some(arr) = v.get("qrWidgets").and_then(|x| x.as_array()) {
+        let widgets = normalize_qr_widgets(&cfg, arr);
+        cfg.widget_jar = widgets[0].jar.clone();
+        cfg.qr_widgets = widgets;
+    }
+    if let Some(s) = v.get("qrAlign").and_then(|x| x.as_str()) { cfg.qr_align = normalize_qr_align(s); }
+    if let Some(n) = v.get("qrSize").and_then(|x| x.as_u64()) { cfg.qr_size = (n as u32).min(200); }
+    save_config(&ctx.paths, &cfg);
+    *ctx.cfg.lock().unwrap() = cfg.clone();
+    log("qr widget settings saved");
+    let _ = request.respond(json_resp(200, json!({
+        "ok": true, "qrWidgets": cfg.qr_widgets, "qrAlign": cfg.qr_align, "qrSize": cfg.qr_size
+    })));
+}
+
 fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
     let cfg = ctx.cfg();
     let (donate, stats, overlay) = links(&cfg);
@@ -699,7 +724,7 @@ fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
         "statsToken": cfg.stats_token, "port": cfg.port, "publicPort": cfg.public_port, "publicBase": public_base,
         "tailscale": ts,
         "token": cfg.token, "bg": cfg.bg, "bitsBg": cfg.bits_bg, "bitsPageBg": cfg.bits_page_bg, "bitsGrid": cfg.bits_grid, "jars": cfg.jars, "jarNames": cfg.jar_names, "jarMine": cfg.jar_mine, "maxJars": MAX_JARS, "widgetJar": cfg.widget_jar,
-        "qrWidgets": cfg.qr_widgets, "qrLinks": qr_links,
+        "qrWidgets": cfg.qr_widgets, "qrAlign": cfg.qr_align, "qrSize": cfg.qr_size, "qrLinks": qr_links,
         "features": cfg.features,
         "links": { "donate": donate, "stats": stats, "overlay": overlay, "qr": qr_link(&cfg), "bitsPage": bits_page, "bitsOverlay": bits_overlay, "youtube": youtube_link(&cfg) }
     });
@@ -709,6 +734,8 @@ fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
             o.remove("token");
             o.remove("statsToken");
             o.remove("qrWidgets");
+            o.remove("qrAlign");
+            o.remove("qrSize");
             o.remove("qrLinks");
             if let Some(l) = o.get_mut("links").and_then(|x| x.as_object_mut()) {
                 for k in ["stats", "overlay", "bitsOverlay", "youtube", "qr"] { l.remove(k); }
@@ -720,6 +747,30 @@ fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
 
 fn valid_hex_color(s: &str) -> bool {
     s.len() == 7 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit())
+}
+
+fn normalize_qr_widgets(cfg: &Config, arr: &[serde_json::Value]) -> Vec<QrWidgetCfg> {
+    let mut widgets: Vec<QrWidgetCfg> = arr.iter().take(MAX_QR_WIDGETS)
+        .filter_map(|x| serde_json::from_value::<QrWidgetCfg>(x.clone()).ok())
+        .map(|mut w| {
+            w.jar = w.jar.trim().to_string();
+            if !cfg.jars.iter().any(|j| j == &w.jar) { w.jar = cfg.jars.first().cloned().unwrap_or_default(); }
+            if !valid_hex_color(&w.color) { w.color = "#101217".into(); }
+            if !matches!(w.style.as_str(), "both" | "qr" | "goal") { w.style = "both".into(); }
+            w
+        })
+        .collect();
+    if widgets.is_empty() {
+        widgets.push(QrWidgetCfg { jar: cfg.jars.first().cloned().unwrap_or_default(), ..Default::default() });
+    }
+    widgets
+}
+
+fn normalize_qr_align(s: &str) -> String {
+    match s.trim().to_ascii_lowercase().as_str() {
+        "top" | "mid" | "bottom" => s.trim().to_ascii_lowercase(),
+        _ => "bottom".into(),
+    }
 }
 
 fn config_post(ctx: &Ctx, mut request: tiny_http::Request) {
@@ -743,22 +794,12 @@ fn config_post(ctx: &Ctx, mut request: tiny_http::Request) {
     }
     if let Some(s) = v.get("widgetJar").and_then(|x| x.as_str()) { cfg.widget_jar = s.trim().to_string(); }
     if let Some(arr) = v.get("qrWidgets").and_then(|x| x.as_array()) {
-        let mut widgets: Vec<QrWidgetCfg> = arr.iter().take(MAX_QR_WIDGETS)
-            .filter_map(|x| serde_json::from_value::<QrWidgetCfg>(x.clone()).ok())
-            .map(|mut w| {
-                w.jar = w.jar.trim().to_string();
-                if !cfg.jars.iter().any(|j| j == &w.jar) { w.jar = cfg.jars.first().cloned().unwrap_or_default(); }
-                if !valid_hex_color(&w.color) { w.color = "#101217".into(); }
-                if !matches!(w.style.as_str(), "both" | "qr" | "goal") { w.style = "both".into(); }
-                w
-            })
-            .collect();
-        if widgets.is_empty() {
-            widgets.push(QrWidgetCfg { jar: cfg.jars.first().cloned().unwrap_or_default(), ..Default::default() });
-        }
+        let widgets = normalize_qr_widgets(&cfg, arr);
         cfg.widget_jar = widgets[0].jar.clone();
         cfg.qr_widgets = widgets;
     }
+    if let Some(s) = v.get("qrAlign").and_then(|x| x.as_str()) { cfg.qr_align = normalize_qr_align(s); }
+    if let Some(n) = v.get("qrSize").and_then(|x| x.as_u64()) { cfg.qr_size = (n as u32).min(200); }
     if let Some(s) = v.get("publicBase").and_then(|x| x.as_str()) {
         let s = s.trim().trim_end_matches('/');
         // accept a bare host ("ratcorporation.us.kg") or a full URL
@@ -901,6 +942,7 @@ fn serve_page(ctx: &Ctx, host: &str, path: &str, public: bool) -> Option<Vec<u8>
         Page::Stats => include_str!("../public/check.html"),
         Page::Overlay => include_str!("../public/overlay.html"),
         Page::Qr => include_str!("../public/qr.html"),
+        Page::QrEdit => include_str!("../public/qr_edit.html"),
         Page::Setup => include_str!("../public/setup.html"),
         Page::Notify => include_str!("../public/notify.html"),
         Page::BitsOverlay => include_str!("../public/bits_overlay.html"),
@@ -1046,6 +1088,12 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         return;
     }
     if method == Method::Get && path == "/api/poll" { poll_events(&ctx, request, &full); return; }
+    if path == "/api/qr" {
+        if method == Method::Get { qr_get(&ctx, request); }
+        else if method == Method::Post { qr_post(&ctx, request); }
+        else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
     if path == "/api/config" {
         if method == Method::Get { let _ = request.respond(json_resp(200, config_get(&ctx, public))); }
         else if method == Method::Post { config_post(&ctx, request); }

@@ -559,6 +559,8 @@ pub fn list_fonts() -> Vec<String> {
 
 fn d_qr_color() -> String { "#101217".into() }
 fn d_qr_style() -> String { "both".into() }
+fn d_qr_align() -> String { "bottom".into() }
+fn d_qr_size() -> u32 { 100 }
 
 /// one QR overlay: which jar it shows, goal-window background and layout style
 #[derive(Serialize, Deserialize, Clone)]
@@ -613,6 +615,9 @@ pub struct Config {
     #[serde(default = "d_s")] pub widget_jar: String,
     /// /qr, /qr2 … /qr5 overlays (up to MAX_QR_WIDGETS)
     #[serde(default)] pub qr_widgets: Vec<QrWidgetCfg>,
+    #[serde(default = "d_qr_align")] pub qr_align: String, // top | mid | bottom
+    #[serde(default = "d_qr_size")] pub qr_size: u32,      // 0..=200 %
+
 }
 impl Default for Config {
     fn default() -> Self {
@@ -630,6 +635,8 @@ impl Default for Config {
             streamelements: StreamElementsCfg::default(),
             widget_jar: String::new(),
             qr_widgets: Vec::new(),
+            qr_align: d_qr_align(),
+            qr_size: d_qr_size(),
         }
     }
 }
@@ -1205,10 +1212,11 @@ pub fn timer_link(cfg: &Config) -> String {
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
-pub enum Page { Donor, Stats, Overlay, Qr, Setup, Notify, BitsOverlay, BitsDonor, BitsEdit, DonateEdit, YouTube, TimerAdmin, TimerOverlay, AuctionUi, AuctionSettings }
+pub enum Page { Donor, Stats, Overlay, Qr, QrEdit, Setup, Notify, BitsOverlay, BitsDonor, BitsEdit, DonateEdit, YouTube, TimerAdmin, TimerOverlay, AuctionUi, AuctionSettings }
 
 pub fn route_by_host(cfg: &Config, host: &str, path: &str) -> Option<Page> {
     if path == "/setup" { return Some(Page::Setup); }
+    if path == "/qredit" { return Some(Page::QrEdit); }
     if path == "/auctionsettings" { return Some(Page::AuctionSettings); }
     if path == "/notify" { return Some(Page::Notify); }
     if path == "/bitsedit" { return Some(Page::BitsEdit); }
