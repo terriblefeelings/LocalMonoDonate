@@ -234,19 +234,29 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
         // 3rd-party jar: no code, no pending, no tracking — just the payment link
         let t = name.replace(' ', "%20");
         let redirect = format!("https://send.monobank.ua/jar/{}?a={:.0}&t={}", jar_code, amount, t);
-        let _ = request.respond(json_resp(200, json!({ "ok": true, "thirdParty": true, "redirect": redirect })));
+        let _ = request.respond(json_resp(200, json!({ "ok": true, "thirdParty": true, "redirect": redirect, "fallback": redirect })));
         return;
     }
-    let code = {
+    // two codes for one intent: the auto-opened payment page and the fallback link.
+    // The first matching payment consumes both so a viewer cannot trigger the alert twice
+    // when both tabs are open during the redirect.
+    let (code, code2) = {
         let st = ctx.state.lock().unwrap();
         let j = st.jars.iter().find(|j| j.code == jar_code);
-        match j { Some(j) => gen_code(&cfg.code_prefix, &j.issued, &j.pending), None => gen_code(&cfg.code_prefix, &[], &[]) }
+        let mut issued = j.map(|j| j.issued.clone()).unwrap_or_default();
+        let pending = j.map(|j| j.pending.clone()).unwrap_or_default();
+        let code = gen_code(&cfg.code_prefix, &issued, &pending);
+        issued.push(code.clone());
+        let code2 = gen_code(&cfg.code_prefix, &issued, &pending);
+        (code, code2)
     };
     {
         let mut st = ctx.state.lock().unwrap();
         if let Some(j) = st.jars.iter_mut().find(|j| j.code == jar_code) {
-            j.pending.push(Pending { code: code.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), voice: voice.clone(), bit: bit_sel.clone(), created_at: now_ms() });
+            j.pending.push(Pending { code: code.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), voice: voice.clone(), bit: bit_sel.clone(), pair: code2.clone(), created_at: now_ms() });
+            j.pending.push(Pending { code: code2.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), voice: voice.clone(), bit: bit_sel.clone(), pair: code.clone(), created_at: now_ms() });
             j.issued.push(code.clone());
+            j.issued.push(code2.clone());
             if j.issued.len() > 5000 { let n = j.issued.len() - 5000; j.issued.drain(0..n); }
         }
     }
@@ -254,9 +264,11 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     ctx.watch(10 * 60 * 1000);
 
     let comment = donate_comment(&code).replace(' ', "%20");
+    let comment2 = donate_comment(&code2).replace(' ', "%20");
     let redirect = format!("https://send.monobank.ua/jar/{}?a={:.0}&t={}", jar_code, amount, comment);
-    log(&format!("form: {:.0} UAH from {} -> {} ({})", amount, name, code, jar_code));
-    let _ = request.respond(json_resp(200, json!({ "ok": true, "code": code, "redirect": redirect })));
+    let fallback = format!("https://send.monobank.ua/jar/{}?a={:.0}&t={}", jar_code, amount, comment2);
+    log(&format!("form: {:.0} UAH from {} -> {} / {} ({})", amount, name, code, code2, jar_code));
+    let _ = request.respond(json_resp(200, json!({ "ok": true, "code": code, "code2": code2, "redirect": redirect, "fallback": fallback })));
 }
 
 fn test(ctx: &Ctx, mut request: tiny_http::Request) {

@@ -875,6 +875,8 @@ pub struct Pending {
     #[serde(default)] pub voice: String,
     /// bit chosen on the donation form (plays on the bits overlay instead of a normal alert)
     #[serde(default)] pub bit: Option<Bit>,
+    /// fallback-link twin code; both are consumed by the first matching payment
+    #[serde(default)] pub pair: String,
     pub created_at: i64,
 }
 

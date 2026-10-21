@@ -179,6 +179,8 @@ impl Ctx {
         // resolve the alert payload (if any) plus the local history record
         let (name, message, youtube_id, kind, code, alert, voice) = if let Some(k) = idx {
             let p = jar.pending.remove(k);
+            // the fallback-link twin is the same intent, never a second alert
+            if !p.pair.is_empty() { jar.pending.retain(|x| x.code != p.pair); }
             if let Some(bit) = p.bit.clone() {
                 // bit picked on the donation form: play it on the bits overlay (then YouTube)
                 let n = if p.name.trim().is_empty() { "Anonymous SA".to_string() } else { format!("{} SA", p.name.trim()) };

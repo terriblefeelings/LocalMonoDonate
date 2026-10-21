@@ -116,7 +116,7 @@ btn.addEventListener('click', async e => {
     const r = await fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json();
     if (!d.ok) { err(d.error || 'Error'); btn.disabled = false; btn.textContent = window.t('pay'); return; }
-    paylink.href = d.redirect; paynote.hidden = false;
+    paylink.href = d.fallback || d.redirect; paynote.hidden = false;
     window.open(d.redirect, '_blank', 'noopener');
     $('amount').value = ''; $('name').value = ''; $('message').value = ''; $('youtube').value = '';
     btn.disabled = false; btn.textContent = window.t('pay');

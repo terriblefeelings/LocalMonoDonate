@@ -118,6 +118,7 @@ async function testDonations() {
   const amt = Math.max(mn, Math.min(mx, 100));
   const sub = await api('/api/submit', { amount: amt, name: 'Donor', message: 'hello' });
   ok('submit: code + monobank redirect', sub.ok === true && !!sub.code && /send\.monobank\.ua\/jar\//.test(sub.redirect || ''), JSON.stringify(sub).slice(0, 90));
+  ok('submit: fallback link has its own code', sub.ok === true && !!sub.fallback && sub.fallback !== sub.redirect && !!sub.code2 && sub.code2 !== sub.code);
   ok('submit: empty name rejected', (await api('/api/submit', { amount: amt, name: '', message: 'x' })).ok === false);
   ok('submit: empty message rejected', (await api('/api/submit', { amount: amt, name: 'x', message: '' })).ok === false);
   ok('submit: below-min rejected', (await api('/api/submit', { amount: Math.max(0, mn - 1), name: 'x', message: 'y' })).ok === false);
