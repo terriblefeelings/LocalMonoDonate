@@ -61,7 +61,7 @@ Copy-Item (Join-Path $root 'README.md') (Join-Path $app 'README.md')
 
 # zip can not store pre-1980 timestamps (WebView2Loader.dll ships with one)
 Get-ChildItem $app -Recurse -File | ForEach-Object { $_.LastWriteTime = Get-Date }
-$zip = Join-Path $dist ($(if ($WithTts) { 'MONOBANK-lite-0.2.10.zip' } else { 'LocalMonoDonate-0.2.10.zip' }))
+$zip = Join-Path $dist ($(if ($WithTts) { 'MONOBANK-lite-0.2.11-dev.zip' } else { 'LocalMonoDonate-0.2.11-dev.zip' }))
 Push-Location $dist
 & tar.exe -a -c -f $zip 'LocalMonoDonate'
 if ($LASTEXITCODE -ne 0) { throw 'zip failed' }
