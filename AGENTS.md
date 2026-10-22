@@ -20,7 +20,7 @@ exe віддавав зміни.
 
 ```powershell
 cd J:\MONOBANK\AUC
-node _alltest.mjs       # 187 глибоких HTTP-перевірок (сторінки, API, аукціон, донати, таймер, біти, QR)
+node _alltest.mjs       # 188 глибоких HTTP-перевірок (сторінки, API, аукціон, донати, таймер, біти, QR)
 node combotest.mjs      # 33 комбінації режимів аукціону × джерело × валюта + продовження таймера
 node _deeptest.mjs      # 15 кліків у браузері + тема/мова
 node capture_pages.mjs  # 53 скріншоти -> J:\MONOBANK\shots
@@ -40,6 +40,7 @@ node capture_pages.mjs  # 53 скріншоти -> J:\MONOBANK\shots
   ніколи не комітити й не друкувати.
 - Не робіть JSON round-trip через PowerShell для config/data, поки застосунок зупинений
   (подвійне кодування кирилиці).
-- Текст UI — EN + UA (`window.I18N`, `data-i18n`); типово EN.
+- Текст UI — EN + UA (`window.I18N`, `data-i18n`); за замовчуванням — EN.
+- Avoid unnecessary secondary labels and descriptions. Let the layout do the explaining.
 - Документація репозиторію — українською (`README.md`, `docs/FAQ.md`, `docs/PRIVACY.md`), код і
   коментарі — англійською.
