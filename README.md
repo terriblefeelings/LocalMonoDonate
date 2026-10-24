@@ -130,7 +130,7 @@
 | `WebView2Loader.dll` | хостинг WebView2 |
 | `MicrosoftEdgeWebview2Setup.exe` | тихе встановлення WebView2, якщо його немає |
 | `tailscale-setup.msi` | публічна сторінка донатів одним кліком |
-| `tts-engine\` | портативний Python + голоси Google/Azure (без кастомних StyleTTS) |
+| `tts-engine\` | портативний Python + голоси Google/Azure, модель StyleTTS2-UA і yt-dlp для Instagram |
 | `config.example.json` | лише приклад структури — застосунок його не читає |
 
 Node, Python, Rust та інсталятор не потрібні. Налаштування й токени створюються під час першого запуску
@@ -306,7 +306,7 @@ powershell -File pack.ps1 -WithTts -TtsEngine <шлях-до-lite-tts-engine>
 
 `include_str!` вбудовує всі файли з `public/` у exe — **після редагування HTML/JS/CSS потрібна перезбірка**.
 
-Портативний `tts-engine` (venv2 + ffmpeg + serve.py, ~260 МБ) і Tailscale MSI не зберігаються в git —
+Портативний `tts-engine` (venv2 + ffmpeg + serve.py + модель/голоси, ~560 МБ) і Tailscale MSI не зберігаються в git —
 вони є в релізному архіві.
 
 ### Тести
@@ -316,7 +316,7 @@ cargo test --release
 
 cd AUC
 $env:LMD_DATA = "$env:TEMP\lmd-tests"   # щоб тести не чіпали реальний профіль
-node _alltest.mjs       # 187 HTTP-перевірок: сторінки, API, аукціон, донати, таймер, біти, QR
+node _alltest.mjs       # 190 HTTP-перевірок: сторінки, API, аукціон, донати, таймер, біти, QR
 node combotest.mjs      # 33 комбінації аукціону/таймера
 node _deeptest.mjs      # кліки в браузері (потрібен playwright-core)
 node capture_pages.mjs  # скріншоти

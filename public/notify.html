@@ -3,533 +3,462 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Alerts — LocalMonoDonate</title>
+<title>Alerts / LocalMonoDonate</title>
+<meta name="description" content="Configure donation alert rules, styling, voice, media, and output preview for LocalMonoDonate.">
 <link rel="stylesheet" href="/app.css">
-<style>
-  /* Hallmark · modern-minimal · Workbench · Blackened Broadcast Steel · graphic realism */
-  html,body{overflow-x:clip}
-  body.notify-page{
-    --desk-void:oklch(12% .012 72);--desk-plate:oklch(17% .014 72);--desk-raised:oklch(21% .016 72);
-    --desk-edge:oklch(30% .014 72);--desk-ink:oklch(92% .009 78);--desk-muted:oklch(70% .012 76);
-    --desk-dim:oklch(54% .012 76);--desk-signal:oklch(77% .14 76);--desk-signal-deep:oklch(64% .13 68);
-    background-color:var(--desk-void);color:var(--desk-ink);
-    background-image:radial-gradient(ellipse at 78% -18%,oklch(31% .025 70 / .26),transparent 44%),
-      linear-gradient(145deg,oklch(16% .015 72),var(--desk-void) 48%,oklch(10% .01 72));
-  }
-  html[data-theme="light"] body.notify-page{
-    --desk-void:oklch(91% .012 76);--desk-plate:oklch(96% .009 78);--desk-raised:oklch(98% .006 78);
-    --desk-edge:oklch(79% .012 76);--desk-ink:oklch(23% .012 72);--desk-muted:oklch(42% .012 74);
-    --desk-dim:oklch(54% .012 76);--desk-signal:oklch(55% .14 65);--desk-signal-deep:oklch(49% .13 55);
-    background-image:radial-gradient(ellipse at 78% -18%,oklch(82% .035 76 / .52),transparent 44%),
-      linear-gradient(145deg,oklch(96% .01 78),var(--desk-void) 58%,oklch(88% .012 76));
-  }
-  body.notify-page .wrap{max-width:1480px;padding:28px 28px 76px}
-  body.notify-page .head{background:color-mix(in oklch,var(--desk-void) 92%,transparent);border-bottom-color:var(--desk-edge)}
-  body.notify-page .head .brand .t{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
-  body.notify-page .head .brand .t .pg{color:var(--desk-signal);font-weight:700}
-  body.notify-page .head .brand .logo{color:var(--desk-signal)}
-  .console-title{position:relative;margin:0 0 18px;padding:12px 0 16px;border-bottom:1px solid color-mix(in oklch,var(--desk-edge) 74%,transparent)}
-  .console-stamp,.console-meta,.console-head,.console-foot,.monitor-label,.range-head{display:flex;align-items:center;gap:10px}
-  .console-stamp{font:10px/1.2 var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--desk-muted)}
-  .console-stamp .slash{color:var(--desk-dim)}
-  .signal-lamp{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--desk-signal);box-shadow:0 0 9px color-mix(in oklch,var(--desk-signal) 55%,transparent);flex:0 0 8px}
-  .station-state{margin-left:auto;display:flex;align-items:center;gap:7px;color:var(--desk-signal);letter-spacing:.1em}
-  .console-title-row{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-top:14px}
-  .eyebrow,.engraved,.console-id span,.monitor-label,.console-foot,.range-head,.cue-count{font:10px/1.25 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--desk-muted)}
-  .console-title h1{margin:4px 0 2px;font:700 clamp(25px,3vw,38px)/1.06 Bahnschrift,"Arial Narrow",var(--sans);letter-spacing:-.035em;color:var(--desk-ink)}
-  .console-title .intro{margin:5px 0 0;max-width:58ch;color:var(--desk-muted);font-size:13px}
-  .console-id{display:grid;gap:5px;min-width:160px;padding:9px 13px;border:1px solid var(--desk-edge);border-radius:6px;
-    background:linear-gradient(180deg,color-mix(in oklch,var(--desk-raised) 90%,white 2%),var(--desk-plate));box-shadow:inset 0 1px 0 color-mix(in oklch,var(--desk-ink) 9%,transparent)}
-  .console-id strong{font:600 12px/1.2 var(--mono);letter-spacing:.05em;color:var(--desk-signal)}
-  .notify-workbench{display:grid;grid-template-columns:minmax(330px,.86fr) minmax(0,1.5fr);gap:16px;align-items:start}
-  .console-panel{position:relative;min-width:0;overflow:hidden;border:1px solid var(--desk-edge);border-radius:9px;
-    background:linear-gradient(155deg,color-mix(in oklch,var(--desk-raised) 80%,white 2%),var(--desk-plate) 38%,color-mix(in oklch,var(--desk-void) 78%,var(--desk-plate)));
-    box-shadow:inset 0 1px 0 color-mix(in oklch,var(--desk-ink) 10%,transparent),0 14px 32px oklch(0% 0 0 / .13)}
-  .console-panel::before,.console-panel::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;z-index:2;
-    background:radial-gradient(circle at 35% 30%,oklch(60% .012 75),oklch(25% .01 72) 62%,oklch(11% .01 72));
-    box-shadow:0 0 0 1px color-mix(in oklch,var(--desk-edge) 78%,transparent),inset 0 1px 1px oklch(90% .01 75 / .25);pointer-events:none}
-  .console-panel::before{top:11px;left:11px}.console-panel::after{right:11px;bottom:11px}
-  .console-head{justify-content:space-between;gap:14px;min-height:62px;padding:14px 19px 12px 27px;border-bottom:1px solid var(--desk-edge);
-    background:linear-gradient(180deg,color-mix(in oklch,var(--desk-ink) 4%,transparent),transparent)}
-  .console-head h2{margin:4px 0 0;font-size:14px;line-height:1.2;font-weight:650;letter-spacing:.015em;color:var(--desk-ink)}
-  .console-head .hint{font:10px/1.4 var(--mono);letter-spacing:.1em;color:var(--desk-muted);text-align:right;text-transform:uppercase}
-  .console-body{padding:14px 16px 16px}
-  .cue-count{display:flex;align-items:center;gap:8px;padding:1px 0 11px;color:var(--desk-muted)}
-  .cue-count b{margin-left:auto;color:var(--desk-ink);font-size:11px;font-weight:600}
-  .cue-count .signal-lamp{width:6px;height:6px;flex-basis:6px}
-  #rules{display:grid;gap:7px}
-  .notify-page .rule{position:relative;min-height:58px;margin:0;padding:10px 9px 10px 12px;gap:9px;border-radius:5px;
-    border:1px solid color-mix(in oklch,var(--desk-edge) 82%,transparent);background:linear-gradient(180deg,color-mix(in oklch,var(--desk-raised) 86%,white 1%),var(--desk-plate));
-    box-shadow:inset 0 1px 0 color-mix(in oklch,var(--desk-ink) 5%,transparent);transition:border-color .15s,background .15s,transform .15s}
-  .notify-page .rule:hover{border-color:color-mix(in oklch,var(--desk-signal) 46%,var(--desk-edge));transform:translateY(-1px)}
-  .notify-page .rule.sel{border-color:var(--desk-signal);background:linear-gradient(90deg,color-mix(in oklch,var(--desk-signal) 10%,var(--desk-raised)),var(--desk-plate) 48%);box-shadow:inset 3px 0 0 var(--desk-signal),inset 0 1px 0 color-mix(in oklch,var(--desk-ink) 7%,transparent)}
-  .notify-page .rule:focus-visible{outline:2px solid var(--desk-signal);outline-offset:2px}
-  .notify-page .rule .dot{width:9px;height:9px;flex-basis:9px;border-color:var(--desk-dim);background:radial-gradient(circle at 35% 30%,var(--desk-edge),var(--desk-void))}
-  .notify-page .rule.sel .dot{background:var(--desk-signal);border-color:var(--desk-signal);box-shadow:0 0 8px color-mix(in oklch,var(--desk-signal) 55%,transparent)}
-  .notify-page .rule .lab .nm{font-weight:620;color:var(--desk-ink)}
-  .notify-page .rule .lab .rng{margin-top:2px;font-size:10px;color:var(--desk-muted)}
-  .notify-page .rule .del{width:28px;height:28px;border:1px solid transparent;border-radius:4px}
-  .notify-page .rule .del:hover{border-color:var(--desk-edge);background:var(--desk-raised);color:var(--desk-signal)}
-  .notify-page .rule .testbtn{color:var(--desk-signal);font-size:9px}
-  .cue-range{margin-top:12px;padding:11px 12px 12px;border:1px solid var(--desk-edge);border-radius:5px;background:color-mix(in oklch,var(--desk-void) 58%,var(--desk-plate))}
-  .range-head{justify-content:space-between;margin-bottom:8px;font-size:10px}
-  .range-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .range-fields .cell{display:flex;flex-direction:column;gap:4px;min-width:0}
-  .range-fields label{font:10px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--desk-muted)}
-  .range-fields input{height:36px;padding:7px 9px;font:12px var(--mono);font-variant-numeric:tabular-nums}
-  .cue-panel .note{font-size:10px;line-height:1.5}
-  .notify-page .add{border-color:color-mix(in oklch,var(--desk-signal) 40%,var(--desk-edge));color:var(--desk-signal);border-radius:5px;font:10px var(--mono);letter-spacing:.08em;text-transform:uppercase;background:color-mix(in oklch,var(--desk-signal) 4%,transparent)}
-  .notify-page .add:hover{background:color-mix(in oklch,var(--desk-signal) 10%,transparent);border-color:var(--desk-signal);color:var(--desk-ink)}
-  .monitor-panel{display:flex;flex-direction:column}
-  .monitor-head{align-items:center}
-  .monitor-meta{display:flex;align-items:center;gap:12px}
-  .monitor-meta span{font:10px/1.25 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--desk-muted)}
-  .monitor-meta .lamp-label{display:flex;align-items:center;gap:7px;color:var(--desk-signal)}
-  .monitor-chassis{flex:1;min-height:0;padding:14px 16px 13px;background:linear-gradient(145deg,color-mix(in oklch,var(--desk-void) 55%,var(--desk-plate)),var(--desk-void));}
-  .monitor-bezel{position:relative;padding:10px;border:1px solid color-mix(in oklch,var(--desk-edge) 70%,black);border-radius:7px;
-    background:linear-gradient(145deg,oklch(26% .012 72),oklch(15% .01 72) 48%,oklch(23% .012 72));
-    box-shadow:inset 0 1px 0 oklch(90% .008 76 / .12),inset 0 -2px 5px oklch(0% 0 0 / .7),0 4px 9px oklch(0% 0 0 / .22)}
-  .monitor-bezel::before{content:"";position:absolute;inset:4px;border:1px solid oklch(75% .01 76 / .08);border-radius:4px;pointer-events:none}
-  .notify-page #stage{position:relative;isolation:isolate;min-height:330px;margin:0;padding:18px;border:1px solid oklch(65% .012 76 / .13);border-radius:3px;
-    background:radial-gradient(ellipse at 50% 44%,oklch(23% .013 72),oklch(9% .008 72) 74%);overflow:hidden}
-  .notify-page #stage::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(118deg,oklch(100% 0 0 / .045),transparent 22% 76%,oklch(100% 0 0 / .025))}
-  .notify-page #stage>.notif{position:relative;z-index:1}
-  .console-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px 0;color:var(--desk-muted);font:10px/1.25 var(--mono);letter-spacing:.07em;text-transform:uppercase}
-  .console-foot .foot-lamp{display:flex;align-items:center;gap:7px}
-  .console-foot .foot-lamp::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--desk-signal-deep);box-shadow:0 0 6px color-mix(in oklch,var(--desk-signal-deep) 40%,transparent)}
-  .settings-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:24px 0 10px;padding:0 2px 9px;border-bottom:1px solid var(--desk-edge)}
-  .settings-head h2{margin:0;font:650 15px/1.2 Bahnschrift,"Arial Narrow",var(--sans);letter-spacing:.01em;color:var(--desk-ink)}
-  .settings-head p{margin:4px 0 0;font-size:11px;color:var(--desk-muted)}
-  .settings-head .engraved{font-size:10px;text-align:right}
-  .notify-page .status{padding:10px 2px 0;min-height:30px;font:10px var(--mono);letter-spacing:.04em}
-  .notify-page .status.ok{color:var(--desk-signal)}
-  .notify-page .status.err{color:var(--err)}
-  .pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
-  .mini{display:flex;flex-direction:column;gap:9px}
-  .mini label{font:11px var(--mono);letter-spacing:.035em;color:var(--desk-muted)}
-  .mini .cell{display:flex;flex-direction:column;gap:5px;min-width:0}
-  .notify-page details.grp{position:relative;margin:0;overflow:hidden;border:1px solid var(--desk-edge);border-radius:6px;
-    background:linear-gradient(155deg,color-mix(in oklch,var(--desk-raised) 74%,white 1%),var(--desk-plate) 42%,color-mix(in oklch,var(--desk-void) 82%,var(--desk-plate)));
-    box-shadow:inset 0 1px 0 color-mix(in oklch,var(--desk-ink) 6%,transparent)}
-  .notify-page details.grp>summary{position:relative;min-height:54px;padding:13px 15px 13px 34px;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--desk-ink)}
-  .notify-page details.grp>summary::before{position:absolute;left:15px;top:50%;width:9px;height:9px;display:grid;place-items:center;transform:translateY(-50%);content:"+";
-    border:1px solid var(--desk-edge);border-radius:2px;color:var(--desk-signal);font:10px/1 var(--mono)}
-  .notify-page details.grp[open]>summary{border-bottom:1px solid var(--desk-edge);background:color-mix(in oklch,var(--desk-signal) 4%,transparent)}
-  .notify-page details.grp[open]>summary::before{content:"−";border-color:color-mix(in oklch,var(--desk-signal) 65%,var(--desk-edge))}
-  .notify-page details.grp .body{padding:14px 15px 16px}
-  .notify-page .note{font:11px/1.5 var(--mono);letter-spacing:.01em;color:var(--desk-muted)}
-  .notify-page input,.notify-page select,.notify-page textarea{border-color:color-mix(in oklch,var(--desk-edge) 76%,transparent);border-radius:4px;background:color-mix(in oklch,var(--desk-void) 70%,var(--desk-plate));color:var(--desk-ink)}
-  .notify-page input:focus,.notify-page select:focus,.notify-page textarea:focus{border-color:var(--desk-signal);box-shadow:0 0 0 2px color-mix(in oklch,var(--desk-signal) 18%,transparent);background:var(--desk-void)}
-  .notify-page input[type=color]{height:36px;padding:3px;background:var(--desk-plate)}
-  .notify-page input[type=range]{accent-color:var(--desk-signal)}
-  .notify-page button,.notify-page .btn{border-color:var(--desk-edge);border-radius:4px;background:linear-gradient(180deg,color-mix(in oklch,var(--desk-raised) 88%,white 3%),var(--desk-plate));box-shadow:inset 0 1px 0 color-mix(in oklch,var(--desk-ink) 7%,transparent)}
-  .notify-page button:hover,.notify-page .btn:hover{border-color:color-mix(in oklch,var(--desk-signal) 65%,var(--desk-edge))}
-  .notify-page button:focus-visible,.notify-page .btn:focus-visible{outline:2px solid var(--desk-signal);outline-offset:2px}
-  .notify-page .rule .sw .track{border-radius:2px}
-  .notify-page .selpop{background:var(--desk-plate);border-color:var(--desk-edge)}
-  .notify-page .selopt:hover{background:var(--desk-raised)}
-  .notify-page .selopt.on{background:var(--desk-signal);color:oklch(17% .01 72)}
-  .notify-page #ministage{background:var(--desk-plate);border-color:var(--desk-edge);border-radius:6px;box-shadow:0 12px 28px oklch(0% 0 0 / .38)}
-  @media(max-width:1120px){body.notify-page .wrap{padding:20px 18px 52px}.notify-workbench{grid-template-columns:1fr;gap:11px}.monitor-panel{order:-1}.notify-page #stage{min-height:290px}.monitor-chassis{padding:10px}}
-  @media(max-width:760px){.notify-page #stage{min-height:290px}.console-title-row{align-items:start}.console-id{min-width:130px}.pgrid{grid-template-columns:1fr}}
-  @media(max-width:600px){.notify-page .head{align-items:flex-start;flex-wrap:wrap;gap:8px;padding:10px 12px}.notify-page .head .brand{flex:1 1 100%;width:100%}.notify-page .head .tools{width:100%;justify-content:flex-start;gap:5px}.notify-page .head .tools .ib{width:34px;height:34px}}
-  @media(max-width:480px){body.notify-page .wrap{padding:14px 12px 44px}.console-title-row{display:grid;grid-template-columns:1fr}.console-id{width:100%}.console-head{padding-right:13px;align-items:flex-start}.console-head .hint{max-width:115px}.monitor-meta{gap:6px}.monitor-meta span,.console-foot{font-size:9px}.console-foot{flex-wrap:wrap}.console-foot span:last-child{margin-left:auto;text-align:right}.monitor-chassis{padding:8px}.monitor-bezel{padding:5px}.notify-page #stage{min-height:250px;padding:8px}.pgrid{grid-template-columns:1fr}}
-  @media(prefers-reduced-motion:reduce){.notify-page *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
-</style>
+<link rel="stylesheet" href="/notify.css">
 </head>
 <body class="notify-page">
-<div class="head">
-  <div class="brand">
-    <button class="logo" id="logo" type="button" title="🐀"><svg viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14,54c6.409,0,11.645-5.054,11.969-11.383c1.384,0.424,2.797,0.749,4.226,0.979C30.471,44.02,34,49.526,34,54v2.095  l-6.114,0.611C25.67,56.928,24,58.774,24,61c0,0.552,0.448,1,1,1h26c3.459,0,10-1.463,10-7V43c0-5.262-1.374-10.178-4.454-15.94  c-1.475-2.76-3.147-5.888-3.581-9.148c-0.317-2.381,0.135-4.744,1.239-6.481c0.602-0.947,1.501-1.55,2.406-1.615  c0.74-0.046,1.438,0.277,2.018,0.953c0.717,0.837,0.863,2.015,0.37,3l-0.392,0.783l1.789,0.895l0.392-0.783  c0.854-1.708,0.602-3.748-0.64-5.197c-0.994-1.16-2.302-1.74-3.678-1.646c-1.534,0.109-3.011,1.058-3.951,2.537  c-1.373,2.16-1.918,4.936-1.534,7.818c0.481,3.62,2.245,6.917,3.8,9.827C57.699,33.459,59,38.085,59,43v1.603  c-2.332-5.197-6.409-8.344-10.652-11.595c-1.547-1.186-3.147-2.412-4.689-3.761c-0.474-0.415-0.912-0.815-1.316-1.201  c-1.211-1.157-1.496-2.961-0.675-4.289c0.216-0.349,0.404-0.714,0.579-1.085C45.566,21.7,48,18.631,48,15c0-4.411-3.589-8-8-8  c-0.52,0-1.03,0.068-1.533,0.167C37.307,4.083,34.369,2,31,2c-4.411,0-8,3.589-8,8c0,0.596,0.095,1.204,0.241,1.812  c-0.183,0.267-0.373,0.528-0.534,0.813c-0.087,0.165-2.212,4.063-8.167,5.659c-1.545,0.414-2.527,1.148-2.916,2.181  c-0.353,0.936-0.16,2.033,0.544,3.089c2.422,3.634,6.231,5.038,14.557,5.365c1.729,0.068,3.38,0.854,4.527,2.156  c0.794,0.901,1.524,1.773,2.062,2.428c0.493,0.6,0.479,1.481-0.08,2.056c-0.286,0.284-0.665,0.438-1.094,0.43  c-2.415-0.061-4.544-0.371-7.347-1.072l-1.239-0.31c-0.047-0.012-0.094-0.014-0.141-0.024C21.146,31.714,17.666,30,14,30  C7.383,30,2,35.383,2,42S7.383,54,14,54z M31,4c2.497,0,4.672,1.531,5.562,3.801c-0.031,0.015-0.062,0.03-0.093,0.045  C35.133,7.295,33.735,7,32.298,7C29.574,7,27,8.036,25.01,9.807C25.113,6.588,27.756,4,31,4z M32.09,37.989  c0.938,0.033,1.881-0.345,2.546-1.004c0.006-0.006,0.075-0.075,0.081-0.081c1.229-1.264,1.289-3.271,0.142-4.669  c-0.549-0.668-1.296-1.56-2.106-2.48c-1.507-1.71-3.676-2.743-5.949-2.832c-0.953-0.038-1.823-0.093-2.637-0.16  c0.125-0.085,0.257-0.16,0.378-0.251c2.609-1.947,3.218-2.849,3.359-3.146l-1.778-0.913c-0.018,0.029-0.47,0.733-2.778,2.456  c-0.841,0.627-1.834,1.077-2.944,1.356c-3.736-0.742-5.384-2.037-6.573-3.82c-0.157-0.235-0.504-0.832-0.337-1.274  c0.145-0.385,0.7-0.724,1.563-0.955c6.849-1.835,9.321-6.47,9.406-6.634C26.061,10.755,29.063,9,32.298,9  c0.722,0,1.432,0.095,2.127,0.267c-0.49,0.474-0.923,1.013-1.282,1.609l1.713,1.032C35.954,10.087,37.876,9,40,9  c3.309,0,6,2.691,6,6s-2.691,6-6,6c-0.286,0-0.575-0.021-0.859-0.061l-0.281,1.98c0.32,0.045,0.644,0.061,0.967,0.068  c-1.118,2.093-0.676,4.777,1.135,6.506c0.424,0.404,0.883,0.824,1.38,1.259c1.591,1.393,3.218,2.638,4.791,3.843  C53.5,39.475,59,43.689,59,55c0,4.926-7.921,5-8,5H26.225c0.338-0.709,1.027-1.22,1.86-1.303l7.015-0.702  C35.611,57.944,36,57.514,36,57v-3.982c0-2.294,1.792-4.229,4.08-4.406l7.997-0.615l-0.153-1.994l-7.997,0.615  c-1.975,0.152-3.69,1.211-4.762,2.741c-0.713-2.201-1.728-4.188-2.455-5.464C33.509,43.957,34.308,44,35.109,44H37v-2h-1.891  c-4.496,0-8.999-1.063-13.02-3.074c-0.317-0.158-0.549-0.432-0.654-0.771c-0.105-0.34-0.065-0.706,0.114-1.029  c0.271-0.488,0.909-0.733,1.521-0.579l1.239,0.31C27.224,37.587,29.551,37.925,32.09,37.989z M14,32c2.653,0,5.188,1.081,7.049,2.93  c-0.516,0.284-0.956,0.697-1.251,1.227c-0.445,0.805-0.543,1.725-0.275,2.59c0.264,0.852,0.873,1.569,1.67,1.968  c0.912,0.456,1.85,0.856,2.803,1.219C23.998,41.957,24,41.978,24,42c0,5.514-4.486,10-10,10S4,47.514,4,42S8.486,32,14,32z"/><path d="M11,46h6c0.552,0,1-0.448,1-1v-6c0-0.552-0.448-1-1-1h-6c-0.552,0-1,0.448-1,1v6C10,45.552,10.448,46,11,46z M12,40h4v4h-4  V40z"/><rect height="2" width="2" x="28" y="16"/><rect height="2" width="2" x="4" y="22"/><rect height="2" width="2" x="2" y="24"/><rect height="2" width="2" x="6" y="24"/><rect height="2" width="2" x="4" y="26"/><rect height="2" width="2" x="12" y="56"/><rect height="2" width="2" x="10" y="58"/><rect height="2" width="2" x="14" y="58"/><rect height="2" width="2" x="12" y="60"/><rect height="2" width="2" x="11" y="2"/><rect height="2" width="2" x="9" y="4"/><rect height="2" width="2" x="13" y="4"/><rect height="2" width="2" x="11" y="6"/></svg></button>
-    <div class="t">LocalMonoDonate <span class="pg">- Alerts Customization</span></div>
-  </div>
-  <div class="tools"></div>
-</div>
+<div class="head" id="siteHeader"></div>
 
-<div class="wrap">
-  <section class="console-title" aria-labelledby="notifyTitle">
-    <div class="console-stamp"><span class="signal-lamp" aria-hidden="true"></span><span data-i18n="consoleSystem">DONATION SYSTEM</span><span class="slash">/</span><span data-i18n="consoleArea">ALERT ENGINE</span><span class="station-state"><span data-i18n="consoleReady">LOCAL PREVIEW</span></span></div>
-    <div class="console-title-row"><div><p class="eyebrow" data-i18n="consoleEyebrow">CUE DESIGN WORKSTATION</p><h1 id="notifyTitle" data-i18n="consoleTitle">Alert console</h1><p class="intro" data-i18n="consoleIntro">Set the cue, tune its delivery, and inspect the result before it reaches stream.</p></div><div class="console-id"><span data-i18n="consoleProfile">CONTROL PROFILE</span><strong data-i18n="consoleProfileValue">01 / DONATION</strong></div></div>
-  </section>
+<div id="page-zoom">
+<main class="nt-shell">
+  <header class="nt-masthead">
+    <div class="nt-masthead__meta">
+      <span class="nt-code">A/01</span>
+      <span data-i18n="consoleSystem">Donation alerts</span>
+      <span class="nt-slash" aria-hidden="true">/</span>
+      <span data-i18n="statusLocal">Local preview</span>
+    </div>
+    <div class="nt-masthead__row">
+      <div class="nt-masthead__copy">
+        <h1 id="notifyTitle"><span class="nt-alert-word" data-i18n="titleLead">Alerts</span> <span data-i18n="titleAccent">configuration</span></h1>
+        <p data-i18n="consoleIntro">Shape the signal, voice, and framing of each donation alert. Every change renders in the local preview.</p>
+      </div>
+      <div class="admin-hero__status nt-masthead__status"><span class="admin-hero__lamp" aria-hidden="true"></span><span>Local admin</span></div>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </header>
 
-  <div class="notify-workbench">
-    <section class="console-panel cue-panel" aria-labelledby="cueHeading">
-      <div class="console-head"><div><span class="engraved" data-i18n="cueBank">01 / CUE BANK</span><h2 id="cueHeading" data-i18n="variation">Donate Variation</h2></div><span class="hint" data-i18n="rulesHint">first match wins · default is fallback</span></div>
-      <div class="console-body">
-        <div class="cue-count"><span class="signal-lamp" aria-hidden="true"></span><span data-i18n="cueStack">ROUTING CUES</span><b id="cueCount">1 CUE</b></div>
-        <div id="rules" role="list" aria-label="Donation variations"></div>
-        <div class="cue-range"><div class="range-head"><span data-i18n="triggerRange">TRIGGER RANGE</span><span data-i18n="currencyUnit">UAH</span></div><div class="range-fields">
-          <div class="cell"><label for="rule_min" data-i18n="from">from</label><input type="number" id="rule_min" min="10" max="29999"></div>
-          <div class="cell"><label for="rule_max" data-i18n="toInf">to</label><input type="number" id="rule_max" min="10" max="29999"></div>
-        </div></div>
-        <div class="note" id="rulenote" aria-live="polite"></div>
-        <button class="add" id="addrule" data-i18n="addRule" style="margin-top:9px">+ Add variation</button>
+  <div class="nt-racing-rail" aria-hidden="true"></div>
+
+  <div class="nt-workbench">
+    <aside class="nt-bank nt-panel" aria-labelledby="cueHeading">
+      <header class="nt-panel__head">
+        <div><h2 id="cueHeading"><span class="nt-panel__id" aria-hidden="true">01</span><span data-i18n="cueBank">Cue bank</span></h2><p data-i18n="cueBankHint">Select a cue to inspect its range and styling.</p></div>
+        <span class="nt-bank__count" id="cueCount">1 variation</span>
+      </header>
+      <div id="rules" class="nt-rule-list" role="list" aria-label="Donation variations"></div>
+      <div class="nt-bank__range">
+        <span class="nt-rangebar__label" data-i18n="triggerRange">Amount range</span>
+        <div class="nt-bank__range-line">
+          <label class="nt-rangebar__field" for="rule_min"><span data-i18n="from">from</span><input type="number" id="rule_min" min="10" max="29999" inputmode="numeric"></label>
+          <label class="nt-rangebar__field" for="rule_max"><span data-i18n="toInf">to</span><input type="number" id="rule_max" min="10" max="29999" inputmode="numeric"></label>
+          <span class="nt-unit" data-i18n="currencyUnit">UAH</span>
+        </div>
+        <p id="rulenote" class="nt-note" aria-live="polite"></p>
+      </div>
+      <button id="addrule" class="nt-button nt-button--primary nt-button--block" type="button" data-i18n="addRule">+ Add variation</button>
+    </aside>
+
+    <section class="nt-monitor nt-panel" aria-labelledby="monitorHeading">
+      <header class="nt-panel__head">
+        <div><h2 id="monitorHeading"><span class="nt-panel__id" aria-hidden="true">02</span><span data-i18n="outputLabel">Output monitor</span></h2><p data-i18n="previewLocal">Only you can see this preview; it is not broadcast.</p></div>
+        <div class="nt-output__controls"><div class="nt-output__state"><span class="nt-lamp" aria-hidden="true"></span><span data-i18n="previewOnly">Preview</span></div></div>
+      </header>
+      <dl class="nt-readout">
+        <div><dt data-i18n="consoleProfile">Editing</dt><dd id="activeCueName">Default (rest)</dd></div>
+        <div><dt data-i18n="triggerRange">Amount range</dt><dd><span class="nt-unit" data-i18n="currencyUnit">UAH</span> <span id="ruleRange">0 +</span></dd></div>
+        <div><dt data-i18n="previewOnly">Preview</dt><dd><span data-i18n="localOnly">Local only</span></dd></div>
+      </dl>
+      <div class="nt-monitor__frame">
+        <div class="nt-monitor__rail"><span data-i18n="outputLabel">Output monitor</span><span><span data-i18n="localOnly">Local only</span><span>16:9</span></span></div>
+        <div id="stage" class="nt-stage" role="region" aria-label="Live alert preview"></div>
+        <div class="nt-monitor__caption"><span data-i18n="previewDrag">Drag media to move it</span><span data-i18n="previewLocal">Only you can see this preview; it is not broadcast.</span></div>
       </div>
     </section>
-
-    <section class="console-panel monitor-panel" aria-labelledby="monitorHeading">
-      <div class="console-head monitor-head"><div><span class="engraved" data-i18n="monitorChannel">02 / OUTPUT MONITOR</span><h2 id="monitorHeading" data-i18n="monitorTitle">Alert preview</h2></div><div class="monitor-meta"><span class="lamp-label"><span class="signal-lamp" aria-hidden="true"></span><span data-i18n="previewOnly">PREVIEW ONLY</span></span></div></div>
-      <div class="monitor-chassis"><div class="monitor-bezel"><div class="stage" id="stage" aria-label="Live alert preview"></div></div><div class="console-foot"><span class="foot-lamp" data-i18n="previewLocal">LOCAL RENDER · NO LIVE BROADCAST</span><span data-i18n="previewDrag">DRAG MEDIA TO REPOSITION</span></div></div>
-    </section>
   </div>
-  <div class="status" id="status" role="status" aria-live="polite"></div>
-  <div class="settings-head"><div><span class="engraved" data-i18n="settingsIndex">03 / DETAIL BAYS</span><h2 data-i18n="settingsTitle">Cue characteristics</h2><p data-i18n="settingsHint">Open a bay to tune individual hardware parameters.</p></div><span class="engraved" data-i18n="settingsHintRight">PER-CUE ADJUSTMENTS</span></div>
 
-  <div class="pgrid"><details class="grp" style="order:1"><summary><span class="h" data-i18n="gText">Text</span></summary><div class="body mini">
-    <div class="cell"><label data-i18n="lineBlue">Top line (light blue)</label><input type="text" id="top_text"></div>
-    <div class="cell"><label data-i18n="lineGreen">Amount line (green)</label><input type="text" id="money_text"></div>
-    <div class="note" data-i18n="varsHint">%donate% = donor name · %money% = amount — both work in either line</div>
-    <div class="cell"><label data-i18n="ttsMode">Voice set</label><select id="tts_mode">
-      <option value="default" data-i18n="tmDefault">Default (all voices)</option>
-      <option value="google:uk" data-i18n="tmGuk">Google UA only</option>
-      <option value="google:us" data-i18n="tmGus">Google US only</option>
-      <option value="azure:uk" data-i18n="tmAzuk">Azure UA (Polina/Ostap)</option>
-      <option value="azure:us" data-i18n="tmAzus">Azure US (Jenny/Guy)</option>
-      <option value="custom" data-i18n="tmCustom">Custom only</option>
-      <option value="off" data-i18n="tmOff">Off (no voice)</option>
-    </select></div>
-    <div class="cell" id="azure_cell" style="display:none"><label data-i18n="azKey">Azure Speech key</label><input type="password" id="azure_key" placeholder="Key 1"></div>
-    <div class="cell" id="azure_reg_cell" style="display:none"><label data-i18n="azRegion">Azure region</label><input type="text" id="azure_region" placeholder="e.g. westeurope"></div>
-    <div class="note" id="azure_warn" style="display:none;color:#ff6b6b" data-i18n="azWarn">Fill in the Azure key and region below to use this voice set.</div>
-    <div class="note" id="azure_help" style="display:none" data-i18n="azHelp">How to get an Azure key (free, 500k characters/month): 1) sign in at portal.azure.com; 2) Create a resource → search "Speech"; 3) pick a resource group + a Region (remember it, e.g. westeurope); 4) Pricing tier = Free F0; 5) Create, then open the resource → Keys and Endpoint → copy KEY 1 and the Location. Paste them above and Save.</div>
-    <div class="cell"><label data-i18n="defVoice">Default voice</label><select id="tts_voice"></select></div>
-    <div class="cell"><label data-i18n="readMode">Read aloud</label><select id="tts_read">
-      <option value="announcement" data-i18n="rmAnn">Announcement only</option>
-      <option value="message" data-i18n="rmMsg">Message only</option>
-      <option value="both" data-i18n="rmBoth">Announcement + message</option>
-    </select></div>
-    <div class="note" data-i18n="ttsNote">Applies to all variations. Donors may pick another voice on the form unless a single voice is set.</div>
-  </div></details>
+  <section class="nt-console" aria-labelledby="settingsHeading">
+    <header class="nt-sectionline">
+      <div class="nt-sectionline__copy"><h2 id="settingsHeading"><span class="nt-sectionline__id" aria-hidden="true">03</span><span data-i18n="parameterConsole">Parameter console</span></h2><p data-i18n="settingsHint">Control its sound, motion, text, and media.</p></div>
+      <p class="nt-inspector__hint" data-i18n="settingsHintRight">Changes apply to the selected variation</p>
+    </header>
+    <div class="nt-inspector__body">
+      <div class="nt-tabs" role="tablist" aria-label="Parameter sections">
+          <button class="nt-tab is-active" id="tab-copy" type="button" role="tab" aria-selected="true" aria-controls="panel-copy" tabindex="0" data-tab="copy"><span class="nt-tab__index">01</span><span class="nt-tab__name" data-i18n="signalCopyType">Copy and type</span></button>
+          <button class="nt-tab" id="tab-top" type="button" role="tab" aria-selected="false" aria-controls="panel-top" tabindex="-1" data-tab="top"><span class="nt-tab__index">02</span><span class="nt-tab__name" data-i18n="signalTop">Top line</span></button>
+          <button class="nt-tab" id="tab-amount" type="button" role="tab" aria-selected="false" aria-controls="panel-amount" tabindex="-1" data-tab="amount"><span class="nt-tab__index">03</span><span class="nt-tab__name" data-i18n="signalAmount">Amount line</span></button>
+          <button class="nt-tab" id="tab-voice" type="button" role="tab" aria-selected="false" aria-controls="panel-voice" tabindex="-1" data-tab="voice"><span class="nt-tab__index">04</span><span class="nt-tab__name" data-i18n="signalVoice">Voice channel</span></button>
+          <button class="nt-tab" id="tab-timing" type="button" role="tab" aria-selected="false" aria-controls="panel-timing" tabindex="-1" data-tab="timing"><span class="nt-tab__index">05</span><span class="nt-tab__name" data-i18n="signalTiming">Timing and motion</span></button>
+          <button class="nt-tab" id="tab-frame" type="button" role="tab" aria-selected="false" aria-controls="panel-frame" tabindex="-1" data-tab="frame"><span class="nt-tab__index">06</span><span class="nt-tab__name" data-i18n="signalFrame">Output frame</span></button>
+          <button class="nt-tab" id="tab-media" type="button" role="tab" aria-selected="false" aria-controls="panel-media" tabindex="-1" data-tab="media"><span class="nt-tab__index">07</span><span class="nt-tab__name" data-i18n="signalMedia">Media channel</span></button>
+          <button class="nt-tab" id="tab-data" type="button" role="tab" aria-selected="false" aria-controls="panel-data" tabindex="-1" data-tab="data"><span class="nt-tab__index">08</span><span class="nt-tab__name" data-i18n="signalData">Configuration data</span></button>
+          <button class="nt-tab" id="tab-test" type="button" role="tab" aria-selected="false" aria-controls="panel-test" tabindex="-1" data-tab="test" hidden><span class="nt-tab__index">09</span><span class="nt-tab__name" data-i18n="mediaTest">Media test</span></button>
+      </div>
+      <div class="nt-tabpanels">
+        <section class="nt-tabpanel" id="panel-copy" role="tabpanel" aria-labelledby="tab-copy">
+          <div class="nt-fields">
+        <label class="nt-field nt-field--wide" for="rule_label">
+        <span class="nt-field__label" data-i18n="variationName">Variation name</span>
+        <input type="text" id="rule_label" maxlength="48" autocomplete="off">
+        </label>
+<label class="nt-field nt-field--wide" for="top_text">
+        <span class="nt-field__label" data-i18n="lineBlue">Top line (light blue)</span>
+        <input type="text" id="top_text" autocomplete="off">
+        </label>
+        <label class="nt-field nt-field--wide" for="money_text">
+        <span class="nt-field__label" data-i18n="lineGreen">Amount line (green)</span>
+        <input type="text" id="money_text" autocomplete="off">
+        </label>
+        <p class="nt-note nt-span-2" data-i18n="varsHint">%donate% = user name, %money% = amount; both work in either line</p>
 
-  <details class="grp" style="order:2"><summary><span class="h" data-i18n="gDuration">Duration</span></summary><div class="body mini">
-    <div class="cell"><label data-i18n="showMs">Show for (ms, image/none)</label><input type="number" id="duration_ms" min="500" max="60000" step="500"></div>
-  </div></details>
-
-  <details class="grp" style="order:3"><summary><span class="h" data-i18n="gAnim">Animation</span></summary><div class="body mini">
-    <div class="cell"><label data-i18n="animIn">In</label><select id="anim_in"><option value="slide_up" data-i18n="aUp">slide up</option><option value="fade" data-i18n="aFade">fade</option><option value="zoom" data-i18n="aZoom">zoom</option><option value="slide_left" data-i18n="aLeft">slide left</option></select></div>
-    <div class="cell"><label data-i18n="animOut">Out</label><select id="anim_out"><option value="fade" data-i18n="aFade">fade</option><option value="slide_down" data-i18n="aDown">slide down</option><option value="zoom" data-i18n="aZoom">zoom</option></select></div>
-    <div class="cell"><label data-i18n="speedMs">Speed (ms)</label><input type="number" id="anim_ms" min="80" max="2000" step="20"></div>
-  </div></details>
-
-  <details class="grp" style="order:4"><summary><span class="h" data-i18n="gMsg">Message</span></summary><div class="body mini">
-    <div class="cell"><label data-i18n="font">Font</label><select id="msg_font"></select></div>
-    <div class="cell"><label data-i18n="size">Size (px)</label><input type="number" id="msg_size" min="6" max="120"></div>
-    <div class="cell"><label data-i18n="weight">Weight</label><select id="msg_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select></div>
-    <div class="cell"><label data-i18n="color">Text colour</label><input type="color" id="msg_color"></div>
-    <div class="cell"><label data-i18n="outline">Outline colour</label><input type="color" id="msg_outline"></div>
-    <div class="cell"><label data-i18n="outlineOp">Outline opacity</label><input type="range" id="msg_outline_op" min="0" max="1" step="0.01"></div>
-    <div class="cell"><label data-i18n="maxw">Max width (px)</label><input type="number" id="msg_maxw" min="80" max="2000"></div>
-    <div class="cell"><label data-i18n="maxh">Max height (px)</label><input type="number" id="msg_maxh" min="24" max="800"></div>
-    <div class="cell"><label data-i18n="bgc">Background</label><input type="color" id="red_bg"></div>
-    <div class="cell"><label data-i18n="bgo">Background opacity</label><input type="range" id="red_bg_opacity" min="0" max="1" step="0.01"></div>
-    <div class="cell"><label data-i18n="bgr">Background radius (px)</label><input type="number" id="red_radius" min="0" max="80"></div>
-  </div></details>
-
-  <details class="grp" style="order:5"><summary><span class="h" data-i18n="gBlue">Top line style</span></summary><div class="body mini">
-    <div class="cell"><label data-i18n="font">Font</label><select id="blue_font"></select></div>
-    <div class="cell"><label data-i18n="size">Size (px)</label><input type="number" id="blue_size" min="6" max="120"></div>
-    <div class="cell"><label data-i18n="weight">Weight</label><select id="blue_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select></div>
-    <div class="cell"><label data-i18n="color">Text colour</label><input type="color" id="blue_color"></div>
-    <div class="cell"><label data-i18n="outline">Outline colour</label><input type="color" id="blue_outline"></div>
-    <div class="cell"><label data-i18n="outlineOp">Outline opacity</label><input type="range" id="blue_outline_op" min="0" max="1" step="0.01"></div>
-    <div class="cell"><label data-i18n="maxw">Max width (px)</label><input type="number" id="blue_maxw" min="80" max="2000"></div>
-    <div class="cell"><label data-i18n="bgc">Background</label><input type="color" id="blue_bg"></div>
-    <div class="cell"><label data-i18n="bgo">Background opacity</label><input type="range" id="blue_bg_opacity" min="0" max="1" step="0.01"></div>
-    <div class="cell"><label data-i18n="bgr">Background radius (px)</label><input type="number" id="blue_radius" min="0" max="80"></div>
-  </div></details>
-
-  <details class="grp" style="order:6"><summary><span class="h" data-i18n="gGreen">Amount line style</span></summary><div class="body mini">
-    <div class="cell"><label data-i18n="font">Font</label><select id="green_font"></select></div>
-    <div class="cell"><label data-i18n="size">Size (px)</label><input type="number" id="green_size" min="6" max="120"></div>
-    <div class="cell"><label data-i18n="weight">Weight</label><select id="green_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select></div>
-    <div class="cell"><label data-i18n="color">Text colour</label><input type="color" id="green_color"></div>
-    <div class="cell"><label data-i18n="outline">Outline colour</label><input type="color" id="green_outline"></div>
-    <div class="cell"><label data-i18n="outlineOp">Outline opacity</label><input type="range" id="green_outline_op" min="0" max="1" step="0.01"></div>
-    <div class="cell"><label data-i18n="maxw">Max width (px)</label><input type="number" id="green_maxw" min="80" max="2000"></div>
-    <div class="cell"><label data-i18n="bgc">Background</label><input type="color" id="green_bg"></div>
-    <div class="cell"><label data-i18n="bgo">Background opacity</label><input type="range" id="green_bg_opacity" min="0" max="1" step="0.01"></div>
-    <div class="cell"><label data-i18n="bgr">Background radius (px)</label><input type="number" id="green_radius" min="0" max="80"></div>
-  </div></details>
-
-  <details class="grp" style="order:7"><summary><span class="h" data-i18n="gWindow">Window background</span></summary><div class="body mini">
-    <div class="cell"><label data-i18n="bgc">Background</label><input type="color" id="win_bg"></div>
-    <div class="cell"><label data-i18n="bgo">Opacity</label><input type="range" id="win_bg_opacity" min="0" max="1" step="0.01"></div>
-    <div class="cell"><label data-i18n="bgr">Corner radius (px)</label><input type="number" id="win_radius" min="0" max="80"></div>
-    <div class="cell"><label data-i18n="winMaxH">Max height (px, 0 = auto)</label><input type="number" id="win_maxh" min="0" max="2000"></div>
-    <div class="cell"><label data-i18n="maxw">Max width (px)</label><input type="number" id="max_width" min="120" max="2000"></div>
-  </div></details>
-
-  <details class="grp" style="order:8"><summary><span class="h" data-i18n="gMedia">Media &amp; sound</span></summary><div class="body mini">
-    <div class="cell"><label data-i18n="image">Image (png/jpg/gif…)</label><div style="display:flex;gap:6px"><input type="text" id="image_url" placeholder="/media/… or https://…"><button data-up="image">↑</button></div></div>
-    <div class="cell"><label data-i18n="video">Video (mp4/webm…)</label><div style="display:flex;gap:6px"><input type="text" id="video_url" placeholder="/media/… or https://…"><button data-up="video">↑</button></div></div>
-    <div class="cell"><label data-i18n="sound">Sound (mp3/…)</label><div style="display:flex;gap:6px"><input type="text" id="sound_url" placeholder="/media/… or https://…"><button data-up="sound">↑</button></div></div>
-    <div class="cell"><label data-i18n="mPos">Position vs window</label><select id="media_pos"><option value="top" data-i18n="mpTop">top</option><option value="bottom" data-i18n="mpBottom">bottom</option><option value="left" data-i18n="mpLeft">left</option><option value="right" data-i18n="mpRight">right</option></select></div>
-    <div class="cell"><label data-i18n="mSize">Size (px W×H)</label><div style="display:flex;gap:6px"><input type="number" id="media_w" min="40" max="2000" placeholder="W"><input type="number" id="media_h" min="40" max="2000" placeholder="H"></div></div>
-    <div class="cell"><label data-i18n="mZoom">Zoom (%)</label><input type="number" id="media_zoom" min="0" max="200" step="5"></div>
-    <div class="cell"><label data-i18n="mRadius">Radius (px)</label><input type="number" id="media_radius" min="0" max="200"></div>
-    <div class="note" data-i18n="mediaHint">drag inside the media to reposition it (pan) · zoom & size above</div>
-  </div></details>
-
-  <details class="grp" style="order:9"><summary><span class="h" data-i18n="gExport">Export / import</span></summary><div class="body mini" style="flex-direction:row;flex-wrap:wrap;gap:8px">
-    <button id="export" data-i18n="exportJson">Export JSON</button>
-    <button id="import" data-i18n="importJson">Import JSON</button>
-    <button id="reset" data-i18n="reset">Reset</button>
-  </div></details>
+        <label class="nt-field nt-field--wide" for="msg_font">
+        <span class="nt-field__label" data-i18n="font">Font</span>
+        <select id="msg_font"></select>
+        </label>
+        <label class="nt-field" for="msg_size">
+        <span class="nt-field__label" data-i18n="size">Size (px)</span>
+        <input type="number" id="msg_size" min="6" max="120" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="msg_weight">
+        <span class="nt-field__label" data-i18n="weight">Weight</span>
+        <select id="msg_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select>
+        </label>
+        <label class="nt-field" for="msg_color">
+        <span class="nt-field__label" data-i18n="color">Text colour</span>
+        <input type="color" id="msg_color">
+        </label>
+        <label class="nt-field" for="msg_outline">
+        <span class="nt-field__label" data-i18n="outline">Outline colour</span>
+        <input type="color" id="msg_outline">
+        </label>
+        <label class="nt-field nt-field--wide" for="msg_outline_op">
+        <span class="nt-field__head"><span class="nt-field__label" data-i18n="outlineOp">Outline opacity</span><output class="nt-value" data-range-value for="msg_outline_op"></output></span>
+        <input type="range" id="msg_outline_op" min="0" max="1" step="0.01">
+        </label>
+        <label class="nt-field" for="msg_maxw">
+        <span class="nt-field__label" data-i18n="maxw">Max width (px)</span>
+        <input type="number" id="msg_maxw" min="80" max="2000" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="msg_maxh">
+        <span class="nt-field__label" data-i18n="maxh">Max height (px)</span>
+        <input type="number" id="msg_maxh" min="24" max="800" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="red_bg">
+        <span class="nt-field__label" data-i18n="bgc">Background</span>
+        <input type="color" id="red_bg">
+        </label>
+        <label class="nt-field" for="red_bg_opacity">
+        <span class="nt-field__head"><span class="nt-field__label" data-i18n="bgo">Background opacity</span><output class="nt-value" data-range-value for="red_bg_opacity"></output></span>
+        <input type="range" id="red_bg_opacity" min="0" max="1" step="0.01">
+        </label>
+        <label class="nt-field nt-field--wide" for="red_radius">
+        <span class="nt-field__label" data-i18n="bgr">Background radius (px)</span>
+        <input type="number" id="red_radius" min="0" max="80" inputmode="numeric">
+        </label>
+          </div>
+        </section>
+        <section class="nt-tabpanel" id="panel-top" role="tabpanel" aria-labelledby="tab-top" hidden>
+          <div class="nt-fields">
+<label class="nt-field nt-field--wide" for="blue_font">
+        <span class="nt-field__label" data-i18n="font">Font</span>
+        <select id="blue_font"></select>
+        </label>
+        <label class="nt-field" for="blue_size">
+        <span class="nt-field__label" data-i18n="size">Size (px)</span>
+        <input type="number" id="blue_size" min="6" max="120" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="blue_weight">
+        <span class="nt-field__label" data-i18n="weight">Weight</span>
+        <select id="blue_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select>
+        </label>
+        <label class="nt-field" for="blue_color">
+        <span class="nt-field__label" data-i18n="color">Text colour</span>
+        <input type="color" id="blue_color">
+        </label>
+        <label class="nt-field" for="blue_outline">
+        <span class="nt-field__label" data-i18n="outline">Outline colour</span>
+        <input type="color" id="blue_outline">
+        </label>
+        <label class="nt-field nt-field--wide" for="blue_outline_op">
+        <span class="nt-field__head"><span class="nt-field__label" data-i18n="outlineOp">Outline opacity</span><output class="nt-value" data-range-value for="blue_outline_op"></output></span>
+        <input type="range" id="blue_outline_op" min="0" max="1" step="0.01">
+        </label>
+        <label class="nt-field" for="blue_maxw">
+        <span class="nt-field__label" data-i18n="maxw">Max width (px)</span>
+        <input type="number" id="blue_maxw" min="80" max="2000" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="blue_bg">
+        <span class="nt-field__label" data-i18n="bgc">Background</span>
+        <input type="color" id="blue_bg">
+        </label>
+        <label class="nt-field" for="blue_bg_opacity">
+        <span class="nt-field__head"><span class="nt-field__label" data-i18n="bgo">Background opacity</span><output class="nt-value" data-range-value for="blue_bg_opacity"></output></span>
+        <input type="range" id="blue_bg_opacity" min="0" max="1" step="0.01">
+        </label>
+        <label class="nt-field" for="blue_radius">
+        <span class="nt-field__label" data-i18n="bgr">Background radius (px)</span>
+        <input type="number" id="blue_radius" min="0" max="80" inputmode="numeric">
+        </label>
+                  <label class="nt-field" for="blue_tracking">
+        <span class="nt-field__label" data-i18n="tracking">Letter spacing (px)</span>
+        <input type="number" id="blue_tracking" min="-5" max="20" step="0.5" inputmode="decimal">
+        </label>
+        <label class="nt-field" for="blue_line">
+        <span class="nt-field__label" data-i18n="lineHeight">Line height</span>
+        <input type="number" id="blue_line" min="0.8" max="2" step="0.05" inputmode="decimal">
+        </label>
+        <p class="nt-note nt-span-2" data-i18n="lineNote">Line spacing and tracking apply to the broadcast alert.</p>
 </div>
-<div id="ministage"><div class="cap">Preview</div><div class="box" id="minibox"></div></div>
-<input type="file" id="file" style="display:none">
-<div id="ratbox"><button class="x" id="ratx">✕</button><video id="ratvid" playsinline controls></video></div>
+        </section>
+        <section class="nt-tabpanel" id="panel-amount" role="tabpanel" aria-labelledby="tab-amount" hidden>
+          <div class="nt-fields">
+<label class="nt-field nt-field--wide" for="green_font">
+        <span class="nt-field__label" data-i18n="font">Font</span>
+        <select id="green_font"></select>
+        </label>
+        <label class="nt-field" for="green_size">
+        <span class="nt-field__label" data-i18n="size">Size (px)</span>
+        <input type="number" id="green_size" min="6" max="120" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="green_weight">
+        <span class="nt-field__label" data-i18n="weight">Weight</span>
+        <select id="green_weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select>
+        </label>
+        <label class="nt-field" for="green_color">
+        <span class="nt-field__label" data-i18n="color">Text colour</span>
+        <input type="color" id="green_color">
+        </label>
+        <label class="nt-field" for="green_outline">
+        <span class="nt-field__label" data-i18n="outline">Outline colour</span>
+        <input type="color" id="green_outline">
+        </label>
+        <label class="nt-field nt-field--wide" for="green_outline_op">
+        <span class="nt-field__head"><span class="nt-field__label" data-i18n="outlineOp">Outline opacity</span><output class="nt-value" data-range-value for="green_outline_op"></output></span>
+        <input type="range" id="green_outline_op" min="0" max="1" step="0.01">
+        </label>
+        <label class="nt-field" for="green_maxw">
+        <span class="nt-field__label" data-i18n="maxw">Max width (px)</span>
+        <input type="number" id="green_maxw" min="80" max="2000" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="green_bg">
+        <span class="nt-field__label" data-i18n="bgc">Background</span>
+        <input type="color" id="green_bg">
+        </label>
+        <label class="nt-field" for="green_bg_opacity">
+        <span class="nt-field__head"><span class="nt-field__label" data-i18n="bgo">Background opacity</span><output class="nt-value" data-range-value for="green_bg_opacity"></output></span>
+        <input type="range" id="green_bg_opacity" min="0" max="1" step="0.01">
+        </label>
+        <label class="nt-field" for="green_radius">
+        <span class="nt-field__label" data-i18n="bgr">Background radius (px)</span>
+        <input type="number" id="green_radius" min="0" max="80" inputmode="numeric">
+        </label>
+                  <label class="nt-field" for="green_tracking">
+        <span class="nt-field__label" data-i18n="tracking">Letter spacing (px)</span>
+        <input type="number" id="green_tracking" min="-5" max="20" step="0.5" inputmode="decimal">
+        </label>
+        <label class="nt-field" for="green_line">
+        <span class="nt-field__label" data-i18n="lineHeight">Line height</span>
+        <input type="number" id="green_line" min="0.8" max="2" step="0.05" inputmode="decimal">
+        </label>
+        <p class="nt-note nt-span-2" data-i18n="lineNote">Line spacing and tracking apply to the broadcast alert.</p>
+</div>
+        </section>
+        <section class="nt-tabpanel" id="panel-voice" role="tabpanel" aria-labelledby="tab-voice" hidden>
+          <div class="nt-fields">
+<label class="nt-field nt-field--wide" for="tts_mode">
+        <span class="nt-field__label" data-i18n="ttsMode">Voice set</span>
+        <select id="tts_mode">
+        <option value="google:uk" data-i18n="tmGuk">Google UA only</option>
+        <option value="off" data-i18n="tmOff">Off (no voice)</option>
+        </select>
+        </label>
+        <label class="nt-field nt-field--wide" id="azure_cell" style="display:none" for="azure_key">
+        <span class="nt-field__label" data-i18n="azKey">Azure Speech key</span>
+        <input type="password" id="azure_key" placeholder="Key 1" autocomplete="off">
+        </label>
+        <label class="nt-field nt-field--wide" id="azure_reg_cell" style="display:none" for="azure_region">
+        <span class="nt-field__label" data-i18n="azRegion">Azure region</span>
+        <input type="text" id="azure_region" placeholder="e.g. westeurope" autocomplete="off">
+        </label>
+        <p class="nt-note nt-note--warning nt-span-2" id="azure_warn" style="display:none" data-i18n="azWarn">Fill in the Azure key and region below to use this voice set.</p>
+        <details class="nt-disclosure nt-span-2" id="azure_help" style="display:none">
+        <summary data-i18n="azHelpTitle">Azure key setup</summary>
+        <p data-i18n="azHelp">How to get an Azure key (free, 500k characters/month): 1) sign in at portal.azure.com; 2) Create a resource, search Speech; 3) pick a resource group + a Region (remember it, e.g. westeurope); 4) Pricing tier = Free F0; 5) Create, then open the resource, Keys and Endpoint, copy KEY 1 and the Location. Paste them above and Save.</p>
+        </details>
+        <div class="cell nt-field" id="voice_field">
+        <label class="nt-field__label" for="tts_voice" data-i18n="defVoice">Default voice</label>
+        <select id="tts_voice"></select>
+        </div>
+        <label class="nt-field" for="tts_read">
+        <span class="nt-field__label" data-i18n="readMode">Read aloud</span>
+        <select id="tts_read">
+        <option value="announcement" data-i18n="rmAnn">Announcement only</option>
+        <option value="message" data-i18n="rmMsg">Message only</option>
+        <option value="both" data-i18n="rmBoth">Announcement + message</option>
+        </select>
+        </label>
+        <label class="nt-field" for="tts_speed">
+        <span class="nt-field__label" data-i18n="ttsSpeed">Speech speed</span>
+        <input type="number" id="tts_speed" min="0.5" max="2" step="0.05" inputmode="decimal">
+        </label>
+        <p class="nt-note nt-span-2" data-i18n="ttsNote">Applies to all variations. Voice is always Google Ukrainian; users cannot change it.</p>
+          </div>
+        </section>
+        <section class="nt-tabpanel" id="panel-timing" role="tabpanel" aria-labelledby="tab-timing" hidden>
+          <div class="nt-fields">
+<label class="nt-field" for="anim_in">
+        <span class="nt-field__label" data-i18n="animIn">In</span>
+        <select id="anim_in">
+        <option value="slide_up" data-i18n="aUp">slide up</option>
+        <option value="fade" data-i18n="aFade">fade</option>
+        <option value="zoom" data-i18n="aZoom">zoom</option>
+        <option value="slide_left" data-i18n="aLeft">slide left</option>
+        <option value="slide_right" data-i18n="aRight">slide right</option>
+        <option value="rise" data-i18n="aRise">rise</option>
+        <option value="flip_x" data-i18n="aFlip">flip</option>
+        </select>
+        </label>
+        <label class="nt-field" for="anim_out">
+        <span class="nt-field__label" data-i18n="animOut">Out</span>
+        <select id="anim_out">
+        <option value="fade" data-i18n="aFade">fade</option>
+        <option value="slide_down" data-i18n="aDown">slide down</option>
+        <option value="zoom" data-i18n="aZoom">zoom</option>
+        <option value="slide_right" data-i18n="aRight">slide right</option>
+        <option value="rise" data-i18n="aRise">rise</option>
+        <option value="flip_x" data-i18n="aFlip">flip</option>
+        </select>
+        </label>
+        <label class="nt-field nt-field--wide" for="anim_ms">
+        <span class="nt-field__label" data-i18n="speedMs">Speed (ms)</span>
+        <input type="number" id="anim_ms" min="80" max="2000" step="20" inputmode="numeric">
+        </label>
+          </div>
+        </section>
+        <section class="nt-tabpanel" id="panel-frame" role="tabpanel" aria-labelledby="tab-frame" hidden>
+          <div class="nt-fields">
+<label class="nt-field" for="win_bg">
+        <span class="nt-field__label" data-i18n="bgc">Background</span>
+        <input type="color" id="win_bg">
+        </label>
+        <label class="nt-field" for="win_bg_opacity">
+        <span class="nt-field__head"><span class="nt-field__label" data-i18n="bgo">Background opacity</span><output class="nt-value" data-range-value for="win_bg_opacity"></output></span>
+        <input type="range" id="win_bg_opacity" min="0" max="1" step="0.01">
+        </label>
+        <label class="nt-field" for="win_radius">
+        <span class="nt-field__label" data-i18n="bgr">Background radius (px)</span>
+        <input type="number" id="win_radius" min="0" max="80" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="win_maxh">
+        <span class="nt-field__label" data-i18n="winMaxH">Max height (px, 0 = auto)</span>
+        <input type="number" id="win_maxh" min="0" max="2000" inputmode="numeric">
+        </label>
+        <label class="nt-field nt-field--wide" for="max_width">
+        <span class="nt-field__label" data-i18n="maxw">Max width (px)</span>
+        <input type="number" id="max_width" min="120" max="2000" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="win_border_color">
+        <span class="nt-field__label" data-i18n="winBorder">Border colour</span>
+        <input type="color" id="win_border_color">
+        </label>
+        <label class="nt-field" for="win_border_width">
+        <span class="nt-field__label" data-i18n="winBorderW">Border width (px)</span>
+        <input type="number" id="win_border_width" min="0" max="20" inputmode="numeric">
+        </label>
+        <label class="nt-field nt-field--wide" for="win_shadow">
+        <span class="nt-field__head"><span class="nt-field__label" data-i18n="winShadow">Shadow strength</span><output class="nt-value" data-range-value for="win_shadow"></output></span>
+        <input type="range" id="win_shadow" min="0" max="60" step="1">
+        </label>
+        <label class="nt-field" for="win_padding">
+        <span class="nt-field__label" data-i18n="winPadding">Inner padding (px)</span>
+        <input type="number" id="win_padding" min="0" max="80" inputmode="numeric">
+        </label>
+        <p class="nt-note nt-span-2" data-i18n="frameNote">Border, shadow, and padding affect only the alert window.</p>
+          </div>
+        </section>
+        <section class="nt-tabpanel" id="panel-media" role="tabpanel" aria-labelledby="tab-media" hidden>
+          <div class="nt-fields">
+<div class="nt-field nt-field--wide">
+        <label class="nt-field__label" for="image_url" data-i18n="image">Image (png/jpg/gif…)</label>
+        <div class="nt-upload-row">
+        <input type="text" id="image_url" placeholder="/media/... or https://..." autocomplete="off">
+        <button type="button" class="nt-button nt-button--small" data-up="image" data-i18n="upload">Load</button>
+        </div>
+        </div>
+        <div class="nt-field nt-field--wide">
+        <label class="nt-field__label" for="video_url" data-i18n="video">Video (mp4/webm…)</label>
+        <div class="nt-upload-row">
+        <input type="text" id="video_url" placeholder="/media/... or https://..." autocomplete="off">
+        <button type="button" class="nt-button nt-button--small" data-up="video" data-i18n="upload">Load</button>
+        </div>
+        </div>
+        <div class="nt-field nt-field--wide">
+        <label class="nt-field__label" for="sound_url" data-i18n="sound">Sound (mp3/…)</label>
+        <div class="nt-upload-row">
+        <input type="text" id="sound_url" placeholder="/media/... or https://..." autocomplete="off">
+        <button type="button" class="nt-button nt-button--small" data-up="sound" data-i18n="upload">Load</button>
+        </div>
+        </div>
+        <label class="nt-field" for="media_pos">
+        <span class="nt-field__label" data-i18n="mPos">Position vs window</span>
+        <select id="media_pos">
+        <option value="top" data-i18n="mpTop">top</option>
+        <option value="bottom" data-i18n="mpBottom">bottom</option>
+        <option value="left" data-i18n="mpLeft">left</option>
+        <option value="right" data-i18n="mpRight">right</option>
+        </select>
+        </label>
+        <label class="nt-field" for="media_w">
+        <span class="nt-field__label" data-i18n="mSize">Size (px W×H)</span>
+        <span class="nt-pair">
+        <input type="number" id="media_w" min="40" max="2000" placeholder="W" aria-label="Width" inputmode="numeric">
+        <input type="number" id="media_h" min="40" max="2000" placeholder="H" aria-label="Height" inputmode="numeric">
+        </span>
+        </label>
+        <label class="nt-field" for="media_zoom">
+        <span class="nt-field__label" data-i18n="mZoom">Zoom (%)</span>
+        <input type="number" id="media_zoom" min="0" max="200" step="5" inputmode="numeric">
+        </label>
+        <label class="nt-field" for="media_radius">
+        <span class="nt-field__label" data-i18n="mRadius">Radius (px)</span>
+        <input type="number" id="media_radius" min="0" max="200" inputmode="numeric">
+        </label>
+        <div class="nt-inline-actions nt-span-2">
+        <button id="centerMedia" class="nt-button nt-button--small" type="button" data-i18n="centerMedia">Center</button>
+        <span class="nt-note" data-i18n="previewDrag">Drag media to move it</span>
+        </div>
+        <p class="nt-note nt-span-2" data-i18n="hoverZoomNote">Hover media to zoom. Double-click the preview to recenter it.</p>
+          </div>
+        </section>
+        <section class="nt-tabpanel" id="panel-data" role="tabpanel" aria-labelledby="tab-data" hidden>
+          <div class="nt-fields">
+<div class="nt-actions nt-span-2">
+        <button id="export" class="nt-button" type="button" data-i18n="exportJson">Export JSON</button>
+        <button id="import" class="nt-button" type="button" data-i18n="importJson">Import JSON</button>
+        <button id="reset" class="nt-button nt-button--danger" type="button" data-i18n="reset">Reset</button>
+        </div>
+          </div>
+        </section>
+        <section class="nt-tabpanel" id="panel-test" role="tabpanel" aria-labelledby="tab-test" hidden>
+          <div class="nt-fields">
+            <label class="nt-field nt-field--wide" for="test_media_url">
+              <span class="nt-field__label" data-i18n="testMDLink">Media link for Test MD</span>
+              <input type="text" id="test_media_url" placeholder="https://www.tiktok.com/...">
+            </label>
+            <p class="nt-note nt-span-2" data-i18n="testMDNote">Any supported YouTube, Instagram, TikTok, Twitch, Reddit or X link. Used only by Test MD.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <footer class="nt-footer">
+    <span data-i18n="localOnly">Local only</span>
+    <span data-i18n="saveHint">Save from the top bar</span>
+    <span data-i18n="previewOnly">Preview</span>
+  </footer>
+  <input type="file" id="file" hidden>
+</main>
+</div>
+
+<button id="zoomReset" class="nt-zoom-hud" type="button" title="Reset zoom" aria-label="Reset page zoom"><span id="zoomValue">100%</span></button>
+
 <script src="/i18n.js"></script>
 <script src="/head.js"></script>
 <script src="/alert.js"></script>
-<script>
-const $ = id => document.getElementById(id);
-const DEFAULTS = Alert.DEFAULTS;
-const STYLE_KEYS = ['top_text','money_text','blue_font','blue_size','blue_weight','blue_color','blue_outline','blue_outline_op','blue_maxw','green_font','green_size','green_weight','green_color','green_outline','green_outline_op','green_maxw','msg_font','msg_size','msg_weight','msg_color','msg_outline','msg_outline_op','msg_maxw','msg_maxh','win_bg','win_bg_opacity','win_radius','win_maxh','blue_bg','blue_bg_opacity','blue_radius','green_bg','green_bg_opacity','green_radius','red_bg','red_bg_opacity','red_radius','duration_ms','wait_media','anim_in','anim_out','anim_ms','image_url','video_url','sound_url','media_pos','media_w','media_h','media_zoom','media_radius','media_pan_x','media_pan_y','max_width'];
-const NUM = new Set(['blue_size','blue_weight','blue_outline_op','blue_maxw','green_size','green_weight','green_outline_op','green_maxw','msg_size','msg_weight','msg_outline_op','msg_maxw','msg_maxh','win_bg_opacity','win_radius','win_maxh','blue_bg_opacity','blue_radius','green_bg_opacity','green_radius','red_bg_opacity','red_radius','duration_ms','anim_ms','media_w','media_h','media_zoom','media_radius','media_pan_x','media_pan_y','max_width']);
-const BOOL = new Set(['wait_media']);
-const DICT = {
-  en:{save:'Save',variation:'Donation variation',rulesHint:'first match wins · default is fallback',addRule:'+ Add variation',from:'from',toInf:'to',allVoices:'All (donor chooses)',ttsMode:'Voice set',tmAzuk:'Azure UA (Polina/Ostap)',tmAzus:'Azure US (Jenny/Guy)',azKey:'Azure Speech key',azRegion:'Azure region',azWarn:'Fill in the Azure key and region below to use this voice set.',azHelp:'How to get an Azure key (free, 500k characters/month): 1) sign in at portal.azure.com; 2) Create a resource, search Speech; 3) pick a resource group + a Region (remember it, e.g. westeurope); 4) Pricing tier = Free F0; 5) Create, then open the resource, Keys and Endpoint, copy KEY 1 and the Location. Paste them above and Save.',tmDefault:'Default (all voices)',tmGuk:'Google UA only',tmGus:'Google US only',tmCustom:'Custom only',tmOff:'Off (no voice)',defVoice:'Default voice',readMode:'Read aloud',rmAnn:'Announcement only',rmMsg:'Message only',rmBoth:'Announcement + message',ttsNote:'Applies to all variations. Donors may pick another voice on the form unless a single voice is set.',gText:'Text',lineBlue:'Top line (light blue)',lineGreen:'Amount line (green)',varsHint:'%donate% = donor name · %money% = amount — both work in either line',gBlue:'Top line style',gGreen:'Amount line style',gMsg:'Message',gWindow:'Window background',font:'Font',size:'Size (px)',weight:'Weight',color:'Text colour',outline:'Outline colour',outlineOp:'Outline opacity',maxw:'Max width (px)',maxh:'Max height (px)',bgc:'Background',bgo:'Background opacity',bgr:'Background radius (px)',winMaxH:'Max height (px, 0 = auto)',gDuration:'Duration',showMs:'Show for (ms, image/none)',keepMedia:'Hold while audio/video plays',gAnim:'Animation',animIn:'In',animOut:'Out',speedMs:'Speed (ms)',aUp:'slide up',aFade:'fade',aZoom:'zoom',aLeft:'slide left',aDown:'slide down',gMedia:'Media & sound',image:'Image (png/jpg/gif…)',video:'Video (mp4/webm…)',sound:'Sound (mp3/…)',mPos:'Position vs window',mpTop:'top',mpBottom:'bottom',mpLeft:'left',mpRight:'right',mSize:'Size (px W×H)',mZoom:'Zoom (%)',mRadius:'Radius (px)',mediaHint:'drag inside the media to reposition it (pan) · zoom & size above',gExport:'Export / import',exportJson:'Export JSON',importJson:'Import JSON',reset:'Reset',defaultLabel:'Default (rest)',saved:'saved — server running',name:'Name',confirmReset:'Reset this variation to default settings?',resetDone:'variation reset to defaults'},
-  ua:{save:'Зберегти',variation:'Варіація донату',rulesHint:'перше співпадіння · за замовчуванням — решта',addRule:'+ Додати варіацію',from:'від',toInf:'до',allVoices:'Усі (обирає донор)',ttsMode:'Набір голосів',tmAzuk:'Azure UA (Поліна/Остап)',tmAzus:'Azure US (Дженні/Гай)',azKey:'Ключ Azure Speech',azRegion:'Регіон Azure',azWarn:'Заповніть ключ і регіон Azure нижче, щоб використати цей набір голосів.',azHelp:'Як отримати ключ Azure (безкоштовно, 500 тис. символів/міс): 1) увійдіть на portal.azure.com; 2) Create a resource, знайдіть Speech; 3) виберіть resource group + Region (запам’ятайте, напр. westeurope); 4) Pricing tier = Free F0; 5) Create, відкрийте ресурс, Keys and Endpoint, скопіюйте KEY 1 та Location. Вставте їх вище і натисніть Save.',tmDefault:'Типовий (усі голоси)',tmGuk:'Лише Google UA',tmGus:'Лише Google US',tmCustom:'Лише власні',tmOff:'Вимкнено (без голосу)',defVoice:'Голос за замовчуванням',readMode:'Озвучувати',rmAnn:'Лише оголошення',rmMsg:'Лише повідомлення',rmBoth:'Оголошення + повідомлення',ttsNote:'Застосовується до всіх варіацій. Донор може обрати інший голос у формі, якщо задано не один голос.',gText:'Текст',lineBlue:'Верхній рядок (блакитний)',lineGreen:'Рядок суми (зелений)',varsHint:'%donate% = імʼя · %money% = сума — працюють в обох рядках',gBlue:'Стиль верхнього рядка',gGreen:'Стиль рядка суми',gMsg:'Повідомлення',gWindow:'Фон вікна',font:'Шрифт',size:'Розмір (px)',weight:'Товщина',color:'Колір тексту',outline:'Колір обрису',outlineOp:'Прозорість обрису',maxw:'Макс. ширина (px)',maxh:'Макс. висота (px)',bgc:'Фон',bgo:'Прозорість фону',bgr:'Радіус фону (px)',winMaxH:'Макс. висота вікна (px, 0 = авто)',gDuration:'Тривалість',showMs:'Показ (мс, зображення/немає)',keepMedia:'Тримати, поки аудіо/відео грає',gAnim:'Анімація',animIn:'Поява',animOut:'Зникнення',speedMs:'Швидкість (мс)',aUp:'знизу',aFade:'прозоро',aZoom:'зум',aLeft:'зліва',aDown:'вниз',gMedia:'Медіа та звук',image:'Зображення (png/jpg/gif…)',video:'Відео (mp4/webm…)',sound:'Звук (mp3/…)',mPos:'Позиція відносно вікна',mpTop:'зверху',mpBottom:'знизу',mpLeft:'зліва',mpRight:'справа',mSize:'Розмір (px Ш×В)',mZoom:'Зум (%)',mRadius:'Радіус (px)',mediaHint:'тягни всередині медіа щоб зсунути · зум і розмір вище',gExport:'Експорт / імпорт',exportJson:'Експорт JSON',importJson:'Імпорт JSON',reset:'Скинути',defaultLabel:'За замовчуванням (решта)',saved:'збережено ✓',name:'Імʼя',confirmReset:'Скинути цю варіацію до стандартних налаштувань?',resetDone:'варіацію скинуто до стандартних'}
-};
-window.I18N = { en: DICT.en, ua: DICT.ua };
-Object.assign(DICT.en, {
-  consoleSystem:'DONATION SYSTEM', consoleArea:'ALERT ENGINE', consoleReady:'LOCAL PREVIEW', consoleEyebrow:'CUE DESIGN WORKSTATION',
-  consoleTitle:'Alert console', consoleIntro:'Set the cue, tune its delivery, and inspect the result before it reaches stream.',
-  consoleProfile:'CONTROL PROFILE', consoleProfileValue:'01 / DONATION', cueBank:'01 / CUE BANK', cueStack:'ROUTING CUES',
-  cueSingular:'CUE', cuePlural:'CUES', poolLabel:'Add to default pool', triggerRange:'TRIGGER RANGE', currencyUnit:'UAH', monitorChannel:'02 / OUTPUT MONITOR',
-  monitorTitle:'Alert preview', previewOnly:'PREVIEW ONLY', previewLocal:'LOCAL RENDER · NO LIVE BROADCAST', previewDrag:'DRAG MEDIA TO REPOSITION',
-  settingsIndex:'03 / DETAIL BAYS', settingsTitle:'Cue characteristics', settingsHint:'Open a bay to tune individual hardware parameters.',
-  settingsHintRight:'PER-CUE ADJUSTMENTS', fixedCueNote:'Fixed amount — this cue plays only for the configured range.',
-  poolCueNote:'Pool cue — this variation shares equal selection chance with the default.',
-  testVariation:'Test this variation', deleteVariation:'Delete variation', selectVariation:'Select variation'
-});
-Object.assign(DICT.ua, {
-  consoleSystem:'СИСТЕМА ДОНАТІВ', consoleArea:'РУШІЙ АЛЕРТІВ', consoleReady:'ЛОКАЛЬНЕ ПРЕВ’Ю', consoleEyebrow:'РОБОЧА СТАНЦІЯ АЛЕРТІВ',
-  consoleTitle:'Пульт алертів', consoleIntro:'Налаштуйте сигнал і перевірте його вигляд до появи в ефірі.',
-  consoleProfile:'ПРОФІЛЬ КЕРУВАННЯ', consoleProfileValue:'01 / ДОНАТИ', cueBank:'01 / БАНК СИГНАЛІВ', cueStack:'ПРАВИЛА МАРШРУТИЗАЦІЇ',
-  cueSingular:'ПРАВИЛО', cuePlural:'ПРАВИЛА', poolLabel:'Додати до типового пулу', triggerRange:'ДІАПАЗОН СПРАЦЮВАННЯ', currencyUnit:'ГРН', monitorChannel:'02 / МОНІТОР ВИХОДУ',
-  monitorTitle:'Попередній перегляд', previewOnly:'ЛИШЕ ПРЕВ’Ю', previewLocal:'ЛОКАЛЬНИЙ РЕНДЕР · НЕ В ЕФІРІ', previewDrag:'ПЕРЕТЯГНІТЬ МЕДІА ДЛЯ ЗМІНИ ПОЗИЦІЇ',
-  settingsIndex:'03 / СЕКЦІЇ НАЛАШТУВАНЬ', settingsTitle:'Характеристики сигналу', settingsHint:'Відкрийте секцію, щоб налаштувати її параметри.',
-  settingsHintRight:'НАЛАШТУВАННЯ ОКРЕМОГО ПРАВИЛА', fixedCueNote:'Фіксована сума — правило діє лише для заданого діапазону.',
-  poolCueNote:'Спільний пул — це правило має однаковий шанс із типовим.',
-  testVariation:'Перевірити це правило', deleteVariation:'Видалити правило', selectVariation:'Вибрати правило'
-});
-let lang = localStorage.getItem('lm_lang') || 'en';
-const t = k => (DICT[lang] && DICT[lang][k]) || (DICT.en[k] || k);
-function applyLang() { lang = localStorage.getItem('lm_lang') || lang; document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
-  if ($('stage')) $('stage').setAttribute('aria-label', t('monitorTitle'));
-  if ($('rules')) $('rules').setAttribute('aria-label', t('variation'));
-  document.querySelectorAll('#langseg button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
-  document.documentElement.lang = lang === 'ua' ? 'uk' : 'en'; renderRules(); refreshSelLabels(); }
-/* language is applied by applyLang() below (head.js calls window.applyLang) */
-
-let rules = [], sel = 0;
-function newId() { return 'r' + Math.random().toString(36).slice(2, 8); }
-function renderRules() { const box = $('rules'); box.innerHTML = '';
-  const count = $('cueCount'); if (count) count.textContent = String(rules.length).padStart(2, '0') + ' ' + t(rules.length === 1 ? 'cueSingular' : 'cuePlural');
-  rules.forEach((r, i) => { const el = document.createElement('div'); el.className = 'rule' + (i === sel ? ' sel' : '');
-    el.tabIndex = 0; el.setAttribute('role', 'group'); el.setAttribute('aria-current', i === sel ? 'true' : 'false'); el.setAttribute('aria-label', t('selectVariation') + ': ' + (r.label || t('name') + ' ' + (i + 1)));
-    el.onkeydown = e => { if (e.target !== el || (e.key !== 'Enter' && e.key !== ' ')) return; e.preventDefault(); sel = i; loadStyleToUI(); renderRules(); };
-    el.onclick = () => { sel = i; loadStyleToUI(); renderRules(); };
-    const isDef = r.id === 'default'; const dot = document.createElement('span'); dot.className = 'dot';
-    const lab = document.createElement('div'); lab.className = 'lab'; lab.innerHTML = '<div class="nm"></div><div class="rng"></div>';
-    lab.querySelector('.nm').textContent = isDef ? t('defaultLabel') : (r.label || t('name') + ' ' + (i + 1));
-    const range = (r.max > 0 ? r.max + ' ₴' : '∞');
-    lab.querySelector('.rng').textContent = r.pool ? 'pool · equal chance' : `${r.min || 0} ₴ · ${range}`;
-    el.append(dot, lab);
-    if (!isDef) { const pc = document.createElement('span'); pc.className = 'sw'; pc.title = 'Add to pool';
-      pc.innerHTML = '<input type="checkbox" aria-label="' + t('poolLabel') + '"' + (r.pool ? ' checked' : '') + '><span class="track"></span>';
-      pc.querySelector('input').title = t('poolLabel');
-      pc.querySelector('input').onclick = (e) => { e.stopPropagation(); r.pool = e.target.checked; renderRules(); if (sel === i) loadStyleToUI(); };
-      el.append(pc); }
-    const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'testbtn'; tb.textContent = 'TEST'; tb.title = t('testVariation');
-    tb.onclick = (e) => { e.stopPropagation(); testRule(r); };
-    el.append(tb);
-    if (!isDef) { const d = document.createElement('button'); d.type = 'button'; d.className = 'del'; d.textContent = '✕'; d.title = t('deleteVariation'); d.setAttribute('aria-label', t('deleteVariation')); d.onclick = (e) => { e.stopPropagation(); rules.splice(i, 1); if (sel >= rules.length) sel = 0; loadStyleToUI(); renderRules(); }; el.append(d); }
-    box.append(el); }); }
-function testRule(r) { fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: sampleAmount(r), name: 'Test Donor', ruleId: r.id }) }); }
-$('addrule').onclick = () => { const idx = Math.max(0, rules.length - 1); rules.splice(idx, 0, { id: newId(), label: '', min: 100, max: 100, pool: false, style: {} }); sel = idx; loadStyleToUI(); renderRules(); };
-const clampRange = v => Math.min(29999, Math.max(10, Math.round(Number(v)) || 10));
-['rule_min','rule_max'].forEach(id => $(id).addEventListener('input', () => { if (!rules[sel]) return; rules[sel].min = clampRange($('rule_min').value); rules[sel].max = clampRange($('rule_max').value); renderRules(); }));
-/* YouTube settings live on the Donate Page Customization page */
-/* add-to-pool is toggled in each rule row */
-function readStyle() { const s = {}; for (const k of STYLE_KEYS) { const el = $(k); if (!el) continue; if (BOOL.has(k)) s[k] = el.checked; else if (NUM.has(k)) s[k] = Number(el.value); else s[k] = el.value; }
-  const cur = (rules[sel] && rules[sel].style) || {};
-  s.media_pan_x = cur.media_pan_x || 0; s.media_pan_y = cur.media_pan_y || 0;
-  s.yt_min = cur.yt_min || 0; s.yt_views = cur.yt_views || 0; s.yt_max_min = cur.yt_max_min || 0; s.yt_playlists = !!cur.yt_playlists;
-  return s; }
-function writeStyle(s) { const m = Object.assign({}, DEFAULTS, s || {}); for (const k of STYLE_KEYS) { const el = $(k); if (!el) continue;
-  if (BOOL.has(k)) el.checked = !!m[k];
-  else if (k === 'media_w' || k === 'media_h') el.value = (Number(m[k]) > 0 ? m[k] : 320);
-  else el.value = (m[k] ?? ''); } }
-function updateRuleOpts() { const r = rules[sel]; if (!r) return; const isDef = r.id === 'default';
-  const lock = !isDef && r.pool;
-  $('rule_min').disabled = lock; $('rule_max').disabled = lock;
-  $('rulenote').textContent = isDef ? '' : (r.pool ? t('poolCueNote') : t('fixedCueNote'));
-}
-function loadStyleToUI() { if (rules[sel]) { writeStyle(rules[sel].style || {});
-    $('rule_min').value = rules[sel].min || 0; $('rule_max').value = rules[sel].max || 0; } updateRuleOpts(); updateMediaLocks(); preview(); }
-
-function fitPreview() {
-  const stage = $('stage'), el = stage && stage.querySelector('.notif');
-  if (!el) return;
-  const naturalWidth = el.offsetWidth, naturalHeight = el.offsetHeight;
-  const availableWidth = Math.max(180, stage.clientWidth - 36);
-  const availableHeight = Math.max(240, window.innerHeight * 0.42);
-  const zoom = Math.min(0.98, availableWidth / Math.max(1, naturalWidth), availableHeight / Math.max(1, naturalHeight));
-  if (Math.abs((Number(el.style.zoom) || 1) - zoom) > 0.005) el.style.zoom = String(zoom);
-}
-
-function enablePan(box, s) {
-  const el = box.querySelector('img,video'); if (!el) return;
-  let drag=false, sx=0, sy=0, ox=0, oy=0;
-  box.addEventListener('pointerdown', e => { drag=true; sx=e.clientX; sy=e.clientY; ox=s.media_pan_x||0; oy=s.media_pan_y||0;
-    try { box.setPointerCapture(e.pointerId); } catch {} e.preventDefault(); e.stopPropagation(); });
-  box.addEventListener('pointermove', e => { if (!drag) return;
-    el.style.transform = `translate(${ox+(e.clientX-sx)}px, ${oy+(e.clientY-sy)}px) scale(${(s.media_zoom||100)/100})`; });
-  box.addEventListener('pointerup', e => { if (!drag) return; drag=false;
-    const st = rules[sel].style || {}; st.media_pan_x = Math.round(ox+(e.clientX-sx)); st.media_pan_y = Math.round(oy+(e.clientY-sy));
-    rules[sel].style = st; loadStyleToUI(); });
-}
-function preview() {
-  if (!rules[sel]) return;
-  const s = readStyle(); rules[sel].style = s;
-  const data = { name: t('name'), amount: 100, currency: '₴', message: lang==='ua' ? 'Приклад повідомлення в ефірі, який може бути довгим і переноситься на кілька рядків без обрізання' : 'Example on-stream message that can be long and wraps across several lines without being cut off' };
-  const stage = $('stage'); stage.innerHTML = '';
-  const r = Alert.build(data, s, { preview: true }); const el = r.notif;
-  el.style.transition = 'none'; el.style.opacity='0'; el.style.transform = Alert.animFrom(s.anim_in);
-  stage.append(el); void el.offsetWidth;
-  el.style.transition = `opacity ${s.anim_ms}ms ease, transform ${s.anim_ms}ms cubic-bezier(.2,.9,.3,1.2)`;
-  el.style.opacity='1'; el.style.transform='none';
-  requestAnimationFrame(fitPreview);
-  if (r.red) requestAnimationFrame(() => Alert.fitMessage(r.red, r.msgH, r.msgBase));
-  const mbox = el.querySelector('.nmbox'); if (mbox) enablePan(mbox, s);
-  const mini = $('minibox');
-  if (mini) { const rm = Alert.build(data, s, { preview: true }); mini.innerHTML = ''; mini.append(rm.notif); if (rm.red) requestAnimationFrame(() => Alert.fitMessage(rm.red, rm.msgH, rm.msgBase)); }
-}
-function setDis(id, dis) { const inp = $(id); if (inp) inp.disabled = dis; const b = document.querySelector('[data-up="' + id.replace('_url', '') + '"]'); if (b) b.disabled = dis; }
-function updateMediaLocks() {
-  const img = ($('image_url').value || '').trim(), vid = ($('video_url').value || '').trim(), snd = ($('sound_url').value || '').trim();
-  const lockVideo = !!img || !!snd, lockImgSnd = !!vid;
-  setDis('video_url', lockVideo); setDis('image_url', lockImgSnd); setDis('sound_url', lockImgSnd);
-}
-['image_url', 'video_url', 'sound_url'].forEach(id => $(id).addEventListener('input', updateMediaLocks));
-let upKind = 'image';
-document.querySelectorAll('[data-up]').forEach(b => b.onclick = () => { upKind = b.dataset.up; $('file').click(); });
-$('file').onchange = async e => { const f = e.target.files && e.target.files[0]; if (!f) return; const safe = f.name.replace(/[^A-Za-z0-9._-]/g, '_');
-  try { const r = await fetch('/api/upload?name=' + encodeURIComponent(safe), { method: 'POST', body: f }); const d = await r.json();
-    if (d.ok) { $(upKind + '_url').value = d.url; preview(); $('status').textContent = '↑ ' + d.url; } else $('status').textContent = 'upload error'; } catch { $('status').textContent = 'upload error'; } };
-/* lang seg wired in extraTools */
-let TTS = null;
-function hideUnavailableTts() {
-  const all = (TTS && TTS.voices) || [];
-  const custom = all.filter(v => !v.id.startsWith('google:') && !v.id.startsWith('azure:'));
-  const sel = $('tts_mode');
-  if (sel) {
-    const opt = sel.querySelector('option[value="custom"]');
-    if (opt) opt.style.display = custom.length ? '' : 'none';
-    if (!custom.length && sel.value === 'custom') sel.value = 'default';
-  }
-}
-function fillTtsVoices() {
-  hideUnavailableTts();
-  const mode = $('tts_mode').value; const all = (TTS && TTS.voices) || [];
-  const azuk = all.filter(v => v.id === 'azure:uk-UA-PolinaNeural' || v.id === 'azure:uk-UA-OstapNeural').map(v => v.id);
-  const azus = all.filter(v => v.id === 'azure:en-US-JennyNeural' || v.id === 'azure:en-US-GuyNeural').map(v => v.id);
-  const az = azuk.concat(azus);
-  const custom = all.filter(v => !v.id.startsWith('google:') && !v.id.startsWith('azure:')).map(v => v.id);
-  const goog = all.filter(v => v.id.startsWith('google:')).map(v => v.id);
-  const hasKey = (TTS && TTS.tts && TTS.tts.hasAzure) || $('azure_key').value.trim() !== '';
-  const allow = mode === 'off' ? [] : mode === 'google:uk' ? ['google:uk'] : mode === 'google:us' ? ['google:us']
-    : mode === 'azure:uk' ? azuk : mode === 'azure:us' ? azus : mode === 'custom' ? custom : goog.concat(az, custom);
-  const sel = $('tts_voice'); const cell = sel.closest('.cell'); const prev = sel.value; sel.innerHTML = '';
-  const multi = (mode === 'default' || mode === 'custom' || mode === 'azure:uk' || mode === 'azure:us');
-  if (multi) sel.append(new Option(t('allVoices'), ''));
-  all.filter(v => allow.includes(v.id)).forEach(v => sel.append(new Option(v.label, v.id)));
-  if (prev && (prev === '' || allow.includes(prev))) sel.value = prev;
-  if (cell) cell.style.display = multi ? '' : 'none';
-  const isAz = (mode === 'azure:uk' || mode === 'azure:us' || mode === 'default');
-  $('azure_cell').style.display = isAz ? '' : 'none';
-  $('azure_reg_cell').style.display = isAz ? '' : 'none';
-  $('azure_help').style.display = isAz ? '' : 'none';
-  const warn = document.getElementById('azure_warn');
-  if (warn) { const need = (mode === 'azure:uk' || mode === 'azure:us') && !hasKey; warn.style.display = need ? '' : 'none'; }
-  if (typeof refreshSelLabels === 'function') refreshSelLabels();
-}
-async function loadTts() {
-  try { TTS = await (await fetch('/api/tts')).json(); const tc = TTS.tts || {};
-    $('tts_mode').value = tc.mode || 'default'; $('tts_read').value = tc.readMode || 'announcement';
-    if (tc.azureRegion) $('azure_region').value = tc.azureRegion;
-    if (tc.hasAzure) $('azure_key').placeholder = '•••••• saved';
-    fillTtsVoices(); if (tc.voice) $('tts_voice').value = tc.voice; refreshSelLabels(); } catch {}
-}
-$('tts_mode').addEventListener('change', fillTtsVoices);
-window.savePage = async () => { if (rules[sel]) rules[sel].style = readStyle();
-  try { const r = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rules }) }); const d = await r.json();
-    await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: $('tts_mode').value, voice: $('tts_voice').value, readMode: $('tts_read').value,
-        azureKey: $('azure_key').value, azureRegion: $('azure_region').value }) });
-    $('status').className = 'status' + (d.ok ? ' ok' : ' err'); $('status').textContent = d.ok ? t('saved') : ('error: ' + (d.error || ''));
-    if (d.ok) { const nr = await (await fetch('/api/notify')).json(); if (nr.rules) { rules = nr.rules; loadStyleToUI(); renderRules(); } } } catch { $('status').className='status err'; $('status').textContent = 'save error'; } };
-/* test wired in extraTools */
-function sampleAmount(r) { if (r.max > r.min && r.min > 0) return r.min; if (r.max > 0) return r.max; return r.min > 0 ? r.min : 100; }
-$('export').onclick = () => { const blob = new Blob([JSON.stringify({ rules }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'localmonodonate-alerts.json'; a.click(); };
-$('import').onclick = () => { const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange = () => { const f=inp.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ try{ const j=JSON.parse(rd.result); if (j.rules) { rules=j.rules; sel=0; loadStyleToUI(); renderRules(); } }catch{} }; rd.readAsText(f); }; inp.click(); };
-$('reset').onclick = () => { if (!rules[sel]) return; if (!confirm(t('confirmReset'))) return;
-  rules[sel].style = JSON.parse(JSON.stringify(DEFAULTS)); loadStyleToUI(); renderRules();
-  $('status').className = 'status ok'; $('status').textContent = t('resetDone'); };
-let pvT = null;
-document.querySelectorAll('input,select').forEach(el => { if (el.id && el.id !== 'file' && el.id !== 'bgfile') el.addEventListener('input', () => { clearTimeout(pvT); pvT = setTimeout(preview, 90); }); });
-function updMini() { const r = $('stage').getBoundingClientRect(); $('ministage').classList.toggle('show', r.bottom < 8); }
-window.addEventListener('scroll', updMini, { passive: true });
-window.addEventListener('resize', () => { updMini(); fitPreview(); });
-new ResizeObserver(fitPreview).observe(document.querySelector('.monitor-bezel'));
-function enhanceSelects() {
-  document.querySelectorAll('select').forEach(s => {
-    if (s._enh) return; s._enh = 1;
-    const wrap = document.createElement('div'); wrap.className = 'selwrap';
-    s.parentNode.insertBefore(wrap, s); wrap.appendChild(s);
-    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'selbtn';
-    const pop = document.createElement('div'); pop.className = 'selpop';
-    wrap.append(btn, pop);
-    s._syncLabel = () => { btn.textContent = (s.options[s.selectedIndex] || {}).textContent || ''; };
-    const build = () => { pop.innerHTML = '';
-      Array.from(s.options).forEach((o, i) => { const it = document.createElement('div'); it.className = 'selopt' + (i === s.selectedIndex ? ' on' : ''); it.textContent = o.textContent;
-        it.onclick = e => { e.stopPropagation(); s.selectedIndex = i; s._syncLabel(); s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true })); wrap.classList.remove('open'); };
-        pop.appendChild(it); }); };
-    btn.onclick = e => { e.stopPropagation(); document.querySelectorAll('.selwrap.open').forEach(w => { if (w !== wrap) w.classList.remove('open'); }); build(); const open = wrap.classList.toggle('open');
-      if (open) { const r = btn.getBoundingClientRect(); pop.style.position = 'fixed'; pop.style.left = r.left + 'px'; pop.style.width = r.width + 'px'; pop.style.right = 'auto';
-        pop.style.top = (r.bottom + 4) + 'px'; pop.style.maxHeight = Math.max(120, window.innerHeight - r.bottom - 16) + 'px'; } };
-    s._syncLabel();
-  });
-}
-function refreshSelLabels() { document.querySelectorAll('select').forEach(s => { if (s._syncLabel) s._syncLabel(); }); }
-document.addEventListener('click', () => document.querySelectorAll('.selwrap.open').forEach(w => w.classList.remove('open')));
-(() => {
-  const m = $('ministage'), cap = m.querySelector('.cap');
-  try { const s = JSON.parse(localStorage.getItem('lm_mini') || 'null'); if (s) { m.style.left = s.x + 'px'; m.style.top = s.y + 'px'; m.style.right = 'auto'; } } catch {}
-  let drag = false, sx = 0, sy = 0, ox = 0, oy = 0;
-  cap.addEventListener('pointerdown', e => { drag = true; sx = e.clientX; sy = e.clientY; const r = m.getBoundingClientRect(); ox = r.left; oy = r.top;
-    m.style.left = ox + 'px'; m.style.top = oy + 'px'; m.style.right = 'auto'; try { cap.setPointerCapture(e.pointerId); } catch {} e.preventDefault(); });
-  cap.addEventListener('pointermove', e => { if (!drag) return; m.style.left = (ox + e.clientX - sx) + 'px'; m.style.top = (oy + e.clientY - sy) + 'px'; });
-  cap.addEventListener('pointerup', () => { if (!drag) return; drag = false;
-    try { localStorage.setItem('lm_mini', JSON.stringify({ x: parseInt(m.style.left), y: parseInt(m.style.top) })); } catch {} });
-})();
-(async () => {
-  try { const fonts = await (await fetch('/api/fonts')).json(); const list = (fonts.fonts && fonts.fonts.length ? fonts.fonts : ['Segoe UI','Arial']);
-    ['blue_font','green_font','msg_font'].forEach(id => { const s2 = $(id); s2.innerHTML = ''; for (const f of list) { const o = document.createElement('option'); o.value = f; o.textContent = f; s2.append(o); } }); } catch {}
-  enhanceSelects();
-  try { const n = await (await fetch('/api/notify')).json(); rules = (n.rules && n.rules.length) ? n.rules : [ { id:'default', label:'', min:0, max:0, style:{} } ]; sel = 0; } catch { rules = [ { id:'default', label:'', min:0, max:0, style:{} } ]; }
-  applyLang(); loadStyleToUI(); loadTts(); })();
-window.refreshPreview = function () { try { preview(); } catch {} };
-function playRat() { const v = $('ratvid'); if (!v.getAttribute('src')) v.setAttribute('src', '/rat.mp4');
-  $('ratbox').classList.add('show'); try { v.currentTime = 0; } catch {} v.play().catch(() => {}); }
-function closeRat() { const v = $('ratvid'); $('ratbox').classList.remove('show'); try { v.pause(); } catch {} }
-$('logo').onclick = playRat;
-$('ratx').onclick = closeRat;
-$('ratbox').onclick = e => { if (e.target.id === 'ratbox') closeRat(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRat(); });
-</script>
+<script src="/notify.js"></script>
+<script src="/notify-ui.js"></script>
 </body>
 </html>

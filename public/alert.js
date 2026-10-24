@@ -2,10 +2,10 @@
    so what you see in settings is exactly what plays. */
 (function () {
   const DEFAULTS = { top_text:'', money_text:'%donate% задонатив %money%',
-    blue_font:'Segoe UI', blue_size:20, blue_weight:600, blue_color:'#ffffff', blue_outline:'#000000', blue_outline_op:0, blue_maxw:720,
-    green_font:'Segoe UI', green_size:26, green_weight:800, green_color:'#ffffff', green_outline:'#000000', green_outline_op:0, green_maxw:720,
+    blue_font:'Segoe UI', blue_size:20, blue_weight:600, blue_color:'#ffffff', blue_outline:'#000000', blue_outline_op:0, blue_maxw:720, blue_tracking:0, blue_line:1.2,
+    green_font:'Segoe UI', green_size:26, green_weight:800, green_color:'#ffffff', green_outline:'#000000', green_outline_op:0, green_maxw:720, green_tracking:0, green_line:1.2,
     msg_font:'Segoe UI', msg_size:18, msg_weight:500, msg_color:'#ffffff', msg_outline:'#000000', msg_outline_op:0, msg_maxw:720, msg_maxh:96,
-    win_bg:'#131313', win_bg_opacity:0.9, win_radius:16, win_maxh:0,
+    win_bg:'#131313', win_bg_opacity:0.9, win_radius:16, win_maxh:0, win_border_color:'#000000', win_border_width:0, win_shadow:0, win_padding:10,
     blue_bg:'#000000', blue_bg_opacity:0, blue_radius:12,
     green_bg:'#000000', green_bg_opacity:0, green_radius:12,
     red_bg:'#000000', red_bg_opacity:0, red_radius:12,
@@ -20,7 +20,7 @@
   function outline(c, op) { if (!op) return 'none'; const col = hexA(c, op); const p = [];
     for (const [dx,dy] of [[-1,-1],[1,-1],[-1,1],[1,1],[0,-1],[0,1],[-1,0],[1,0]]) p.push(`${dx*2}px ${dy*2}px 0 ${col}`);
     return p.join(', '); }
-  function animFrom(k){ return ({slide_up:'translateY(30px) scale(.96)',fade:'scale(1)',zoom:'scale(.85)',slide_left:'translateX(-40px)',slide_down:'translateY(30px) scale(.96)'})[k]||'scale(1)'; }
+  function animFrom(k){ return ({slide_up:'translateY(30px) scale(.96)',fade:'scale(1)',zoom:'scale(.85)',slide_left:'translateX(-40px)',slide_down:'translateY(30px) scale(.96)',slide_right:'translateX(40px)',rise:'translateY(-40px) scale(.96)',flip_x:'rotateY(90deg) scale(.96)'})[k]||'scale(1)'; }
   function lineStyle(el, font, size, weight, color, out, outop, maxw, bg, bgop, rad) {
     el.style.fontFamily = `"${font}", system-ui, sans-serif`; el.style.fontSize = size + 'px'; el.style.fontWeight = weight;
     el.style.color = color; el.style.textShadow = outline(out, outop); el.style.maxWidth = maxw + 'px';
@@ -46,12 +46,17 @@
     const notif = document.createElement('div'); notif.className = 'notif';
     const stack = document.createElement('div'); stack.className = 'stack'; stack.style.width = N.max_width + 'px';
     if (topTxt.trim()) { const blue = document.createElement('div'); blue.className = 'nline'; blue.style.width = '100%'; blue.textContent = topTxt;
-      lineStyle(blue, N.blue_font, N.blue_size, N.blue_weight, N.blue_color, N.blue_outline, N.blue_outline_op, N.blue_maxw, N.blue_bg, N.blue_bg_opacity, N.blue_radius); stack.append(blue); }
+      lineStyle(blue, N.blue_font, N.blue_size, N.blue_weight, N.blue_color, N.blue_outline, N.blue_outline_op, N.blue_maxw, N.blue_bg, N.blue_bg_opacity, N.blue_radius);
+      blue.style.letterSpacing = (N.blue_tracking || 0) + 'px'; blue.style.lineHeight = N.blue_line || 1.2; stack.append(blue); }
     const win = document.createElement('div'); win.className = 'nwin'; win.style.width = '100%'; win.style.boxSizing = 'border-box';
     win.style.background = hexA(N.win_bg, N.win_bg_opacity); win.style.borderRadius = N.win_radius + 'px';
+    win.style.padding = Math.max(0, Number(N.win_padding) || 0) + 'px';
+    win.style.border = Number(N.win_border_width) > 0 ? `${N.win_border_width}px solid ${N.win_border_color || '#000000'}` : 'none';
+    win.style.boxShadow = Number(N.win_shadow) > 0 ? `0 ${Math.round(N.win_shadow / 3)}px ${N.win_shadow}px rgba(0,0,0,.55)` : 'none';
     if (N.win_maxh > 0) { win.style.maxHeight = N.win_maxh + 'px'; win.style.overflow = 'hidden'; }
     if (moneyTxt.trim()) { const green = document.createElement('div'); green.className = 'nline'; green.style.width = '100%'; green.textContent = moneyTxt;
-      lineStyle(green, N.green_font, N.green_size, N.green_weight, N.green_color, N.green_outline, N.green_outline_op, N.green_maxw, N.green_bg, N.green_bg_opacity, N.green_radius); win.append(green); }
+      lineStyle(green, N.green_font, N.green_size, N.green_weight, N.green_color, N.green_outline, N.green_outline_op, N.green_maxw, N.green_bg, N.green_bg_opacity, N.green_radius);
+      green.style.letterSpacing = (N.green_tracking || 0) + 'px'; green.style.lineHeight = N.green_line || 1.2; win.append(green); }
     const red = document.createElement('div'); red.className = 'nmsg'; red.style.width = '100%'; red.textContent = data.message || '';
     lineStyle(red, N.msg_font, N.msg_size, N.msg_weight, N.msg_color, N.msg_outline, N.msg_outline_op, N.msg_maxw, N.red_bg, N.red_bg_opacity, N.red_radius); win.append(red);
     stack.append(win);

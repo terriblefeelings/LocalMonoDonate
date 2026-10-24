@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>YouTube overlay</title>
-<style>html,body{margin:0;height:100%;background:transparent;overflow:hidden}#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}#stage>div{width:100%;height:100%}</style>
+<style>html,body{margin:0;height:100%;background:transparent;overflow:hidden}#stage{position:fixed;right:32px;bottom:32px;display:flex;align-items:center;justify-content:center;width:640px!important;height:360px!important;max-width:calc(100vw - 64px);max-height:calc(100vh - 64px)}#stage>div,#stage>iframe,#stage>video{width:640px!important;height:360px!important;max-width:calc(100vw - 64px);max-height:calc(100vh - 64px);border:0;object-fit:contain}#stage>video{background:#000}</style>
 </head>
 <body>
 <div id="stage"></div>
@@ -14,22 +14,55 @@ async function loadSettings() { try { const s = await (await fetch('/api/state')
 loadSettings(); setInterval(loadSettings, 5000);
 function pickStyle(amount, ruleId) {
   if (ruleId) { const r = RULES.find(x => x.id === ruleId); if (r) return r.style || {}; }
-  for (const r of RULES) { if (r.id === 'default' || r.pool) continue; const mn = r.min || 0, mx = r.max || 0; if (amount + 1e-9 >= mn && (mx <= 0 || amount <= mx + 1e-9)) return r.style || {}; }
-  const pool = RULES.filter(r => r.id === 'default' || r.pool);
+  for (const r of RULES) { if (r.id === 'default' || r.id === 'test' || r.pool) continue; const mn = r.min || 0, mx = r.max || 0; if (amount + 1e-9 >= mn && (mx <= 0 || amount <= mx + 1e-9)) return r.style || {}; }
+  const pool = RULES.filter(r => r.id === 'default' || r.id === 'test' || r.pool);
   if (!pool.length) return {};
   return pool[Math.floor(Math.random() * pool.length)].style || {};
 }
-let ytPromise = null;
-function loadYT() { if (ytPromise) return ytPromise;
-  ytPromise = new Promise(res => { if (window.YT && window.YT.Player) return res(); window.onYouTubeIframeAPIReady = () => res();
-    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s); }); return ytPromise; }
-async function playYT(host, id, maxMs) { await loadYT();
-  return new Promise(resolve => { let player, done = false;
-    current = { destroy: () => { try { player && player.destroy(); } catch (e) {} } };
-    const fin = () => { if (done) return; done = true; clearTimeout(timer); try { player && player.destroy(); } catch {} resolve(); };
+function ytCmd(win, func, args = []) { try { win.postMessage(JSON.stringify({ event: 'command', func, args }), '*'); } catch {} }
+function playYT(host, id, maxMs) {
+  return new Promise(resolve => {
+    let done = false;
+    const ifr = document.createElement('iframe');
+    const params = new URLSearchParams({ autoplay: '1', mute: '1', controls: '0', rel: '0', playsinline: '1', modestbranding: '1', iv_load_policy: '3', disablekb: '1', fs: '0', enablejsapi: '1', origin: location.origin });
+    ifr.src = 'https://www.youtube.com/embed/' + encodeURIComponent(id) + '?' + params;
+    ifr.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    ifr.allowFullscreen = true;
+    ifr.referrerPolicy = 'strict-origin-when-cross-origin';
+    host.replaceWith(ifr);
+    const win = () => { try { return ifr.contentWindow; } catch { return null; } };
+    const wid = 'yt' + Math.random().toString(36).slice(2);
+    let state = -1, played = false, unmuted = false;
+    const tryUnmute = () => {
+      if (unmuted) return; unmuted = true; clearInterval(unmute);
+      const w = win(); if (!w) return;
+      ytCmd(w, 'unMute'); ytCmd(w, 'setVolume', [100]);
+      // if the browser paused on unmute, fall back to muted playback instead of a frozen frame
+      setTimeout(() => { if (state === 2) { const w2 = win(); if (w2) { ytCmd(w2, 'mute'); ytCmd(w2, 'playVideo'); } } }, 900);
+    };
+    const onMsg = e => {
+      if (!/^https:\/\/(www\.)?youtube(-nocookie)?\.com$/.test(e.origin)) return;
+      let d = e.data; try { if (typeof d === 'string') d = JSON.parse(d); } catch { return; }
+      if (d && d.info && typeof d.info.playerState === 'number') state = d.info.playerState;
+      if (state === 1) { played = true; setTimeout(tryUnmute, 300); }
+      if (state === 0 && played) fin();
+    };
+    const fin = () => { if (done) return; done = true; clearTimeout(timer); clearInterval(unmute); window.removeEventListener('message', onMsg); try { ifr.remove(); } catch {} resolve(); };
     const timer = setTimeout(fin, maxMs);
-    player = new YT.Player(host, { videoId: id, width: '100%', height: '100%', playerVars: { autoplay: 1, controls: 0, rel: 0, playsinline: 1, modestbranding: 1 },
-      events: { onReady: e => e.target.playVideo(), onStateChange: e => { if (e.data === YT.PlayerState.ENDED) fin(); }, onError: () => fin() } }); }); }
+    // muted autoplay is always allowed; unmute once playback is running, then verify it did not pause
+    let tries = 0;
+    const unmute = setInterval(() => {
+      const w = win(); if (!w) return;
+      try { w.postMessage(JSON.stringify({ event: 'listening', id: wid }), '*'); } catch {}
+      ytCmd(w, 'mute');
+      ytCmd(w, 'playVideo');
+      if (++tries >= 6) tryUnmute();
+    }, 700);
+    window.addEventListener('message', onMsg);
+    ifr.addEventListener('load', () => { const w = win(); if (w) { try { w.postMessage(JSON.stringify({ event: 'listening', id: wid }), '*'); } catch {} ytCmd(w, 'mute'); ytCmd(w, 'playVideo'); } });
+    current = { destroy: fin };
+  });
+}
 // one video at a time: a new donation replaces the previous one (no second audio source)
 let current = null, gen = 0;
 function stopCurrent() {
@@ -39,14 +72,97 @@ function stopCurrent() {
   current = null;
   stage.innerHTML = '';
 }
+function embedUrl(raw) {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '').replace(/^mobile\./, '');
+    // Instagram: reels, posts, TV; instagr.am is the same service
+    if (host === 'instagram.com' || host === 'instagr.am') {
+      const m = u.pathname.match(/\/(reel|reels|p|tv)\/([^/?#]+)/i);
+      if (m) {
+        const kind = m[1].toLowerCase() === 'reels' ? 'reel' : m[1].toLowerCase();
+        return 'https://www.instagram.com/' + kind + '/' + m[2] + '/embed?autoplay=1';
+      }
+    }
+    // TikTok: /video/ID, /v/ID.html, /embed/v2/ID
+    if (host.endsWith('tiktok.com')) {
+      const m = u.pathname.match(/\/video\/(\d+)/) || u.pathname.match(/\/v\/(\d+)(?:\.html)?/i) || u.pathname.match(/\/embed\/v2\/(\d+)/i);
+      if (m) return 'https://www.tiktok.com/embed/v2/' + m[1] + '?autoplay=1';
+    }
+    // Twitch clips: clips.twitch.tv/ID, /clip/ID, and clips.twitch.tv/embed?clip=ID
+    if (host === 'clips.twitch.tv' || host.endsWith('twitch.tv')) {
+      let slug = (u.pathname.match(/\/clip\/([^/?#]+)/i) || [])[1];
+      if (!slug && host === 'clips.twitch.tv' && u.pathname.replace(/\/$/, '') === '/embed') slug = u.searchParams.get('clip');
+      if (!slug && host === 'clips.twitch.tv') slug = u.pathname.split('/').filter(Boolean)[0];
+      if (slug && slug.toLowerCase() !== 'embed') return 'https://clips.twitch.tv/embed?clip=' + encodeURIComponent(slug) + '&parent=' + location.hostname + '&autoplay=true';
+    }
+    // Reddit short link and bare v.redd.it id -> canonical embed / direct mp4
+    if (host === 'redd.it') {
+      const id = u.pathname.split('/').filter(Boolean)[0];
+      if (id) return 'https://www.redditmedia.com/r/popular/comments/' + encodeURIComponent(id) + '/?embed=true&showmedia=true&autoplay=1';
+    }
+    if (host === 'v.redd.it') {
+      const parts = u.pathname.split('/').filter(Boolean);
+      if (parts.length && !/\.[a-z0-9]+$/i.test(parts[parts.length - 1])) return 'https://v.redd.it/' + encodeURIComponent(parts[0]) + '/DASH_720.mp4';
+      return raw;
+    }
+    if (host.endsWith('reddit.com')) {
+      const sub = (u.pathname.match(/\/r\/([^/]+)\/comments\//i) || [])[1] || 'popular';
+      const id = (u.pathname.match(/\/comments\/([^/?#]+)/i) || [])[1];
+      if (id) return 'https://www.redditmedia.com/r/' + sub + '/comments/' + id + '/?embed=true&showmedia=true&autoplay=1';
+    }
+    // X / Twitter status, including /i/status and /video/1
+    if (host === 'x.com' || host.endsWith('twitter.com')) {
+      const m = u.pathname.match(/\/status\/(\d+)/);
+      if (m) return 'https://platform.twitter.com/embed/Tweet.html?id=' + m[1];
+    }
+    return raw;
+  } catch { return raw; }
+}
+function playOther(url, maxMs) {
+  return new Promise(resolve => {
+    const stage = document.getElementById('stage');
+    let done = false, el;
+    const fin = () => { if (done) return; done = true; clearTimeout(timer); try { if (el && el.pause) el.pause(); } catch {} resolve(); };
+    const timer = setTimeout(fin, maxMs);
+    const src = embedUrl(url);
+    if (/\.(mp4|webm|mov)(\?|$)/i.test(src) || src.startsWith('/media-x/')) {
+      el = document.createElement('video');
+      el.src = src; el.autoplay = true; el.muted = false; el.playsInline = true; el.controls = false;
+      el.onended = fin;
+      el.onerror = () => {
+        // if the X video proxy fails, still show the tweet instead of a blank stage
+        if (!src.startsWith('/media-x/')) { fin(); return; }
+        try { el.remove(); } catch {}
+        el = document.createElement('iframe');
+        el.src = embedUrl(url); el.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+        el.allowFullscreen = true;
+        stage.append(el);
+      };
+      stage.append(el);
+      const p = el.play();
+      if (p && p.then) p.then(() => { el.muted = false; }).catch(() => { el.muted = true; el.play().catch(() => {}); });
+    } else {
+      el = document.createElement('iframe');
+      el.src = src; el.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+      el.allowFullscreen = true;
+      stage.append(el);
+    }
+    current = { destroy: () => { fin(); try { el && el.remove(); } catch {} } };
+  });
+}
 async function play(d) {
-  if (!d.youtubeId) return;
+  if (!d.youtubeId && !d.mediaUrl) return;
   stopCurrent();
   const my = gen;
-  const stage = document.getElementById('stage');
-  const host = document.createElement('div'); stage.append(host);
-  await playYT(host, d.youtubeId, CFG.videoMaxMs);
-  if (my === gen) { stage.innerHTML = ''; current = null; }
+  if (d.youtubeId) {
+    const stage = document.getElementById('stage');
+    const host = document.createElement('div'); stage.append(host);
+    await playYT(host, d.youtubeId, CFG.videoMaxMs);
+  } else {
+    await playOther(d.mediaUrl, CFG.videoMaxMs);
+  }
+  if (my === gen) { document.getElementById('stage').innerHTML = ''; current = null; }
 }
 let lastId = 0, firstPoll = true;
 async function tick() {

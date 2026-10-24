@@ -6,7 +6,7 @@
 <title data-i18n="title">Звукові сповіщення</title>
 <link rel="stylesheet" href="/app.css">
 <style>
-  body{background-size:cover;background-position:center;background-attachment:fixed;background-repeat:no-repeat;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  body{background-size:cover;background-position:center;background-attachment:fixed;background-repeat:no-repeat;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
   .wrap{max-width:660px;width:100%}
   .deck{display:grid;grid-template-columns:repeat(5,1fr);gap:14px 12px;background-size:cover;background-position:center;border-radius:var(--r-sm)}
   .cell{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit}
@@ -29,7 +29,7 @@
   #pv .ph{padding:28px 18px;color:var(--muted);font-size:14px}
   #pv .ctl{display:flex;align-items:center;gap:10px}
 
-.credits{position:fixed;left:0;right:0;bottom:14px;margin:0 auto;max-width:560px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
+.credits{max-width:560px;margin:16px auto 28px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
 .credits a{color:inherit;text-decoration:underline}
 .credits b{font-weight:600}
 </style>

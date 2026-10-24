@@ -7,7 +7,15 @@
 <link rel="stylesheet" href="/app.css">
 <style>
   .wrap{max-width:760px}
-  .qrrow{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .qrrow{position:relative;display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .qrrow:last-of-type{border-bottom:0}
+  .qrrow__head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .qrrow__fields{display:grid;grid-template-columns:minmax(150px,1fr) 84px minmax(120px,1fr) 90px 84px;gap:10px;align-items:end}
+  .qrfield{display:grid;gap:4px;min-width:0}
+  .qrfield>span{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .qrfield select,.qrfield input{width:100%;min-width:0}
+  .qrrow .del{margin-left:auto;flex:0 0 34px}
+  @media (max-width:760px){.qrrow__fields{grid-template-columns:1fr 1fr}.qrrow .del{position:absolute;right:16px;margin-top:-42px}}
   .qrrow .tag{font-size:11px;color:var(--muted);min-width:30px}
   .qrrow select{min-width:140px}
   .qrrow .del{flex:0 0 34px;justify-content:center}
@@ -16,13 +24,13 @@
   .range output{min-width:48px;font-variant-numeric:tabular-nums;color:var(--fg)}
   .qrPreview{background:#eef1f6;border-radius:14px;padding:24px;display:flex;justify-content:center;overflow:auto}
   .qrprev-stage{display:flex;align-items:flex-end;gap:24px}
-  .qrprev-qr{background:#fff;padding:16px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.18);flex:0 0 auto}
+  .qrprev-qr{background:#fff;padding:16px;border-radius:var(--prev-radius,20px);box-shadow:0 10px 30px rgba(0,0,0,.18);flex:0 0 auto}
   .qrprev-qr svg{display:block;width:var(--prev-qr,220px);height:var(--prev-qr,220px)}
-  .qrprev-jar{min-width:300px;max-width:430px;padding:20px 22px;border-radius:20px;color:#e9edf3;background:#101217;
+  .qrprev-jar{min-width:300px;max-width:430px;padding:20px 22px;border-radius:var(--prev-radius,20px);color:#e9edf3;background:#101217;
     box-shadow:0 10px 30px rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14)}
   .qrprev-jar h3{margin:0 0 6px;font-size:20px;font-weight:700}
   .prevbar{height:10px;border-radius:6px;background:var(--prev-track,rgba(255,255,255,.14));overflow:hidden}
-  .prevbar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);
+  .prevbar i{display:block;height:100%;width:0;border-radius:6px;background:var(--prev-accent,#8b5cf6);
     box-shadow:0 0 12px rgba(139,92,246,.55)}
   .prevbottom{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:10px}
   .prevbottom b{font-size:24px;font-weight:800}
@@ -32,10 +40,8 @@
 </style>
 </head>
 <body>
-<div class="head">
-  <div class="brand"><div class="t">LocalMonoDonate <span class="pg">- QR Widget Customization</span></div></div>
-  <div class="tools"></div>
-</div>
+<div class="head" id="siteHeader"></div>
+
 <div class="wrap">
   <div class="status" id="status"></div>
 
@@ -61,6 +67,7 @@
     <div class="body">
       <div id="qrWidgets"></div>
       <button class="add" id="addQr" data-i18n="addQr">+ Add QR widget</button>
+      <p class="note" data-i18n="qrWidgetFieldsNote">Per widget: jar, background, style, corner radius, accent colour.</p>
       <div class="note" data-i18n="qrWidgetsNote">Up to 5 overlays: /qr, /qr2 … /qr5. Each has its own jar, background color and style.</div>
       <div class="note"><a id="qrDemo" target="_blank" rel="noopener" data-i18n="qrDemo">Test QR: 5 000 / 10 000</a></div>
     </div>
@@ -98,7 +105,7 @@ window.I18N = {
     qrAlignNote: 'How the QR card and the goal card line up vertically.',
     qrSize: 'QR size', qrSizeNote: '0–200%. 100% is the default 220 px QR code; 0 hides it.',
     qrStyleBoth: 'QR + goal', qrStyleQr: 'QR only', qrStyleGoal: 'Goal only',
-    qrColor: 'Background color', qrJar: 'Jar', qrRemove: 'Remove widget',
+    qrColor: 'Background color', qrJar: 'Jar', qrRadius: 'Corner radius', qrAccent: 'Accent color', qrRemove: 'Remove widget',
     saved: 'saved', saveFailed: 'save failed', noJars: 'Add a jar in Setup first'
   },
   ua: {
@@ -114,6 +121,12 @@ window.I18N = {
     saved: 'збережено', saveFailed: 'не вдалося зберегти', noJars: 'Спочатку додайте банку в Setup'
   }
 };
+Object.assign(window.I18N.en, { qrWidgetFieldsNote: 'Per widget: jar, background, style, corner radius, accent colour.' });
+Object.assign(window.I18N.ua, { qrWidgetFieldsNote: 'Для кожного віджета: банка, фон, стиль, радіус кутів і акцентний колір.' });
+Object.assign(window.I18N.en, { qrStyle: 'Style' });
+Object.assign(window.I18N.ua, { qrStyle: 'Стиль' });
+Object.assign(window.I18N.en, { qrRadius: 'Corner radius', qrAccent: 'Accent color' });
+Object.assign(window.I18N.ua, { qrRadius: 'Кут заокруглення', qrAccent: 'Акцентний колір' });
 const $ = id => document.getElementById(id);
 let CFG = {}, WIDGETS = [], ALIGN = 'bottom', SIZE = 100, prevUrl = '';
 
@@ -152,6 +165,9 @@ function renderPreview() {
   jar.style.borderColor = light ? 'rgba(0,0,0,.12)' : 'rgba(255,255,255,.14)';
   jar.style.setProperty('--prev-track', light ? 'rgba(0,0,0,.14)' : 'rgba(255,255,255,.14)');
   jar.style.setProperty('--prev-muted', light ? 'rgba(16,18,23,.62)' : 'rgba(233,237,243,.62)');
+  const radius = Math.max(0, Math.min(64, Number(w.radius ?? 20)));
+  qr.style.borderRadius = radius + 'px'; jar.style.borderRadius = radius + 'px';
+  jar.style.setProperty('--prev-accent', /^#[0-9a-f]{6}$/i.test(w.accent || '') ? w.accent : '#8b5cf6');
   const j = jars().find(x => x.code === w.jar);
   $('prevTitle').textContent = j ? j.name : 'TEST JAR';
   $('prevFill').style.width = '50%';
@@ -182,10 +198,21 @@ function renderWidgets() {
     ['both', 'qr', 'goal'].forEach(v => style.add(new Option(styleLabel(v), v)));
     style.value = ['both', 'qr', 'goal'].includes(w.style) ? w.style : 'both';
     style.onchange = () => { WIDGETS[i].style = style.value; renderPreview(); };
-    const del = document.createElement('button'); del.className = 'del'; del.type = 'button';
-    del.textContent = '✕'; del.title = window.t('qrRemove'); del.disabled = WIDGETS.length <= 1;
-    del.onclick = () => { if (WIDGETS.length > 1) { WIDGETS.splice(i, 1); renderWidgets(); } };
-    row.append(tag, jar, color, style, del); box.append(row);
+    const radius = document.createElement('input'); radius.type = 'number'; radius.className = 'qr-radius'; radius.min = 0; radius.max = 64; radius.value = Number(w.radius ?? 20); radius.title = window.t('qrRadius'); radius.setAttribute('aria-label', window.t('qrRadius'));
+    radius.oninput = () => { WIDGETS[i].radius = Math.max(0, Math.min(64, Number(radius.value) || 0)); renderPreview(); };
+    const accent = document.createElement('input'); accent.type = 'color'; accent.className = 'qr-accent'; accent.value = /^#[0-9a-f]{6}$/i.test(w.accent || '') ? w.accent : '#8b5cf6'; accent.title = window.t('qrAccent'); accent.setAttribute('aria-label', window.t('qrAccent'));
+    accent.oninput = () => { WIDGETS[i].accent = accent.value; renderPreview(); };
+    const head = document.createElement('div'); head.className = 'qrrow__head'; head.append(tag);
+    if (i > 0) {
+      const del = document.createElement('button'); del.className = 'del'; del.type = 'button';
+      del.textContent = '×'; del.title = window.t('qrRemove');
+      del.onclick = () => { WIDGETS.splice(i, 1); renderWidgets(); };
+      head.append(del);
+    }
+    const field = (label, node) => { const l = document.createElement('label'); l.className = 'qrfield'; const sp = document.createElement('span'); sp.textContent = label; l.append(sp, node); return l; };
+    const fields = document.createElement('div'); fields.className = 'qrrow__fields';
+    fields.append(field(window.t('qrJar'), jar), field(window.t('qrColor'), color), field(window.t('qrStyle'), style), field(window.t('qrRadius'), radius), field(window.t('qrAccent'), accent));
+    row.append(head, fields); box.append(row);
   });
   $('addQr').style.display = WIDGETS.length >= 5 ? 'none' : 'inline-flex';
   renderPreview();
@@ -193,7 +220,7 @@ function renderWidgets() {
 $('addQr').onclick = () => {
   if (WIDGETS.length >= 5) return;
   const list = jars(); if (!list.length) return;
-  WIDGETS.push({ jar: list[0].code, color: '#101217', style: 'both' });
+  WIDGETS.push({ jar: list[0].code, color: '#101217', style: 'both', radius: 20, accent: '#8b5cf6' });
   renderWidgets();
 };
 $('qrSize').oninput = () => { SIZE = Number($('qrSize').value) || 0; $('qrSizeVal').textContent = SIZE + '%'; renderPreview(); };
@@ -203,7 +230,7 @@ async function load() {
   try { CFG = await (await fetch('/api/config')).json(); } catch { CFG = {}; }
   WIDGETS = (CFG.qrWidgets && CFG.qrWidgets.length ? CFG.qrWidgets
     : [{ jar: CFG.widgetJar || '', color: '#101217', style: 'both' }]).slice(0, 5).map(w => ({
-      jar: w.jar || '', color: w.color || '#101217', style: w.style || 'both'
+      jar: w.jar || '', color: w.color || '#101217', style: w.style || 'both', radius: Number(w.radius ?? 20), accent: w.accent || '#8b5cf6'
     }));
   ALIGN = ['top', 'mid', 'bottom'].includes(CFG.qrAlign) ? CFG.qrAlign : 'bottom';
   SIZE = Math.max(0, Math.min(200, Number(CFG.qrSize ?? 100)));

@@ -66,7 +66,7 @@ fn ensure(dir: &str) -> Result<(), String> {
 
 /// Synthesize `text` with `voice` into `out` (absolute wav path). Blocking.
 /// `key`/`region` are required only for Azure voices.
-pub fn synth(dir: &str, voice: &str, text: &str, out: &Path, key: &str, region: &str) -> Result<(), String> {
+pub fn synth(dir: &str, voice: &str, text: &str, out: &Path, key: &str, region: &str, speed: f64) -> Result<(), String> {
     ensure(dir)?;
     let mut g = DAEMON.lock().unwrap();
     let d = g.as_mut().ok_or("tts daemon unavailable")?;
@@ -76,6 +76,7 @@ pub fn synth(dir: &str, voice: &str, text: &str, out: &Path, key: &str, region: 
         "out": out.to_string_lossy(),
         "key": key,
         "region": region,
+        "speed": speed,
     });
     writeln!(d.stdin, "{}", req).map_err(|e| e.to_string())?;
     d.stdin.flush().ok();

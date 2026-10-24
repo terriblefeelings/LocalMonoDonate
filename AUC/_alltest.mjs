@@ -58,13 +58,14 @@ async function testPages() {
     ok(`page ${name} html`, body.length > 200 && /<html|<!doctype/i.test(body), 'len ' + body.length);
     ok(`page ${name} clean`, !body.includes('???') && !body.includes('\uFFFD'));
     if (kind > 0) {
-      ok(`page ${name} i18n dict en+ua+data-i18n`, body.includes('I18N') && /\bua\b\s*[:=]/.test(body) && body.includes('data-i18n'));
+      const i18nBody = name === 'notify' ? (await text('/notify.js')).body : body;
+      ok(`page ${name} i18n dict en+ua+data-i18n`, i18nBody.includes('I18N') && /\bua\b\s*[:=]/.test(i18nBody) && body.includes('data-i18n'));
       if (kind === 2) ok(`page ${name} admin: head.js + i18n.js`, body.includes('/head.js') && body.includes('/i18n.js'));
       else ok(`page ${name} public: i18n.js + lang switch`, body.includes('/i18n.js') && /langseg|lm_lang|data-lang/.test(body));
     }
   }
   sec('assets');
-  for (const [n, p] of [['app.css', '/app.css'], ['head.js', '/head.js'], ['i18n.js', '/i18n.js'], ['auc.js', '/auc.js'], ['auc.css', '/auc.css'], ['alert.js', '/alert.js'], ['qrcode.js', '/qrcode.js'], ['default.jpg', '/assets/default.jpg'], ['rat.mp4', '/rat.mp4']]) {
+  for (const [n, p] of [['app.css', '/app.css'], ['head.js', '/head.js'], ['i18n.js', '/i18n.js'], ['auc.js', '/auc.js'], ['auc.css', '/auc.css'], ['alert.js', '/alert.js'], ['notify.js', '/notify.js'], ['notify.css', '/notify.css'], ['notify-ui.js', '/notify-ui.js'], ['qrcode.js', '/qrcode.js'], ['default.jpg', '/assets/default.jpg'], ['rat.mp4', '/rat.mp4']]) {
     ok(`asset ${n} 200`, (await fetch(BASE + p)).status === 200);
   }
   ok('favicon 204', (await fetch(BASE + '/favicon.ico')).status === 204);
@@ -119,8 +120,10 @@ async function testDonations() {
   const sub = await api('/api/submit', { amount: amt, name: 'Donor', message: 'hello' });
   ok('submit: code + monobank redirect', sub.ok === true && !!sub.code && /send\.monobank\.ua\/jar\//.test(sub.redirect || ''), JSON.stringify(sub).slice(0, 90));
   ok('submit: fallback link has its own code', sub.ok === true && !!sub.fallback && sub.fallback !== sub.redirect && !!sub.code2 && sub.code2 !== sub.code);
-  ok('submit: empty name rejected', (await api('/api/submit', { amount: amt, name: '', message: 'x' })).ok === false);
-  ok('submit: empty message rejected', (await api('/api/submit', { amount: amt, name: 'x', message: '' })).ok === false);
+  const anon = await api('/api/submit', { amount: amt, name: '', message: 'x' });
+  const noMsg = await api('/api/submit', { amount: amt, name: 'x', message: '' });
+  ok('submit: empty name falls back to anonymous', anon.ok === true);
+  ok('submit: empty message gets a read-aloud fallback', noMsg.ok === true);
   ok('submit: below-min rejected', (await api('/api/submit', { amount: Math.max(0, mn - 1), name: 'x', message: 'y' })).ok === false);
   ok('submit: non-integer rejected', (await api('/api/submit', { amount: amt + 0.5, name: 'x', message: 'y' })).ok === false);
 }

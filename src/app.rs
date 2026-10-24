@@ -148,7 +148,7 @@ impl Ctx {
             let msg: String = comment.chars().take(cfg.limits.message_max).collect();
             jar.history.insert(0, HistoryItem {
                 id: tx.id.clone(), name: name.clone(), amount: uah, message: msg.clone(),
-                youtube_id: String::new(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
+                youtube_id: String::new(), media_url: String::new(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
             });
             jar.stats.count += 1; jar.stats.total += uah;
             if uah > jar.stats.biggest { jar.stats.biggest = uah; }
@@ -177,7 +177,7 @@ impl Ctx {
         }
 
         // resolve the alert payload (if any) plus the local history record
-        let (name, message, youtube_id, kind, code, alert, voice) = if let Some(k) = idx {
+        let (name, message, youtube_id, media_url, kind, code, alert, voice) = if let Some(k) = idx {
             let p = jar.pending.remove(k);
             // the fallback-link twin is the same intent, never a second alert
             if !p.pair.is_empty() { jar.pending.retain(|x| x.code != p.pair); }
@@ -189,7 +189,7 @@ impl Ctx {
                 let yt = if !p.youtube_id.is_empty() && uah >= yt_min { p.youtube_id.clone() } else { String::new() };
                 jar.history.insert(0, HistoryItem {
                     id: tx.id.clone(), name: n.clone(), amount: uah, message: m.clone(),
-                    youtube_id: yt.clone(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
+                    youtube_id: yt.clone(), media_url: String::new(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
                 });
                 jar.stats.count += 1; jar.stats.total += uah;
                 if uah > jar.stats.biggest { jar.stats.biggest = uah; }
@@ -207,19 +207,20 @@ impl Ctx {
                 return false;
             }
             let pname = if p.name.trim().is_empty() { "Anonymous".to_string() } else { p.name.trim().to_string() };
-            (pname, p.message, p.youtube_id, matched, Some(p.code), true, p.voice)
+            (pname, p.message, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice)
         } else {
-            let name = "Anonymous".to_string();
-            let msg: String = comment.chars().take(cfg.limits.message_max).collect();
+            let name = "Анонім".to_string();
+            let raw: String = comment.chars().take(cfg.limits.message_max).collect();
+            let msg = if raw.trim().is_empty() { format!("{} нічого не написав", name) } else { raw };
             let v = String::new();
-            if cfg.notify_unmatched { (name, msg, String::new(), "unmatched", None, true, v) }
-            else { (name, msg, String::new(), "none", None, false, v) }
+            if cfg.notify_unmatched { (name, msg, String::new(), String::new(), "unmatched", None, true, v) }
+            else { (name, msg, String::new(), String::new(), "none", None, false, v) }
         };
 
         // every positive transaction is kept in the local history + stats, whether or not it alerts
         jar.history.insert(0, HistoryItem {
             id: tx.id.clone(), name: name.clone(), amount: uah, message: message.clone(),
-            youtube_id: youtube_id.clone(), matched: kind.into(), code: code.clone(), at: now_ms(),
+            youtube_id: youtube_id.clone(), media_url: media_url.clone(), matched: kind.into(), code: code.clone(), at: now_ms(),
         });
         jar.stats.count += 1;
         jar.stats.total += uah;
@@ -247,8 +248,8 @@ impl Ctx {
                     let dir = self.paths.base.join("tts");
                     let _ = std::fs::create_dir_all(&dir);
                     let fname = format!("{}.wav", tx.id.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect::<String>());
-                    if crate::tts::synth(&cfg.tts.dir, &eff_voice, &spoken, &dir.join(&fname), &cfg.tts.azure_key, &cfg.tts.azure_region).is_ok() {
-                        tts_url = format!("/tts/{}", fname);
+                    if crate::tts::synth(&cfg.tts.dir, &eff_voice, &spoken, &dir.join(&fname), &cfg.tts.azure_key, &cfg.tts.azure_region, cfg.tts.speed).is_ok() {
+                        tts_url = crate::model::tts_url(&cfg, &fname);
                     } else {
                         log("tts synth failed");
                     }
@@ -256,7 +257,7 @@ impl Ctx {
             }
             self.broadcast(json!({ "type": "donation", "data": {
                 "id": tx.id, "name": name, "amount": uah, "message": message,
-                "youtubeId": youtube_id, "matched": kind, "jar": jar_code, "currency": cur,
+                "youtubeId": youtube_id, "mediaUrl": media_url, "matched": kind, "jar": jar_code, "currency": cur,
                 "ttsUrl": tts_url } }));
             log(&format!("[{}] notification ({}) {:.0} UAH from {}", jar_code, kind, uah, name));
             // StreamElements: mirror the live donation as a tip so the SE alert box plays

@@ -6,8 +6,8 @@
 #   powershell -File pack.ps1 -WithTts                 # + tts-engine from .\tts-engine
 #   powershell -File pack.ps1 -WithTts -TtsEngine D:\tts-engine-lite
 #
-# The portable tts-engine (venv2, ffmpeg.exe, serve.py; Google/Azure voices only) is a
-# ~260 MB runtime that is not stored in git - pass its folder with -TtsEngine.
+# The portable tts-engine (venv2, ffmpeg.exe, serve.py, model, tokenizer, voices) is a
+# ~550 MB runtime that is not stored in git - pass its folder with -TtsEngine.
 param(
   [switch]$WithTts,
   [string]$TtsEngine = (Join-Path $PSScriptRoot 'tts-engine')
@@ -40,6 +40,11 @@ if ($WithTts) {
   Copy-Item (Join-Path $TtsEngine 'venv2') $dst -Recurse
   Copy-Item (Join-Path $TtsEngine 'ffmpeg.exe') $dst
   Copy-Item (Join-Path $TtsEngine 'serve.py') $dst
+  Copy-Item (Join-Path $TtsEngine 'styletts_istftnet_fp16.onnx') $dst
+  Copy-Item (Join-Path $TtsEngine 'tokenizer.py') $dst
+  Copy-Item (Join-Path $TtsEngine 'vocab.json') $dst
+  New-Item -ItemType Directory -Force (Join-Path $dst 'space') | Out-Null
+  Copy-Item (Join-Path $TtsEngine 'space\voices') (Join-Path $dst 'space') -Recurse
 }
 
 # reference template only - deliberately empty, the app never reads it
@@ -63,8 +68,14 @@ Copy-Item (Join-Path $root 'README.md') (Join-Path $app 'README.md')
 Get-ChildItem $app -Recurse -File | ForEach-Object { $_.LastWriteTime = Get-Date }
 $zip = Join-Path $dist ($(if ($WithTts) { 'MONOBANK-lite-0.2.11-dev.zip' } else { 'LocalMonoDonate-0.2.11-dev.zip' }))
 Push-Location $dist
-& tar.exe -a -c -f $zip 'LocalMonoDonate'
-if ($LASTEXITCODE -ne 0) { throw 'zip failed' }
+Remove-Item $zip -Force -ErrorAction SilentlyContinue
+$seven = Get-Command 7z.exe -ErrorAction SilentlyContinue
+if ($seven) {
+  & $seven.Source a -tzip -mx=5 $zip 'LocalMonoDonate'
+  if ($LASTEXITCODE -ne 0) { throw 'zip failed' }
+} else {
+  Compress-Archive -Path 'LocalMonoDonate' -DestinationPath $zip -CompressionLevel Optimal -Force -ErrorAction Stop
+}
 Pop-Location
 "zip: $zip"
 Get-ChildItem $app | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,2)}}

@@ -1,9 +1,10 @@
-use crate::app::Ctx;
+﻿use crate::app::Ctx;
 use crate::model::*;
 use crate::mono;
 use serde_json::json;
+use std::io::Read;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 use tiny_http::{Header, Method, Response, StatusCode};
 
@@ -150,11 +151,11 @@ fn state_json(ctx: &Ctx) -> serde_json::Value {
             .map(|(name, total, count)| json!({ "name": name, "total": total, "count": count }))
             .collect();
         let pending: Vec<serde_json::Value> = j.pending.iter()
-            .map(|p| json!({ "code": p.code, "amount": p.amount, "name": p.name, "createdAt": p.created_at }))
+            .map(|p| json!({ "code": p.code, "amount": p.amount, "name": p.name, "message": p.message, "createdAt": p.created_at }))
             .collect();
         let history: Vec<serde_json::Value> = j.history.iter().take(200)
             .map(|h| json!({ "id": h.id, "name": h.name, "amount": h.amount, "message": h.message,
-                             "youtubeId": h.youtube_id, "matched": h.matched, "at": h.at }))
+                             "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "matched": h.matched, "at": h.at }))
             .collect();
         json!({
             "code": j.code, "title": if !custom.trim().is_empty() { custom } else { j.title.clone() },
@@ -175,7 +176,7 @@ fn state_json(ctx: &Ctx) -> serde_json::Value {
         "maxAmount": cfg.max_amount,
         "tts": { "mode": cfg.tts.mode, "voice": cfg.tts.default_voice(), "readMode": cfg.tts.read_mode,
                  "allowed": cfg.tts.allowed_in(&cfg.tts.dir), "picks": cfg.tts.donor_picks() },
-        "voices": crate::tts::voices(&cfg.tts.dir, cfg.tts.has_azure()),
+        "voices": [{"id": "google:uk", "label": "Google (українська)", "lang": "uk"}],
         "limits": { "nameMax": cfg.limits.name_max, "messageMax": cfg.limits.message_max },
         "overlay": { "durationMs": cfg.overlay.duration_ms, "videoMaxMs": cfg.overlay.video_max_ms },
         "jars": jars,
@@ -196,8 +197,8 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     let cfg = ctx.cfg();
     let amount_in = v.get("amount").and_then(|x| x.as_f64()).unwrap_or(0.0);
-    let name = v.get("name").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
-    let message = v.get("message").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    let mut name = v.get("name").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    let mut message = v.get("message").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
     let yt = v.get("youtube").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
     let voice = v.get("voice").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
     // optional bit picked on the donation form (must exist in the configured deck)
@@ -211,21 +212,37 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     if amount.fract() != 0.0 || amount < cfg.min_amount || amount > cfg.max_amount {
         return fail(request, &format!("Сума має бути цілим числом від {:.0} до {:.0} ₴", cfg.min_amount, cfg.max_amount));
     }
-    if name.is_empty() && bit_sel.is_none() { return fail(request, "Вкажіть ім'я"); }
     if name.chars().count() > cfg.limits.name_max { return fail(request, "Занадто довге ім'я"); }
-    if message.is_empty() && bit_sel.is_none() { return fail(request, "Напишіть повідомлення"); }
     if message.chars().count() > cfg.limits.message_max { return fail(request, "Занадто довге повідомлення"); }
-    let ytid = match youtube_id(&yt) { Ok(x) => x, Err(_) => return fail(request, "Потрібне посилання на одне YouTube-відео (плейлисти, кліпи й канали не підтримуються)") };
-    // YouTube checks (thresholds come from the variation matched for this amount)
+    if bit_sel.is_none() {
+        if name.is_empty() { name = "Анонім".into(); }
+        if message.is_empty() { message = format!("{} нічого не написав", name); }
+    }
+    let parsed_yt = youtube_id(&yt);
+    let ytid = parsed_yt.clone().unwrap_or_default();
+    let other_media = if !yt.is_empty() && ytid.is_empty() && !yt.contains("list=") {
+        other_media_url(&yt)
+    } else { None };
+    if !yt.is_empty() && ytid.is_empty() && !yt.contains("list=") && other_media.is_none() {
+        return fail(request, "Invalid media link");
+    }
+    // media checks use the variation matched for this amount
     let ystyle = pick_style(&cfg.notify.rules, amount);
     // a watch link with &list= still points at one video and is allowed; a pure playlist has no id
-    if ytid.is_empty() && yt.contains("list=") && !ystyle.yt_playlists { return fail(request, "Плейлисти не дозволені"); }
+    if ytid.is_empty() && yt.contains("list=") && !ystyle.yt_playlists { return fail(request, "Playlist is not allowed"); }
     if !ytid.is_empty() {
+        if ystyle.yt_min > 0.0 && amount < ystyle.yt_min { return fail(request, &format!("YouTube requires at least {:.0} UAH", ystyle.yt_min)); }
         if let Some((views, secs)) = mono::youtube_meta(&ytid) {
-            if ystyle.yt_views > 0 && views < ystyle.yt_views { return fail(request, &format!("Відео повинно мати щонайменше {} переглядів", ystyle.yt_views)); }
-            if ystyle.yt_max_min > 0 && secs > ystyle.yt_max_min * 60 { return fail(request, &format!("Відео повинно бути не довше {} хв", ystyle.yt_max_min)); }
+            if ystyle.yt_views > 0 && views < ystyle.yt_views { return fail(request, &format!("Video needs at least {} views", ystyle.yt_views)); }
+            if ystyle.yt_max_min > 0 && secs > ystyle.yt_max_min * 60 { return fail(request, &format!("Video must be at most {} min", ystyle.yt_max_min)); }
         }
     }
+    if let Some(_url) = &other_media {
+        if ystyle.other_media_min > 0.0 && amount < ystyle.other_media_min {
+            return fail(request, &format!("Other media requires at least {:.0} UAH", ystyle.other_media_min));
+        }
+    }
+    let media_url = other_media.map(|u| resolve_short_media(&u)).unwrap_or_default();
 
     let jar_req = v.get("jar").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
     let jar_code = if cfg.jars.iter().any(|j| j == &jar_req) { jar_req } else { cfg.jars[0].clone() };
@@ -253,8 +270,8 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     {
         let mut st = ctx.state.lock().unwrap();
         if let Some(j) = st.jars.iter_mut().find(|j| j.code == jar_code) {
-            j.pending.push(Pending { code: code.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), voice: voice.clone(), bit: bit_sel.clone(), pair: code2.clone(), created_at: now_ms() });
-            j.pending.push(Pending { code: code2.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), voice: voice.clone(), bit: bit_sel.clone(), pair: code.clone(), created_at: now_ms() });
+            j.pending.push(Pending { code: code.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), media_url: media_url.clone(), voice: voice.clone(), bit: bit_sel.clone(), pair: code2.clone(), created_at: now_ms() });
+            j.pending.push(Pending { code: code2.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), media_url: media_url.clone(), voice: voice.clone(), bit: bit_sel.clone(), pair: code.clone(), created_at: now_ms() });
             j.issued.push(code.clone());
             j.issued.push(code2.clone());
             if j.issued.len() > 5000 { let n = j.issued.len() - 5000; j.issued.drain(0..n); }
@@ -271,11 +288,401 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     let _ = request.respond(json_resp(200, json!({ "ok": true, "code": code, "code2": code2, "redirect": redirect, "fallback": fallback })));
 }
 
+fn pct_encode(s: &str) -> String {
+    let mut out = String::new();
+    for b in s.bytes() {
+        if b.is_ascii_alphanumeric() || b == b'-' || b == b'_' || b == b'.' || b == b'~' { out.push(b as char); }
+        else { out.push_str(&format!("%{:02X}", b)); }
+    }
+    out
+}
+
+fn pct_decode(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'%' && i + 2 < b.len() {
+            if let Ok(v) = u8::from_str_radix(&s[i + 1..i + 3], 16) { out.push(v); i += 3; continue; }
+        }
+        out.push(b[i]); i += 1;
+    }
+    String::from_utf8_lossy(&out).to_string()
+}
+
+fn twitch_clip_slug(url: &str) -> Option<String> {
+    let s = url.trim().strip_prefix("https://").or_else(|| url.trim().strip_prefix("http://")).unwrap_or(url.trim());
+    let s = s.strip_prefix("//").unwrap_or(s);
+    let (host, rest) = s.split_once('/').unwrap_or((s, ""));
+    let host = host.split(':').next().unwrap_or("").to_ascii_lowercase();
+    if !(host == "twitch.tv" || host.ends_with(".twitch.tv")) { return None; }
+    let path = format!("/{}", rest.split(['?', '#']).next().unwrap_or(""));
+    let mut slug = if let Some(i) = path.find("/clip/") {
+        path[i + 6..].split(['/', '?', '#']).next().unwrap_or("").to_string()
+    } else {
+        path.split('/').find(|x| !x.is_empty()).unwrap_or("").to_string()
+    };
+    if slug == "embed" || slug.is_empty() {
+        if let Some(q) = rest.split_once("clip=").map(|(_, q)| q) {
+            slug = q.split(['&', '#']).next().unwrap_or("").to_string();
+        }
+    }
+    if slug.is_empty() || !slug.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') { return None; }
+    Some(slug)
+}
+
+fn twitch_clip_mp4(url: &str) -> Option<String> {
+    let slug = twitch_clip_slug(url)?;
+    let body = json!([{
+        "operationName": "VideoAccessToken_Clip",
+        "variables": { "slug": slug },
+        "extensions": { "persistedQuery": { "version": 1,
+            "sha256Hash": "36b89d2507fce29e5ca551df756d27c1cfe079e2609642b4390aa4c35796eb11" } }
+    }]).to_string();
+    let resp = ureq::post("https://gql.twitch.tv/gql")
+        .set("Client-ID", "kimne78kx3ncx6brgo4mv6wki5h1ko")
+        .set("Content-Type", "application/json")
+        .timeout(Duration::from_secs(5))
+        .send_string(&body).ok()?;
+    let text = resp.into_string().ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let clip = v.get(0)?.get("data")?.get("clip")?;
+    let qualities = clip.get("videoQualities")?.as_array()?;
+    let best = qualities.iter().find(|q| q.get("quality").and_then(|x| x.as_str()) == Some("720"))
+        .or_else(|| qualities.first())?;
+    let src = best.get("sourceURL")?.as_str()?;
+    let tok = clip.get("playbackAccessToken")?;
+    let sig = tok.get("signature")?.as_str()?;
+    let value = tok.get("value")?.as_str()?;
+    let join = if src.contains('?') { '&' } else { '?' };
+    Some(format!("{}{}sig={}&token={}", src, join, sig, pct_encode(value)))
+}
+
+/// TikTok share links need their redirect resolved at submit time; keep the original
+/// Twitch URL in history and resolve its short-lived MP4 only when it is about to play.
+fn resolve_short_media(url: &str) -> String {
+    let short = url.contains("vm.tiktok.com") || url.contains("vt.tiktok.com") || url.contains("tiktok.com/t/");
+    if !short { return url.to_string(); }
+    match ureq::get(url).timeout(Duration::from_secs(4)).call() {
+        Ok(r) => r.get_url().to_string(),
+        Err(_) => url.to_string(),
+    }
+}
+
+/// X links often need the /video/1 route before the player exposes the MP4.
+fn x_with_video(url: &str) -> String {
+    let raw = url.trim();
+    let (base, tail) = match raw.split_once('?') { Some((b, q)) => (b, format!("?{}", q)), None => (raw, String::new()) };
+    let lower = base.to_ascii_lowercase();
+    if !(lower.contains("x.com/") || lower.contains("twitter.com/")) { return raw.to_string(); }
+    if base.contains("/video/") { return raw.to_string(); }
+    if base.contains("/status/") {
+        format!("{}/video/1{}", base.trim_end_matches('/'), tail)
+    } else { raw.to_string() }
+}
+
+fn x_status_id(url: &str) -> Option<String> {
+    let s = url.trim().strip_prefix("https://").or_else(|| url.trim().strip_prefix("http://")).unwrap_or(url.trim());
+    let s = s.strip_prefix("//").unwrap_or(s);
+    let (host, rest) = s.split_once('/').unwrap_or((s, ""));
+    let host = host.split(':').next().unwrap_or("").to_ascii_lowercase();
+    if !(host == "x.com" || host.ends_with(".x.com") || host == "twitter.com" || host.ends_with(".twitter.com")) {
+        return None;
+    }
+    let segs: Vec<&str> = rest.split(['?', '#']).next().unwrap_or("").split('/').filter(|x| !x.is_empty()).collect();
+    for i in 0..segs.len().saturating_sub(1) {
+        if (segs[i] == "status" || segs[i] == "statuses") && segs[i + 1].chars().all(|c| c.is_ascii_digit()) {
+            return Some(segs[i + 1].to_string());
+        }
+    }
+    None
+}
+
+/// X/Twitter videos are resolved to their direct MP4 so the overlay shows the
+/// video itself instead of the whole tweet card.
+fn best_mp4(variants: &[serde_json::Value], url_key: &str, type_key: &str) -> Option<String> {
+    let mut best: Option<(u32, String)> = None;
+    let mut fallback: Option<String> = None;
+    for q in variants {
+        if q.get(type_key).and_then(|x| x.as_str()) != Some("video/mp4") { continue; }
+        let src = q.get(url_key).and_then(|x| x.as_str()).unwrap_or("");
+        if src.is_empty() { continue; }
+        fallback = Some(src.to_string());
+        // pick the best rung that still fits the 640x360 PiP (720p max)
+        let h = src.split('/').filter_map(|p| {
+            let (w, h) = p.split_once('x')?;
+            if !w.is_empty() && !h.is_empty() && w.chars().all(|c| c.is_ascii_digit()) && h.chars().all(|c| c.is_ascii_digit()) {
+                h.parse::<u32>().ok()
+            } else { None }
+        }).max().unwrap_or(0);
+        if h <= 720 && best.as_ref().map(|(bh, _)| h > *bh).unwrap_or(true) { best = Some((h, src.to_string())); }
+    }
+    best.map(|(_, s)| s).or(fallback)
+}
+
+fn x_video_syndication(id: &str) -> Option<String> {
+    let endpoint = format!("https://cdn.syndication.twimg.com/tweet-result?id={}&lang=en&token=a", id);
+    let resp = ureq::get(&endpoint).set("User-Agent", "Mozilla/5.0")
+        .timeout(Duration::from_secs(4)).call().ok()?;
+    let text = resp.into_string().ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let variants = v.get("video").and_then(|x| x.get("variants")).and_then(|x| x.as_array())?;
+    best_mp4(variants, "src", "type")
+}
+
+fn x_video_fx(id: &str) -> Option<String> {
+    let endpoint = format!("https://api.fxtwitter.com/status/{}", id);
+    let resp = ureq::get(&endpoint).set("User-Agent", "Mozilla/5.0")
+        .timeout(Duration::from_secs(4)).call().ok()?;
+    let text = resp.into_string().ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let variants = v.get("tweet")?.get("media")?.get("videos")?.get(0)?.get("variants")?.as_array()?;
+    best_mp4(variants, "url", "content_type")
+}
+
+fn x_video_html(url: &str) -> Option<String> {
+    let resp = ureq::get(url).set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        .timeout(Duration::from_secs(6)).call().ok()?;
+    let text = resp.into_string().ok()?;
+    let mut best: Option<(u32, String)> = None;
+    for piece in text.split('"') {
+        let src = piece.replace("\\/", "/");
+        if !src.starts_with("https://video.twimg.com/") || !src.contains(".mp4") { continue; }
+        let h = src.split('/').filter_map(|p| {
+            let (w, h) = p.split_once('x')?;
+            if !w.is_empty() && !h.is_empty() && w.chars().all(|c| c.is_ascii_digit()) && h.chars().all(|c| c.is_ascii_digit()) {
+                h.parse::<u32>().ok()
+            } else { None }
+        }).max().unwrap_or(0);
+        if h <= 720 && best.as_ref().map(|(bh, _)| h > *bh).unwrap_or(true) { best = Some((h, src)); }
+    }
+    best.map(|(_, s)| s)
+}
+
+fn x_video_mp4(url: &str) -> Option<String> {
+    let url = x_with_video(url);
+    let id = x_status_id(&url)?;
+    x_video_syndication(&id)
+        .or_else(|| x_video_fx(&id))
+        .or_else(|| x_video_html(&url))
+}
+
+/// Cache the 720p X MP4 locally once, so OBS plays a normal same-origin media
+/// file instead of depending on the CDN/proxy for every range request.
+fn cache_x_video(ctx: &Ctx, url: &str) -> Option<String> {
+    let id = x_status_id(url)?;
+    let name = format!("x-{}.mp4", id);
+    let path = ctx.paths.base.join("media").join(&name);
+    let valid = std::fs::metadata(&path).map(|m| m.len() > 100_000).unwrap_or(false);
+    if !valid {
+        let src = x_video_mp4(url)?;
+        let resp = ureq::get(&src)
+            .set("Referer", "https://x.com/")
+            .set("User-Agent", "Mozilla/5.0")
+            .set("Accept", "video/mp4,*/*")
+            .timeout(Duration::from_secs(60))
+            .call().ok()?;
+        let mut bytes = Vec::new();
+        resp.into_reader().read_to_end(&mut bytes).ok()?;
+        if bytes.is_empty() { return None; }
+        let _ = std::fs::create_dir_all(ctx.paths.base.join("media"));
+        std::fs::write(&path, bytes).ok()?;
+    }
+    Some(format!("/media/{}", name))
+}
+
+fn cache_remote_video(ctx: &Ctx, src: &str, name: &str, referer: &str) -> Option<String> {
+    if !src.starts_with("https://") { return None; }
+    let path = ctx.paths.base.join("media").join(name);
+    if std::fs::metadata(&path).map(|m| m.len() > 100_000).unwrap_or(false) {
+        return Some(format!("/media/{}", name));
+    }
+    let resp = ureq::get(src)
+        .set("Referer", referer)
+        .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36")
+        .set("Accept", "video/mp4,*/*")
+        .timeout(Duration::from_secs(60))
+        .call().ok()?;
+    let mut bytes = Vec::new();
+    resp.into_reader().read_to_end(&mut bytes).ok()?;
+    if bytes.is_empty() { return None; }
+    let _ = std::fs::create_dir_all(ctx.paths.base.join("media"));
+    std::fs::write(&path, bytes).ok()?;
+    Some(format!("/media/{}", name))
+}
+
+fn tiktok_id(url: &str) -> Option<String> {
+    let s = url.split(['?', '#']).next().unwrap_or(url);
+    let parts: Vec<&str> = s.split('/').filter(|x| !x.is_empty()).collect();
+    for i in 0..parts.len().saturating_sub(1) {
+        if parts[i] == "video" && parts[i + 1].chars().all(|c| c.is_ascii_digit()) {
+            return Some(parts[i + 1].to_string());
+        }
+    }
+    for p in parts.iter().rev() {
+        let n = p.trim_end_matches(".html");
+        if n.chars().all(|c| c.is_ascii_digit()) { return Some(n.to_string()); }
+    }
+    None
+}
+
+fn resolve_tiktok(ctx: &Ctx, url: &str) -> Option<String> {
+    let id = tiktok_id(url)?;
+    let name = format!("tiktok-{}.mp4", id);
+    if std::fs::metadata(ctx.paths.base.join("media").join(&name)).map(|m| m.len() > 100_000).unwrap_or(false) {
+        return Some(format!("/media/{}", name));
+    }
+    let api = format!("https://www.tikwm.com/api/?url={}", pct_encode(url));
+    let resp = ureq::get(&api).set("User-Agent", "Mozilla/5.0")
+        .timeout(Duration::from_secs(8)).call().ok()?;
+    let text = resp.into_string().ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let src = v.get("data")?.get("play")?.as_str()
+        .or_else(|| v.get("data")?.get("hdplay")?.as_str())?;
+    cache_remote_video(ctx, src, &name, "https://www.tiktok.com/")
+}
+
+fn reddit_post_id(url: &str) -> Option<String> {
+    let s = url.split(['?', '#']).next().unwrap_or(url);
+    let s2 = s.trim_start_matches("https://").trim_start_matches("http://").trim_start_matches("//");
+    let host = s2.split('/').next().unwrap_or("").to_ascii_lowercase();
+    if host == "redd.it" {
+        return s2.split('/').filter(|x| !x.is_empty()).nth(1)
+            .filter(|x| x.chars().all(|c| c.is_ascii_alphanumeric())).map(|x| x.to_string());
+    }
+    let parts: Vec<&str> = s.split('/').filter(|x| !x.is_empty()).collect();
+    for i in 0..parts.len().saturating_sub(1) {
+        if parts[i] == "comments" {
+            let id = parts[i + 1];
+            if id.chars().all(|c| c.is_ascii_alphanumeric()) { return Some(id.to_string()); }
+        }
+    }
+    None
+}
+
+fn resolve_reddit(ctx: &Ctx, url: &str) -> Option<String> {
+    let id = reddit_post_id(url)?;
+    let name = format!("reddit-{}.mp4", id);
+    if std::fs::metadata(ctx.paths.base.join("media").join(&name)).map(|m| m.len() > 100_000).unwrap_or(false) {
+        return Some(format!("/media/{}", name));
+    }
+    let api = format!("https://api.pullpush.io/reddit/search/submission/?ids={}", id);
+    let resp = ureq::get(&api).set("User-Agent", "Mozilla/5.0")
+        .timeout(Duration::from_secs(8)).call().ok()?;
+    let text = resp.into_string().ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let post = v.get("data")?.get(0)?;
+    let raw = post.get("secure_media").and_then(|m| m.get("reddit_video")).and_then(|r| r.get("fallback_url"))
+        .or_else(|| post.get("media").and_then(|m| m.get("reddit_video")).and_then(|r| r.get("fallback_url")))
+        .and_then(|x| x.as_str()).map(|s| s.replace("&amp;", "&"))
+        .or_else(|| post.get("url").and_then(|x| x.as_str()).filter(|u| u.contains("v.redd.it/")).map(|u| u.to_string()));
+    // PullPush returns old archived signed URLs; DASH_720 is public without the token.
+    let src = raw.and_then(|u| {
+        let hash = u.split("v.redd.it/").nth(1)?.split(['/', '?']).next()?;
+        Some(format!("https://v.redd.it/{}/DASH_720.mp4", hash))
+    })?;
+    cache_remote_video(ctx, &src, &name, "https://www.reddit.com/")
+}
+
+fn instagram_code(url: &str) -> Option<String> {
+    let s = url.split(['?', '#']).next().unwrap_or(url);
+    let parts: Vec<&str> = s.split('/').filter(|x| !x.is_empty()).collect();
+    for i in 0..parts.len().saturating_sub(1) {
+        if ["reel", "reels", "p", "tv"].contains(&parts[i]) {
+            let code = parts[i + 1];
+            if code.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+                return Some(code.to_string());
+            }
+        }
+    }
+    None
+}
+
+fn media_python(ctx: &Ctx) -> std::path::PathBuf {
+    let mut base = std::path::PathBuf::from(ctx.cfg().tts.dir);
+    if !base.is_absolute() {
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(parent) = exe.parent() { base = parent.join(base); }
+        }
+    }
+    let py = base.join("venv2").join("Scripts").join("python.exe");
+    if py.exists() { py } else { std::path::PathBuf::from("python") }
+}
+
+fn resolve_instagram(ctx: &Ctx, url: &str) -> Option<String> {
+    let code = instagram_code(url)?;
+    let name = format!("instagram-{}.mp4", code);
+    if std::fs::metadata(ctx.paths.base.join("media").join(&name)).map(|m| m.len() > 100_000).unwrap_or(false) {
+        return Some(format!("/media/{}", name));
+    }
+    let out = std::process::Command::new(media_python(ctx))
+        .args(["-m", "yt_dlp", "-g", "--no-warnings", "--socket-timeout", "10", "-f", "best[ext=mp4]/best", url])
+        .output().ok()?;
+    if !out.status.success() { return None; }
+    let text = String::from_utf8_lossy(&out.stdout);
+    let src = text.lines().map(str::trim).find(|l| l.starts_with("https://"))?;
+    cache_remote_video(ctx, src, &name, "https://www.instagram.com/")
+}
+
+/// Fetch an X/Twitter MP4 with the referer its CDN expects; direct playback from
+/// the overlay gets 403 because browsers send the overlay's own referer.
+fn media_x(request: tiny_http::Request, encoded: &str) {
+    let target = pct_decode(encoded);
+    if !target.starts_with("https://video.twimg.com/") {
+        let _ = request.respond(body_resp(400, "text/plain; charset=utf-8", b"bad media".to_vec()));
+        return;
+    }
+    match ureq::get(&target)
+        .set("Referer", "https://x.com/")
+        .set("User-Agent", "Mozilla/5.0")
+        .set("Accept", "video/mp4,*/*")
+        .timeout(Duration::from_secs(60))
+        .call() {
+        Ok(resp) => {
+            let mut bytes = Vec::new();
+            if resp.into_reader().read_to_end(&mut bytes).is_ok() {
+                file_resp(request, bytes, "video/mp4");
+            } else {
+                let _ = request.respond(body_resp(502, "text/plain; charset=utf-8", b"media read failed".to_vec()));
+            }
+        }
+        Err(_) => { let _ = request.respond(body_resp(502, "text/plain; charset=utf-8", b"media fetch failed".to_vec())); }
+    }
+}
+
+/// Twitch clips are turned into their signed direct MP4 at playback time so the
+/// overlay does not depend on Twitch's iframe CSP.
+fn resolve_other_media(ctx: &Ctx, url: &str) -> String {
+    let url = resolve_short_media(url);
+    if let Some(mp4) = twitch_clip_mp4(&url) { return mp4; }
+    if x_status_id(&url).is_some() {
+        if let Some(mp4) = cache_x_video(ctx, &url) { return mp4; }
+        return x_with_video(&url);
+    }
+    if tiktok_id(&url).is_some() {
+        if let Some(local) = resolve_tiktok(ctx, &url) { return local; }
+    }
+    if reddit_post_id(&url).is_some() {
+        if let Some(local) = resolve_reddit(ctx, &url) { return local; }
+    }
+    if instagram_code(&url).is_some() {
+        if let Some(local) = resolve_instagram(ctx, &url) { return local; }
+    }
+    url
+}
+
 fn test(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     let amount = v.get("amount").and_then(|x| x.as_f64()).unwrap_or(100.0);
-    let name = v.get("name").and_then(|x| x.as_str()).unwrap_or("Test Donor").to_string();
-    let message = v.get("message").and_then(|x| x.as_str()).filter(|s| !s.trim().is_empty()).unwrap_or("Шановна Служба Безпеки України та голова СБ України! Я не маю відношення до цього каналу та чату і був доданий сюди без моєї згоди. Я не погоджуюсь з усіма думками, які висловлені у цьому каналі та чаті, а мої повідомлення були написані без моєї згоди. Це відбулося через низький рівень технічної грамоти та невміння користуватися сайтом \"Твіч\".").to_string();
+    let name = v.get("name").and_then(|x| x.as_str()).unwrap_or("Test User").to_string();
+    let test_yt = v.get("youtube").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    let test_ytid = youtube_id(&test_yt).unwrap_or_default();
+    let test_rule = v.get("ruleId").and_then(|x| x.as_str()).unwrap_or("").to_string();
+    let test_media = v.get("mediaUrl").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    let test_media = other_media_url(&test_media).map(|u| resolve_short_media(&u)).unwrap_or_default();
+    let test_style = v.get("style").cloned().unwrap_or(serde_json::Value::Null);
+    let message = v.get("message").and_then(|x| x.as_str()).filter(|s| !s.trim().is_empty())
+        .map(|s| s.to_string()).unwrap_or_else(|| "Шановна Служба Безпеки України та голова СБ України! Я не маю відношення до цього каналу та чату і був доданий сюди без моєї згоди.".to_string());
     if let Some(b) = v.get("bit") {
         if let Ok(bit) = serde_json::from_value::<Bit>(b.clone()) {
             ctx.broadcast(json!({ "type": "bit", "data": {
@@ -300,56 +707,123 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
             let dir = ctx.paths.base.join("tts");
             let _ = std::fs::create_dir_all(&dir);
             let fname = format!("test-{}.wav", now_ms());
-            if crate::tts::synth(&cfg.tts.dir, &voice, &spoken, &dir.join(&fname), &cfg.tts.azure_key, &cfg.tts.azure_region).is_ok() {
-                tts_url = format!("/tts/{}", fname);
+            if crate::tts::synth(&cfg.tts.dir, &voice, &spoken, &dir.join(&fname), &cfg.tts.azure_key, &cfg.tts.azure_region, cfg.tts.speed).is_ok() {
+                tts_url = crate::model::tts_url(&cfg, &fname);
             }
         }
     }
     ctx.broadcast(json!({ "type": "donation", "data": {
         "id": format!("test-{}", now_ms()), "name": name, "amount": amount,
-        "message": message, "youtubeId": "", "matched": "test", "jar": "", "currency": "",
+        "message": message, "youtubeId": test_ytid, "mediaUrl": test_media, "ruleId": test_rule, "style": test_style, "matched": "test", "jar": "", "currency": "",
         "ttsUrl": tts_url }}));
     let _ = request.respond(json_resp(200, json!({ "ok": true })));
 }
 
 /// Called by the donation overlay after the alert (and TTS) finished; the YouTube
 /// overlay listens for the resulting event, so the video never competes with the alert audio.
+fn media_allowed_with_style(style: &NotifyCfg, amount: f64, yt: &str, has_other: bool) -> Result<(), String> {
+    if !yt.is_empty() {
+        if style.yt_min > 0.0 && amount < style.yt_min {
+            return Err(format!("YouTube requires at least {:.0} UAH", style.yt_min));
+        }
+        if let Some((views, secs)) = mono::youtube_meta(yt) {
+            if style.yt_views > 0 && views < style.yt_views { return Err(format!("video needs at least {} views", style.yt_views)); }
+            if style.yt_max_min > 0 && secs > style.yt_max_min * 60 { return Err(format!("video must be at most {} min", style.yt_max_min)); }
+        }
+        Ok(())
+    } else if has_other {
+        if style.other_media_min > 0.0 && amount < style.other_media_min {
+            return Err(format!("other media requires at least {:.0} UAH", style.other_media_min));
+        }
+        Ok(())
+    } else {
+        Err("no media".into())
+    }
+}
+
+fn media_allowed(cfg: &Config, amount: f64, rule: &str, yt: &str, has_other: bool) -> Result<(), String> {
+    let style = if !rule.is_empty() {
+        cfg.notify.rules.iter().find(|r| r.id == rule).map(|r| r.style.clone())
+    } else { None }.unwrap_or_else(|| pick_style(&cfg.notify.rules, amount));
+    media_allowed_with_style(&style, amount, yt, has_other)
+}
+
+static YT_LAST_PLAY: OnceLock<Mutex<(String, i64)>> = OnceLock::new();
+fn yt_play_gate(key: &str) -> bool {
+    let gate = YT_LAST_PLAY.get_or_init(|| Mutex::new((String::new(), 0)));
+    let mut g = gate.lock().unwrap();
+    let now = now_ms();
+    if g.0 == key && now - g.1 < 2000 { return false; }
+    *g = (key.to_string(), now);
+    true
+}
+fn yt_recent_play() -> bool {
+    let gate = YT_LAST_PLAY.get_or_init(|| Mutex::new((String::new(), 0)));
+    let g = gate.lock().unwrap();
+    !g.0.is_empty() && now_ms() - g.1 < 2000
+}
+
 fn youtube_post(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     if v.get("stop").and_then(|x| x.as_bool()).unwrap_or(false) {
-        ctx.broadcast(json!({ "type": "youtube", "data": { "stop": true } }));
+        if !yt_recent_play() {
+            ctx.broadcast(json!({ "type": "youtube", "data": { "stop": true } }));
+        }
         let _ = request.respond(json_resp(200, json!({ "ok": true })));
         return;
     }
-    let id = v.get("youtubeId").and_then(|x| x.as_str()).unwrap_or("").trim();
+    let id = v.get("youtubeId").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    let media = v.get("mediaUrl").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
     let amount = v.get("amount").and_then(|x| x.as_f64()).unwrap_or(0.0);
+    let force = v.get("force").and_then(|x| x.as_bool()).unwrap_or(false);
     let rule = v.get("ruleId").and_then(|x| x.as_str()).unwrap_or("");
-    if !crate::model::is_youtube_id(id) {
-        let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "invalid video id" })));
+    let media = if id.is_empty() {
+        crate::model::other_media_url(&media).map(|u| {
+            if x_status_id(&u).is_some() {
+                cache_x_video(ctx, &u).unwrap_or_else(|| resolve_other_media(ctx, &u))
+            } else { resolve_other_media(ctx, &u) }
+        })
+    } else { None };
+    if !crate::model::is_youtube_id(&id) && media.is_none() {
+        let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "invalid media" })));
         return;
     }
     if !ctx.cfg().features.youtube {
         let _ = request.respond(json_resp(200, json!({ "ok": false, "error": "youtube overlay disabled" })));
         return;
     }
+    if !force {
+        if let Err(e) = media_allowed(&ctx.cfg(), amount, rule, &id, media.is_some()) {
+            log(&format!("youtube: blocked {}: {}", if id.is_empty() { "other media" } else { &id }, e));
+            let _ = request.respond(json_resp(200, json!({ "ok": false, "error": e })));
+            return;
+        }
+    }
+    let key = format!("{}|{}|{}", id, media.as_deref().unwrap_or(""), rule);
+    if !yt_play_gate(&key) {
+        let _ = request.respond(json_resp(200, json!({ "ok": true, "duplicate": true })));
+        return;
+    }
     ctx.broadcast(json!({ "type": "youtube", "data": {
-        "youtubeId": id, "amount": amount, "ruleId": rule } }));
-    log(&format!("youtube: play {} after alert", id));
+        "youtubeId": id, "mediaUrl": media.unwrap_or_default(), "amount": amount, "ruleId": rule } }));
+    log(&format!("youtube: play {} after alert", if id.is_empty() { "other media" } else { &id }));
     let _ = request.respond(json_resp(200, json!({ "ok": true })));
 }
 
 fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     let id = v.get("id").and_then(|x| x.as_str()).unwrap_or("");
+    let no_media = v.get("noMedia").and_then(|x| x.as_bool()).unwrap_or(false);
     let item = {
         let st = ctx.state.lock().unwrap();
         st.jars.iter().flat_map(|j| j.history.iter()).find(|h| h.id == id).cloned()
     };
     match item {
         Some(h) => {
+            let (yt, media) = if no_media { (String::new(), String::new()) } else { (h.youtube_id.clone(), h.media_url.clone()) };
             ctx.broadcast(json!({ "type": "donation", "data": {
                 "id": format!("replay-{}", now_ms()), "name": h.name, "amount": h.amount,
-                "message": h.message, "youtubeId": h.youtube_id, "matched": "replay", "jar": "", "currency": "" }}));
+                "message": h.message, "youtubeId": yt, "mediaUrl": media, "matched": "replay", "jar": "", "currency": "" }}));
             log(&format!("replay: {:.0} UAH from {}", h.amount, h.name));
             let _ = request.respond(json_resp(200, json!({ "ok": true })));
         }
@@ -370,7 +844,7 @@ fn history_json(ctx: &Ctx, jar: usize) -> serde_json::Value {
     let items: Vec<serde_json::Value> = match st.jars.get(jar) {
         Some(j) => j.history.iter().map(|h| json!({
             "id": h.id, "name": h.name, "amount": h.amount, "message": h.message,
-            "youtubeId": h.youtube_id, "matched": h.matched, "at": h.at })).collect(),
+            "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "matched": h.matched, "at": h.at })).collect(),
         None => Vec::new(),
     };
     json!({ "jar": jar, "count": items.len(), "items": items })
@@ -448,11 +922,12 @@ fn tts_post(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     let mut cfg = ctx.cfg();
     let t = &mut cfg.tts;
-    if let Some(s) = v.get("mode").and_then(|x| x.as_str()) {
-        if ["default", "google:uk", "google:us", "custom", "azure:uk", "azure:us", "off"].contains(&s) { t.mode = s.into(); }
-    }
-    if let Some(s) = v.get("voice").and_then(|x| x.as_str()) { t.voice = s.trim().into(); }
+    t.mode = if v.get("mode").and_then(|x| x.as_str()) == Some("off") { "off".into() } else { "google:uk".into() };
+    t.voice = "google:uk".into();
+    t.azure_key.clear();
+    t.azure_region.clear();
     if let Some(s) = v.get("readMode").and_then(|x| x.as_str()) { if !s.trim().is_empty() { t.read_mode = s.trim().into(); } }
+    if let Some(n) = v.get("speed").and_then(|x| x.as_f64()) { t.speed = n.clamp(0.5, 2.0); }
     if let Some(s) = v.get("dir").and_then(|x| x.as_str()) { if !s.trim().is_empty() { t.dir = s.trim().into(); } }
     if let Some(s) = v.get("azureKey").and_then(|x| x.as_str()) { t.azure_key = s.trim().into(); }
     if let Some(s) = v.get("azureRegion").and_then(|x| x.as_str()) { t.azure_region = s.trim().into(); }
@@ -769,6 +1244,8 @@ fn normalize_qr_widgets(cfg: &Config, arr: &[serde_json::Value]) -> Vec<QrWidget
             if !cfg.jars.iter().any(|j| j == &w.jar) { w.jar = cfg.jars.first().cloned().unwrap_or_default(); }
             if !valid_hex_color(&w.color) { w.color = "#101217".into(); }
             if !matches!(w.style.as_str(), "both" | "qr" | "goal") { w.style = "both".into(); }
+            w.radius = w.radius.min(64);
+            if !valid_hex_color(&w.accent) { w.accent = "#8b5cf6".into(); }
             w
         })
         .collect();
@@ -818,7 +1295,7 @@ fn config_post(ctx: &Ctx, mut request: tiny_http::Request) {
         cfg.public_base = if s.is_empty() || s.starts_with("http") { s.to_string() } else { format!("https://{}", s) };
     }
     if let Some(n) = v.get("publicPort").and_then(|x| x.as_u64()) { cfg.public_port = n as u16; }
-    // stats code is created only when the user asks for it (Setup -> Stats -> ↻)
+    // stats code is created only when the user asks for it (Setup -> Stats -> â†»)
 
     save_config(&ctx.paths, &cfg);
     *ctx.cfg.lock().unwrap() = cfg.clone();
@@ -974,12 +1451,18 @@ fn serve_page(ctx: &Ctx, host: &str, path: &str, public: bool) -> Option<Vec<u8>
 fn public_allowed(method: Method, path: &str, cfg: &Config) -> bool {
     match (method, path) {
         (Method::Get, "/favicon.ico") | (Method::Get, "/app.css") | (Method::Get, "/alert.js")
-        | (Method::Get, "/head.js") | (Method::Get, "/i18n.js") | (Method::Get, "/auc.js") | (Method::Get, "/qrcode.js")
+        | (Method::Get, "/head.js") | (Method::Get, "/i18n.js") | (Method::Get, "/notify.js")
+        | (Method::Get, "/notify.css") | (Method::Get, "/notify-ui.js") | (Method::Get, "/auc.js") | (Method::Get, "/qrcode.js")
         | (Method::Get, "/auc.css") | (Method::Get, "/assets/default.jpg") | (Method::Get, "/rat.mp4")
         | (Method::Get, "/api/state") | (Method::Get, "/api/notify") | (Method::Get, "/api/config")
         | (Method::Get, "/api/bits")
-        | (Method::Post, "/api/submit") => true,
+        | (Method::Post, "/api/submit")
+        | (Method::Post, "/api/test")
+        | (Method::Post, "/api/replay")
+        | (Method::Post, "/api/youtube") => true,
         (Method::Get, p) if p.starts_with("/media/") => true,
+        (Method::Get, p) if p.starts_with("/media-x/") => true,
+        (Method::Get, p) if p.starts_with("/tts/") => true,
         (Method::Get, p) => route_public(cfg, p).is_some(),
         _ => false,
     }
@@ -1010,6 +1493,18 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
     }
     if method == Method::Get && path == "/alert.js" {
         let _ = request.respond(body_resp(200, "application/javascript; charset=utf-8", include_str!("../public/alert.js").as_bytes().to_vec()));
+        return;
+    }
+    if method == Method::Get && path == "/notify.js" {
+        let _ = request.respond(body_resp(200, "application/javascript; charset=utf-8", include_str!("../public/notify.js").as_bytes().to_vec()));
+        return;
+    }
+    if method == Method::Get && path == "/notify-ui.js" {
+        let _ = request.respond(body_resp(200, "application/javascript; charset=utf-8", include_str!("../public/notify-ui.js").as_bytes().to_vec()));
+        return;
+    }
+    if method == Method::Get && path == "/notify.css" {
+        let _ = request.respond(body_resp(200, "text/css; charset=utf-8", include_str!("../public/notify.css").as_bytes().to_vec()));
         return;
     }
     if method == Method::Get && path == "/head.js" {
@@ -1266,10 +1761,14 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
     if path == "/api/tts" {
         if method == Method::Get {
             let c = ctx.cfg();
-            let _ = request.respond(json_resp(200, json!({ "tts": { "mode": c.tts.mode, "voice": c.tts.default_voice(), "readMode": c.tts.read_mode, "dir": c.tts.dir, "allowed": c.tts.allowed_in(&c.tts.dir), "picks": c.tts.donor_picks(), "hasAzure": c.tts.has_azure(), "azureRegion": c.tts.azure_region }, "voices": crate::tts::voices(&c.tts.dir, c.tts.has_azure()) })));
+            let _ = request.respond(json_resp(200, json!({ "tts": { "mode": c.tts.mode, "voice": c.tts.default_voice(), "readMode": c.tts.read_mode, "speed": c.tts.speed, "dir": c.tts.dir, "allowed": c.tts.allowed_in(&c.tts.dir), "picks": c.tts.donor_picks(), "hasAzure": c.tts.has_azure(), "azureRegion": c.tts.azure_region }, "voices": [{"id": "google:uk", "label": "Google (українська)", "lang": "uk"}] })));
         }
         else if method == Method::Post { tts_post(&ctx, request); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
+    if method == Method::Get && path.starts_with("/media-x/") {
+        media_x(request, &path[9..]);
         return;
     }
     if path == "/api/upload" {
@@ -1339,6 +1838,43 @@ fn serve_port(ctx: Arc<Ctx>, host: &str, port: u16) {
     for request in server.incoming_requests() {
         let ctx = ctx.clone();
         std::thread::spawn(move || handle(ctx, request, port));
+    }
+}
+
+#[cfg(test)]
+mod media_tests {
+    use super::{twitch_clip_slug, x_status_id};
+
+    #[test]
+    fn extracts_twitch_clip_slugs() {
+        for url in [
+            "https://clips.twitch.tv/RepleteEnthusiasticMageCeilingCat",
+            "https://clips.twitch.tv/RepleteEnthusiasticMageCeilingCat?tt_content=clip",
+            "https://www.twitch.tv/clip/RepleteEnthusiasticMageCeilingCat",
+            "https://twitch.tv/s1mple/clip/RepleteEnthusiasticMageCeilingCat",
+            "https://www.twitch.tv/s1mple/clip/RepleteEnthusiasticMageCeilingCat",
+            "https://m.twitch.tv/s1mple/clip/RepleteEnthusiasticMageCeilingCat",
+            "https://clips.twitch.tv/embed?clip=RepleteEnthusiasticMageCeilingCat&parent=example.com",
+        ] {
+            assert_eq!(twitch_clip_slug(url).as_deref(), Some("RepleteEnthusiasticMageCeilingCat"), "url: {url}");
+        }
+        assert_eq!(twitch_clip_slug("https://example.com/clip/x"), None);
+    }
+
+    #[test]
+    fn extracts_x_status_ids() {
+        for url in [
+            "https://x.com/NASA/status/1446120853117177872",
+            "https://www.x.com/NASA/status/1446120853117177872",
+            "https://twitter.com/NASA/status/1446120853117177872",
+            "https://mobile.twitter.com/NASA/status/1446120853117177872",
+            "https://x.com/i/status/1446120853117177872",
+            "https://x.com/NASA/status/1446120853117177872/video/1",
+            "https://x.com/NASA/status/1446120853117177872?s=20",
+        ] {
+            assert_eq!(x_status_id(url).as_deref(), Some("1446120853117177872"), "url: {url}");
+        }
+        assert_eq!(x_status_id("https://x.com/NASA"), None);
     }
 }
 

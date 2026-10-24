@@ -370,6 +370,7 @@ fn n_dur() -> u64 { 8000 }
 fn n_ytmin() -> f64 { 0.0 }
 fn n_ytviews() -> u64 { 500 }
 fn n_ytmaxmin() -> u64 { 20 }
+fn n_othermin() -> f64 { 0.0 }
 fn n_outc() -> String { "#000000".into() }
 fn n_anin() -> String { "slide_up".into() }
 fn n_anout() -> String { "fade".into() }
@@ -453,6 +454,8 @@ pub struct NotifyCfg {
     #[serde(default = "n_ytviews")] pub yt_views: u64,
     #[serde(default = "n_ytmaxmin")] pub yt_max_min: u64,
     #[serde(default)] pub yt_playlists: bool,
+    /// minimum amount for a non-YouTube media link
+    #[serde(default = "n_othermin")] pub other_media_min: f64,
     // animation
     #[serde(default = "n_anin")] pub anim_in: String,
     #[serde(default = "n_anout")] pub anim_out: String,
@@ -481,7 +484,7 @@ impl Default for NotifyCfg {
             blue_bg: n_outc(), blue_bg_opacity: 0.0, blue_radius: n_rad12(),
             green_bg: n_outc(), green_bg_opacity: 0.0, green_radius: n_rad12(),
             red_bg: n_outc(), red_bg_opacity: 0.0, red_radius: n_rad12(),
-            duration_ms: n_dur(), wait_media: false, yt_min: n_ytmin(), yt_views: n_ytviews(), yt_max_min: n_ytmaxmin(), yt_playlists: false,
+            duration_ms: n_dur(), wait_media: false, yt_min: n_ytmin(), yt_views: n_ytviews(), yt_max_min: n_ytmaxmin(), yt_playlists: false, other_media_min: n_othermin(),
             anim_in: n_anin(), anim_out: n_anout(), anim_ms: n_anms(),
             image_url: n_img(), video_url: String::new(), sound_url: String::new(),
             media_pos: m_pos(), media_w: n_mw(), media_h: n_mh(), media_zoom: n_zoom(), media_radius: m_rad(),
@@ -499,6 +502,7 @@ pub struct NotifyRule {
     #[serde(default)] pub max: f64,
     #[serde(default)] pub pool: bool,
     #[serde(default)] pub style: NotifyCfg,
+    #[serde(default)] pub test_media_url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -507,23 +511,25 @@ pub struct NotifyRules {
 }
 
 pub fn default_rules() -> NotifyRules {
-    NotifyRules { rules: vec![NotifyRule { id: "default".into(), label: "Default".into(), min: 10.0, max: 29999.0, pool: false, style: NotifyCfg::default() }] }
+    NotifyRules { rules: vec![NotifyRule { id: "default".into(), label: "Default".into(), min: 10.0, max: 29999.0, pool: false, style: NotifyCfg::default(), test_media_url: String::new() }] }
 }
 
 /// keep exactly one "default" catch-all rule, always last
 pub fn normalize_rules(mut r: NotifyRules) -> NotifyRules {
     let mut def = r.rules.iter().position(|x| x.id == "default").map(|i| r.rules.remove(i));
+    let test = r.rules.iter().position(|x| x.id == "test").map(|i| r.rules.remove(i));
     r.rules.retain(|x| !x.id.is_empty());
-    let mut d = def.take().unwrap_or(NotifyRule { id: "default".into(), label: "Default".into(), min: 10.0, max: 29999.0, pool: false, style: NotifyCfg::default() });
+    let mut d = def.take().unwrap_or(NotifyRule { id: "default".into(), label: "Default".into(), min: 10.0, max: 29999.0, pool: false, style: NotifyCfg::default(), test_media_url: String::new() });
     d.label = if d.label.is_empty() { "Default".into() } else { d.label };
     r.rules.push(d);
+    if let Some(t) = test { r.rules.push(t); }
     r
 }
 
 /// first non-pool rule (in order) whose range contains amount; otherwise the default (pool selection happens in the overlay)
 pub fn pick_style(rules: &[NotifyRule], amount: f64) -> NotifyCfg {
     for r in rules {
-        if r.id == "default" || r.pool { continue; }
+        if r.id == "default" || r.id == "test" || r.pool { continue; }
         if amount + 1e-9 >= r.min && (r.max <= 0.0 || amount <= r.max + 1e-9) {
             return r.style.clone();
         }
@@ -561,6 +567,8 @@ fn d_qr_color() -> String { "#101217".into() }
 fn d_qr_style() -> String { "both".into() }
 fn d_qr_align() -> String { "bottom".into() }
 fn d_qr_size() -> u32 { 100 }
+fn d_qr_radius() -> u32 { 20 }
+fn d_qr_accent() -> String { "#8b5cf6".into() }
 
 /// one QR overlay: which jar it shows, goal-window background and layout style
 #[derive(Serialize, Deserialize, Clone)]
@@ -569,9 +577,11 @@ pub struct QrWidgetCfg {
     #[serde(default = "d_s")] pub jar: String,
     #[serde(default = "d_qr_color")] pub color: String,
     #[serde(default = "d_qr_style")] pub style: String, // "both" | "qr" | "goal"
+    #[serde(default = "d_qr_radius")] pub radius: u32,
+    #[serde(default = "d_qr_accent")] pub accent: String,
 }
 impl Default for QrWidgetCfg {
-    fn default() -> Self { QrWidgetCfg { jar: String::new(), color: d_qr_color(), style: d_qr_style() } }
+    fn default() -> Self { QrWidgetCfg { jar: String::new(), color: d_qr_color(), style: d_qr_style(), radius: d_qr_radius(), accent: d_qr_accent() } }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -642,10 +652,11 @@ impl Default for Config {
 }
 
 /// text-to-speech for donation alerts (voices served by the local tts-test daemon)
-fn t_mode() -> String { "default".into() }   // "default" | "google:uk" | "google:us" | "custom" | "off"
+fn t_mode() -> String { "google:uk".into() }   // "default" | "google:uk" | "google:us" | "custom" | "off"
 fn t_voice() -> String { "google:uk".into() }   // voice id, or "" = ALL (let the donor pick within the set)
-fn t_read() -> String { "message".into() }   // "message" | "announcement" | "both"
+fn t_read() -> String { "both".into() }   // "message" | "announcement" | "both"
 fn t_dir() -> String { "tts-engine".into() }   // relative to the exe; absolute paths still work
+fn t_speed() -> f64 { 1.2 }                   // speech rate; 0.5-2.0
 fn t_s() -> String { String::new() }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -654,6 +665,7 @@ pub struct TtsCfg {
     #[serde(default = "t_mode")] pub mode: String,
     #[serde(default = "t_voice")] pub voice: String,
     #[serde(default = "t_read")] pub read_mode: String,
+    #[serde(default = "t_speed")] pub speed: f64,
     #[serde(default = "t_dir")] pub dir: String,
     #[serde(default = "t_s")] pub azure_key: String,
     #[serde(default = "t_s")] pub azure_region: String,
@@ -666,46 +678,18 @@ impl TtsCfg {
     pub fn allowed(&self) -> Vec<String> {
         self.allowed_in(&self.dir)
     }
-    pub fn allowed_in(&self, dir: &str) -> Vec<String> {
-        let custom = || if crate::tts::style_available(dir) {
-            crate::tts::CUSTOM_VOICES.iter().map(|s| s.to_string()).collect::<Vec<_>>()
-        } else { Vec::new() };
-        let azure = |list: &[&str]| list.iter().map(|s| format!("azure:{}", s)).collect::<Vec<_>>();
-        match self.mode.as_str() {
-            "off" => vec![],
-            "google:uk" => vec!["google:uk".into()],
-            "google:us" => vec!["google:us".into()],
-            "custom" => custom(),
-            "azure:uk" => if self.has_azure() { azure(&crate::tts::AZURE_UK) } else { vec![] },
-            "azure:us" => if self.has_azure() { azure(&crate::tts::AZURE_US) } else { vec![] },
-            _ => {
-                let mut v = vec!["google:uk".to_string(), "google:us".to_string()];
-                if self.has_azure() {
-                    v.extend(azure(&crate::tts::AZURE_UK));
-                    v.extend(azure(&crate::tts::AZURE_US));
-                }
-                v.extend(custom());
-                v
-            }
-        }
+    /// This build intentionally uses one voice only: Google Ukrainian.
+    pub fn allowed_in(&self, _dir: &str) -> Vec<String> {
+        if self.mode == "off" { vec![] } else { vec!["google:uk".into()] }
     }
-    /// true when the donor may pick a voice (multi-voice set AND "ALL" selected)
-    pub fn donor_picks(&self) -> bool {
-        let azure_ok = (self.mode == "azure:uk" || self.mode == "azure:us") && self.has_azure();
-        (self.mode == "default" || self.mode == "custom" || azure_ok) && self.voice.is_empty()
-    }
-    /// the voice forced when the donor does not pick ("" when the donor picks)
+    pub fn donor_picks(&self) -> bool { false }
     pub fn default_voice(&self) -> String {
-        let a = self.allowed();
-        if a.is_empty() { return String::new(); }
-        if self.voice.is_empty() { String::new() }
-        else if a.contains(&self.voice) { self.voice.clone() }
-        else { a[0].clone() }
+        if self.mode == "off" { String::new() } else { "google:uk".into() }
     }
 }
 impl Default for TtsCfg {
     fn default() -> Self {
-        TtsCfg { mode: t_mode(), voice: t_voice(), read_mode: t_read(), dir: t_dir(), azure_key: t_s(), azure_region: t_s() }
+        TtsCfg { mode: t_mode(), voice: t_voice(), read_mode: t_read(), speed: t_speed(), dir: t_dir(), azure_key: t_s(), azure_region: t_s() }
     }
 }
 
@@ -872,6 +856,7 @@ pub struct Pending {
     pub name: String,
     pub message: String,
     #[serde(default)] pub youtube_id: String,
+    #[serde(default)] pub media_url: String,
     #[serde(default)] pub voice: String,
     /// bit chosen on the donation form (plays on the bits overlay instead of a normal alert)
     #[serde(default)] pub bit: Option<Bit>,
@@ -888,6 +873,7 @@ pub struct HistoryItem {
     pub amount: f64,
     pub message: String,
     #[serde(default)] pub youtube_id: String,
+    #[serde(default)] pub media_url: String,
     pub matched: String,
     #[serde(default)] pub code: Option<String>,
     pub at: i64,
@@ -1079,6 +1065,20 @@ pub fn youtube_id(input: &str) -> Result<String, ()> {
     }
     Err(())
 }
+/// Accept a public video/page URL from a known non-YouTube provider.
+pub fn other_media_url(input: &str) -> Option<String> {
+    let raw = input.trim();
+    if raw.is_empty() { return None; }
+    let s = raw.strip_prefix("https://").or_else(|| raw.strip_prefix("http://")).unwrap_or(raw);
+    let s = s.strip_prefix("//").unwrap_or(s);
+    let host = s.split('/').next().unwrap_or("").rsplit('@').next().unwrap_or("");
+    let host = host.split(':').next().unwrap_or("").to_ascii_lowercase();
+    let host = host.trim_start_matches("www.").trim_start_matches("m.");
+    let ok = ["tiktok.com", "instagram.com", "instagr.am", "twitch.tv", "v.redd.it", "packaged-media.redd.it", "twitter.com", "x.com"]
+        .iter().any(|d| host == *d || host.ends_with(&format!(".{}", d)));
+    if ok { Some(raw.to_string()) } else { None }
+}
+
 pub fn is_youtube_id(s: &str) -> bool {
     s.len() == 11 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
@@ -1136,7 +1136,7 @@ mod top_donators_tests {
     fn h(name: &str, amount: f64, at: i64) -> HistoryItem {
         HistoryItem {
             id: String::new(), name: name.into(), amount, message: String::new(),
-            youtube_id: String::new(), matched: "code".into(), code: None, at,
+            youtube_id: String::new(), media_url: String::new(), matched: "code".into(), code: None, at,
         }
     }
 
@@ -1196,6 +1196,9 @@ pub fn bits_links(cfg: &Config) -> (String, String) {
         format!("http://{}.{}.localhost:{}/bits", n, o, p),
     )
 }
+
+/// Same-origin TTS URL: HTTPS when the overlay page is served through Caddy.
+pub fn tts_url(_cfg: &Config, fname: &str) -> String { format!("/tts/{}", fname) }
 
 /// youtube overlay (plays donated videos in OBS)
 pub fn youtube_link(cfg: &Config) -> String {
@@ -1275,7 +1278,6 @@ fn route_public_exact(cfg: &Config, path: &str) -> Option<Page> {
     let f = &cfg.features;
     let on = |b: bool, p: Page| if b { Some(p) } else { None };
     match path {
-        // only two public pages, always behind the nickname: /<nick>/donation + /<nick>/soundalerts
         "/donation" => on(f.donate, Page::Donor),
         "/soundalerts" => on(f.bits, Page::BitsDonor),
         _ => None,
@@ -1378,6 +1380,74 @@ mod youtube_id_tests {
         ];
         for input in cases {
             assert_eq!(youtube_id(input), Ok(ID.to_string()), "input: {input}");
+        }
+    }
+
+    #[test]
+    fn accepts_the_shared_youtube_variants() {
+        for (input, id) in [
+            ("https://www.youtube.com/watch?v=XqZsoesa55w", "XqZsoesa55w"),
+            ("https://youtube.com/watch?v=XqZsoesa55w", "XqZsoesa55w"),
+            ("https://m.youtube.com/watch?v=XqZsoesa55w", "XqZsoesa55w"),
+            ("https://youtu.be/XqZsoesa55w", "XqZsoesa55w"),
+            ("https://www.youtube.com/shorts/XqZsoesa55w", "XqZsoesa55w"),
+            ("https://www.youtube.com/embed/XqZsoesa55w", "XqZsoesa55w"),
+            ("https://www.youtube-nocookie.com/embed/XqZsoesa55w", "XqZsoesa55w"),
+            ("https://www.youtube.com/watch?v=XqZsoesa55w&t=30s", "XqZsoesa55w"),
+            ("https://www.youtube.com/watch?v=XqZsoesa55w&feature=share", "XqZsoesa55w"),
+            ("https://youtu.be/XqZsoesa55w?t=30", "XqZsoesa55w"),
+            ("https://www.youtube.com/watch?app=desktop&v=XqZsoesa55w", "XqZsoesa55w"),
+            ("https://www.youtube.com/v/XqZsoesa55w", "XqZsoesa55w"),
+            ("https://www.youtube.com/shorts/iEHkJRECAjk", "iEHkJRECAjk"),
+            ("https://youtube.com/shorts/iEHkJRECAjk", "iEHkJRECAjk"),
+            ("https://m.youtube.com/shorts/iEHkJRECAjk", "iEHkJRECAjk"),
+            ("https://www.youtube.com/watch?v=iEHkJRECAjk", "iEHkJRECAjk"),
+            ("https://m.youtube.com/watch?v=iEHkJRECAjk", "iEHkJRECAjk"),
+            ("https://youtu.be/iEHkJRECAjk", "iEHkJRECAjk"),
+            ("https://www.youtube.com/embed/iEHkJRECAjk", "iEHkJRECAjk"),
+            ("https://www.youtube-nocookie.com/embed/iEHkJRECAjk", "iEHkJRECAjk"),
+            ("https://www.youtube.com/shorts/iEHkJRECAjk?feature=share", "iEHkJRECAjk"),
+            ("https://youtube.com/shorts/iEHkJRECAjk?si=example", "iEHkJRECAjk"),
+            ("https://youtu.be/iEHkJRECAjk?feature=shared", "iEHkJRECAjk"),
+        ] {
+            assert_eq!(youtube_id(input), Ok(id.to_string()), "input: {input}");
+        }
+    }
+
+    #[test]
+    fn accepts_the_listed_non_youtube_hosts() {
+        for input in [
+            "https://www.reddit.com/r/Unexpected/comments/jpnav3/",
+            "https://redd.it/8v3dw1",
+            "https://reddit.com/r/videos/comments/8v3dw1/",
+        ] { assert!(other_media_url(input).is_none(), "reddit posts must be rejected: {input}"); }
+        for input in [
+            "https://www.instagram.com/reel/C_bnaTAO2Ll/",
+            "https://instagram.com/reel/C_bnaTAO2Ll/",
+            "https://www.instagram.com/reel/C_bnaTAO2Ll/?utm_source=ig_web_copy_link",
+            "https://www.instagram.com/reel/C_bnaTAO2Ll/?hl=en",
+            "https://www.instagram.com/reel/C_bnaTAO2Ll/embed/",
+            "https://instagr.am/reel/C_bnaTAO2Ll/",
+            "https://www.instagram.com/p/CZVAueAP-U3/",
+            "https://www.instagram.com/p/CZVAueAP-U3/?igsh=dHEwZ3VjajRvcm5k",
+            "https://www.instagram.com/tv/CWHDfowBrvV/",
+            "https://www.tiktok.com/@zachking/video/6768504823336815877",
+            "https://m.tiktok.com/v/6768504823336815877.html",
+            "https://www.tiktok.com/embed/v2/6768504823336815877",
+            "https://clips.twitch.tv/RepleteEnthusiasticMageCeilingCat",
+            "https://www.twitch.tv/s1mple/clip/RepleteEnthusiasticMageCeilingCat",
+            "https://m.twitch.tv/s1mple/clip/RepleteEnthusiasticMageCeilingCat",
+            "https://clips.twitch.tv/embed?clip=RepleteEnthusiasticMageCeilingCat&parent=example.com",
+            "https://v.redd.it/yfdajqud3sx51",
+            "https://v.redd.it/yfdajqud3sx51/DASH_720.mp4?source=fallback",
+            "https://packaged-media.redd.it/abc123/pb/mp4/720/video.mp4?source=fallback",
+            "https://x.com/NASA/status/1446120853117177872",
+            "https://mobile.twitter.com/NASA/status/1446120853117177872",
+            "https://x.com/i/status/1446120853117177872",
+            "https://twitter.com/NASA/status/1446120853117177872/video/1",
+            "https://x.com/NASA/status/1446120853117177872?s=20",
+        ] {
+            assert!(other_media_url(input).is_some(), "input: {input}");
         }
     }
 
