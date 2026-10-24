@@ -1,6 +1,6 @@
 [package]
 name = "localmonodonate"
-version = "0.2.11-dev"
+version = "0.2.11"
 edition = "2021"
 build = "build.rs"
 
