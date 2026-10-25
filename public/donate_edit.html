@@ -10,6 +10,9 @@
   .mini .cell{display:flex;flex-direction:column;gap:6px;min-width:0}
   .mini label{font-size:12px;color:var(--muted)}
   .mediaGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px}
+  .mediaGrid .cell{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+  .mediaGrid .cell label{white-space:nowrap;min-width:0}
+  .mediaGrid .togglewrap{margin-left:auto}
   @media(max-width:600px){.mediaGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
