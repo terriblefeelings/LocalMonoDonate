@@ -10,9 +10,8 @@
   .mini .cell{display:flex;flex-direction:column;gap:6px;min-width:0}
   .mini label{font-size:12px;color:var(--muted)}
   .mediaGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px}
-  .mediaGrid .cell{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+  .mediaGrid .cell{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-width:0}
   .mediaGrid .cell label{white-space:nowrap;min-width:0}
-  .mediaGrid .togglewrap{margin-left:auto}
   @media(max-width:600px){.mediaGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
@@ -45,12 +44,12 @@
       </div>
       <div class="lbl" data-i18n="mediaTypes" style="margin-top:14px">Enabled link types</div>
       <div class="mediaGrid">
-        <div class="cell"><label data-i18n="mediaYoutube">YouTube</label><span class="togglewrap"><input type="checkbox" id="media_youtube" hidden><button type="button" class="togglebtn media-toggle" data-media="youtube" data-i18n-title="mediaToggleNote">ON</button></span></div>
-        <div class="cell"><label data-i18n="mediaInstagram">Instagram</label><span class="togglewrap"><input type="checkbox" id="media_instagram" hidden><button type="button" class="togglebtn media-toggle" data-media="instagram" data-i18n-title="mediaToggleNote">ON</button></span></div>
-        <div class="cell"><label data-i18n="mediaTikTok">TikTok</label><span class="togglewrap"><input type="checkbox" id="media_tiktok" hidden><button type="button" class="togglebtn media-toggle" data-media="tiktok" data-i18n-title="mediaToggleNote">ON</button></span></div>
-        <div class="cell"><label data-i18n="mediaTwitch">Twitch</label><span class="togglewrap"><input type="checkbox" id="media_twitch" hidden><button type="button" class="togglebtn media-toggle" data-media="twitch" data-i18n-title="mediaToggleNote">ON</button></span></div>
-        <div class="cell"><label data-i18n="mediaReddit">Reddit</label><span class="togglewrap"><input type="checkbox" id="media_reddit" hidden><button type="button" class="togglebtn media-toggle" data-media="reddit" data-i18n-title="mediaToggleNote">ON</button></span></div>
-        <div class="cell"><label data-i18n="mediaX">X</label><span class="togglewrap"><input type="checkbox" id="media_x" hidden><button type="button" class="togglebtn media-toggle" data-media="x" data-i18n-title="mediaToggleNote">ON</button></span></div>
+        <div class="cell"><span class="togglewrap"><input type="checkbox" id="media_youtube" hidden><button type="button" class="togglebtn media-toggle" data-media="youtube" data-i18n-title="mediaToggleNote">ON</button></span><label data-i18n="mediaYoutube">YouTube</label></div>
+        <div class="cell"><span class="togglewrap"><input type="checkbox" id="media_instagram" hidden><button type="button" class="togglebtn media-toggle" data-media="instagram" data-i18n-title="mediaToggleNote">ON</button></span><label data-i18n="mediaInstagram">Instagram</label></div>
+        <div class="cell"><span class="togglewrap"><input type="checkbox" id="media_tiktok" hidden><button type="button" class="togglebtn media-toggle" data-media="tiktok" data-i18n-title="mediaToggleNote">ON</button></span><label data-i18n="mediaTikTok">TikTok</label></div>
+        <div class="cell"><span class="togglewrap"><input type="checkbox" id="media_twitch" hidden><button type="button" class="togglebtn media-toggle" data-media="twitch" data-i18n-title="mediaToggleNote">ON</button></span><label data-i18n="mediaTwitch">Twitch</label></div>
+        <div class="cell"><span class="togglewrap"><input type="checkbox" id="media_reddit" hidden><button type="button" class="togglebtn media-toggle" data-media="reddit" data-i18n-title="mediaToggleNote">ON</button></span><label data-i18n="mediaReddit">Reddit</label></div>
+        <div class="cell"><span class="togglewrap"><input type="checkbox" id="media_x" hidden><button type="button" class="togglebtn media-toggle" data-media="x" data-i18n-title="mediaToggleNote">ON</button></span><label data-i18n="mediaX">X</label></div>
       </div>
       <div class="note" id="otherMediaNote" data-i18n="otherMediaNote">Instagram, TikTok, Twitch clips, Reddit and X links only need the minimum amount; views and duration are not checked.</div>
     </div>
