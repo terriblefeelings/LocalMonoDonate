@@ -4,10 +4,14 @@
 
 use crate::model::log;
 use serde_json::{json, Value};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::time::Duration;
 
 const MSI: &str = r"C:\Program Files\Tailscale\tailscale.exe";
+/// Always-current Windows installer, so no specific Tailscale version is pinned.
+/// The bundled MSI is only an offline fallback.
+const LATEST_MSI: &str = "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi";
 /// every user's node gets this name: https://ratcorporation.<tailnet>.ts.net
 pub const HOSTNAME: &str = "ratcorporation";
 
@@ -60,10 +64,27 @@ pub fn status_for(port: u16) -> Value {
     v
 }
 
-/// Run the bundled MSI elevated. Returns as soon as the UAC prompt/installer starts;
-/// the setup page polls status() until Tailscale appears.
-pub fn install(msi: &Path) -> Result<(), String> {
+/// Download the current installer; `None` when offline or the download is truncated.
+fn download_latest() -> Option<PathBuf> {
+    let dst = std::env::temp_dir().join("tailscale-setup-latest-amd64.msi");
+    let resp = ureq::get(LATEST_MSI).timeout(Duration::from_secs(180)).call().ok()?;
+    let mut f = std::fs::File::create(&dst).ok()?;
+    std::io::copy(&mut resp.into_reader(), &mut f).ok()?;
+    // never hand a partial file to msiexec
+    if std::fs::metadata(&dst).ok()?.len() > 1_000_000 { Some(dst) } else { None }
+}
+
+/// Install the current Tailscale release (downloaded on demand), falling back to
+/// the bundled MSI when there is no network.
+pub fn install(bundled: &Path) -> Result<(), String> {
     if installed() { return Ok(()); }
+    let msi = download_latest().unwrap_or_else(|| bundled.to_path_buf());
+    run_msi(&msi)
+}
+
+/// Run the MSI elevated. Returns as soon as the UAC prompt/installer starts;
+/// the setup page polls status() until Tailscale appears.
+fn run_msi(msi: &Path) -> Result<(), String> {
     if !msi.exists() { return Err("installer not found".into()); }
     #[cfg(windows)]
     {
@@ -86,6 +107,48 @@ pub fn install(msi: &Path) -> Result<(), String> {
     {
         let _ = msi;
         Err("Windows only".into())
+    }
+}
+
+/// Latest published Windows release, e.g. "1.104.2" — a 3 KB JSON, no installer download.
+fn latest_version() -> Option<String> {
+    use std::io::Read;
+    let resp = ureq::get("https://pkgs.tailscale.com/stable/?mode=json")
+        .timeout(Duration::from_secs(20))
+        .call().ok()?;
+    let mut body = String::new();
+    resp.into_reader().take(64 * 1024).read_to_string(&mut body).ok()?;
+    let v: Value = serde_json::from_str(&body).ok()?;
+    v.get("MSIsVersion").and_then(|x| x.as_str()).map(str::to_string)
+}
+
+fn installed_version() -> Option<String> {
+    let o = cmd().arg("version").output().ok()?;
+    String::from_utf8_lossy(&o.stdout).split_whitespace().next().map(str::to_string)
+}
+
+fn is_older(a: &str, b: &str) -> bool {
+    let p = |s: &str| -> Vec<u32> { s.split('.').map(|n| n.parse().unwrap_or(0)).collect() };
+    let (x, y) = (p(a), p(b));
+    match (0..3).find(|&i| x.get(i) != y.get(i)) {
+        Some(i) => x.get(i).unwrap_or(&0) < y.get(i).unwrap_or(&0),
+        None => false,
+    }
+}
+
+/// Runs on every start: users who never reinstall the app and never check for
+/// updates still get a current Tailscale client.
+pub fn auto_update() {
+    if !installed() { return; }
+    let (Some(cur), Some(latest)) = (installed_version(), latest_version()) else { return; };
+    if !is_older(&cur, &latest) { return; }
+    log(&format!("tailscale {} -> {}", cur, latest));
+    match download_latest() {
+        Some(msi) => match run_msi(&msi) {
+            Ok(_) => log(&format!("tailscale update to {} started", latest)),
+            Err(e) => log(&format!("tailscale update failed: {}", e)),
+        },
+        None => log("tailscale update: download failed"),
     }
 }
 
@@ -243,5 +306,13 @@ mod tests {
     #[test]
     fn funnel_is_rejected_when_the_public_port_is_off() {
         assert_eq!(funnel_enable(0).get("ok").and_then(|x| x.as_bool()), Some(false));
+    }
+
+    #[test]
+    fn compares_versions_numerically() {
+        assert!(is_older("1.104.1", "1.104.2"));
+        assert!(is_older("1.99.9", "1.104.0"));
+        assert!(!is_older("1.104.2", "1.104.2"));
+        assert!(!is_older("1.105.0", "1.104.9"));
     }
 }

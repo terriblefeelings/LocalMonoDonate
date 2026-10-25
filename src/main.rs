@@ -14,6 +14,11 @@ mod web;
 
 use model::*;
 
+/// A public Funnel route must not outlive the app: reset it on the way out.
+fn ts_cleanup() {
+    if std::env::var_os("LMD_NO_TAILSCALE").is_none() { tailscale::reset_funnel(); }
+}
+
 fn main() {
     let base = Paths::new();
     init_logging(&base);
@@ -42,14 +47,20 @@ fn main() {
     let ctx = app::Ctx::new(cfg, base.clone());
     // LMD_NO_TAILSCALE=1 keeps tests from renaming the node / touching funnel rules
     if std::env::var_os("LMD_NO_TAILSCALE").is_none() {
-        std::thread::spawn(move || crate::tailscale::ensure(public_port));
-        // Tailscale may come up after the app; keep the funnel attached without a restart
-        std::thread::spawn(move || loop {
-            std::thread::sleep(std::time::Duration::from_secs(60));
-            if crate::tailscale::running() && !crate::tailscale::funnel_ok(public_port) {
-                crate::tailscale::ensure(public_port);
-            }
-        });
+        std::thread::spawn(crate::tailscale::auto_update);
+        if public_port == 0 {
+            // no public route wanted: drop one left behind by a previous run
+            std::thread::spawn(crate::tailscale::reset_funnel);
+        } else {
+            std::thread::spawn(move || crate::tailscale::ensure(public_port));
+            // Tailscale may come up after the app; keep the funnel attached without a restart
+            std::thread::spawn(move || loop {
+                std::thread::sleep(std::time::Duration::from_secs(60));
+                if crate::tailscale::running() && !crate::tailscale::funnel_ok(public_port) {
+                    crate::tailscale::ensure(public_port);
+                }
+            });
+        }
     }
     { let c = ctx.clone(); std::thread::spawn(move || crate::tts::warm(&c.cfg().tts.dir)); }
     { let c = ctx.clone(); std::thread::spawn(move || app::run_poller(c)); }
@@ -121,13 +132,13 @@ fn run_window() -> wry::Result<()> {
         *control_flow = ControlFlow::WaitUntil(Instant::now() + Duration::from_millis(500));
         match event {
             Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
-                if tray_ok { log("tray: hide on close"); tray::hide(&window); } else { log("tray: close exits"); *control_flow = ControlFlow::Exit; }
+                if tray_ok { log("tray: hide on close"); tray::hide(&window); } else { log("tray: close exits"); ts_cleanup(); *control_flow = ControlFlow::Exit; }
             }
             Event::WindowEvent { event: WindowEvent::Resized(_), .. } => {
                 if tray_ok && window.is_minimized() { log("tray: hide on minimize"); tray::hide(&window); }
             }
             Event::UserEvent(tray::TrayEvent::Show) => { log("tray: show"); tray::show(&window); }
-            Event::UserEvent(tray::TrayEvent::Quit) => *control_flow = ControlFlow::Exit,
+            Event::UserEvent(tray::TrayEvent::Quit) => { ts_cleanup(); *control_flow = ControlFlow::Exit },
             Event::NewEvents(_) => {
                 let l = LIGHT_THEME.load(Ordering::Relaxed);
                 if l != cur_light {

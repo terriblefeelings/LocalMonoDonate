@@ -1617,18 +1617,13 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
     }
     if path == "/api/tailscale/install" {
         if method == Method::Post {
-            // bundled installer next to the exe => zero-step install for other users
+            // downloads the current release; bundled MSI is only the offline fallback
             let msi = std::env::current_exe().ok()
                 .and_then(|p| p.parent().map(|d| d.join("tailscale-setup.msi")))
-                .filter(|p| p.exists())
                 .unwrap_or_else(|| ctx.paths.base.join("tailscale-setup.msi"));
-            if msi.exists() {
-                match crate::tailscale::install(&msi) {
-                    Ok(_) => { let _ = request.respond(json_resp(200, json!({ "ok": true, "started": true }))); }
-                    Err(e) => { let _ = request.respond(json_resp(200, json!({ "ok": false, "error": e }))); }
-                }
-            } else {
-                let _ = request.respond(json_resp(200, json!({ "ok": false, "download": "https://tailscale.com/download/windows" })));
+            match crate::tailscale::install(&msi) {
+                Ok(_) => { let _ = request.respond(json_resp(200, json!({ "ok": true, "started": true }))); }
+                Err(e) => { let _ = request.respond(json_resp(200, json!({ "ok": false, "error": e }))); }
             }
         } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
