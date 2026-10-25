@@ -5,13 +5,9 @@
 //! (%APPDATA%\LocalMonoDonate\<port>\streamelements.json).
 use crate::model::*;
 use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
 const API: &str = "https://api.streamelements.com/kappa/v2";
-/// SE activities carry no currency - the dashboard totals them as USD, so convert.
-const RATES_URL: &str = "https://open.er-api.com/v6/latest/USD";
 
 fn post_json(url: &str, token: &str, body: &str) -> Result<(), String> {
     match ureq::post(url)
@@ -48,32 +44,6 @@ fn get_json(url: &str, token: &str) -> Result<Value, String> {
     }
 }
 
-/// (fetched at, USD -> currency rates), refreshed every 6 h
-static RATE_CACHE: OnceLock<Mutex<(i64, HashMap<String, f64>)>> = OnceLock::new();
-
-/// how many units of `currency` one USD buys (UAH ~41, EUR ~0.92)
-fn rate_per_usd(currency: &str) -> Result<f64, String> {
-    let cur = currency.trim().to_ascii_uppercase();
-    if cur.is_empty() || cur == "USD" { return Ok(1.0); }
-    let cell = RATE_CACHE.get_or_init(|| Mutex::new((0, HashMap::new())));
-    let now = now_ms();
-    {
-        let g = cell.lock().unwrap();
-        if now - g.0 < 6 * 3_600_000 {
-            if let Some(r) = g.1.get(&cur) { if *r > 0.0 { return Ok(*r); } }
-        }
-    }
-    let v = get_json(RATES_URL, "")?;
-    let mut map = HashMap::new();
-    if let Some(o) = v["rates"].as_object() {
-        for (k, val) in o { if let Some(f) = val.as_f64() { map.insert(k.to_ascii_uppercase(), f); } }
-    }
-    let rate = map.get(&cur).copied().unwrap_or(0.0);
-    if rate <= 0.0 { return Err(format!("no {} rate", cur)); }
-    *cell.lock().unwrap() = (now, map);
-    Ok(rate)
-}
-
 /// GET /channels/{id} - used by the setup page "Test connection".
 pub fn channel(account_id: &str, token: &str) -> Result<Value, String> {
     if account_id.trim().is_empty() { return Err("account id is empty".into()); }
@@ -99,23 +69,27 @@ fn donor_identity(name: &str) -> (String, String) {
     (format!("monobank:{}", slug), format!("{}@monobank.local", slug))
 }
 
-fn post_activity(account_id: &str, token: &str, name: &str, usd: f64, message: &str) -> Result<(), String> {
-    let body = json!({
+fn activity_body(name: &str, amount: f64, message: &str) -> Value {
+    json!({
         "isMock": false,
         "provider": "streamelements",
         "type": "tip",
         "data": {
-            "amount": (usd * 100.0).round() / 100.0,
+            "amount": (amount * 100.0).round() / 100.0,
             "username": name,
             "displayName": name,
             "message": message.chars().take(300).collect::<String>()
         }
-    }).to_string();
+    })
+}
+
+fn post_activity(account_id: &str, token: &str, name: &str, amount: f64, message: &str) -> Result<(), String> {
+    let body = activity_body(name, amount, message).to_string();
     post_json(&format!("{}/activities/{}", API, account_id.trim()), token, &body)
 }
 
-/// POST /tips/{channel} keeps the real donation currency, then the matching activity is
-/// posted in USD so the dashboard totals (which are USD-only) are right.
+/// POST /tips/{channel} keeps the real donation currency, and the matching activity
+/// posts the same amount in the channel currency (SE does not convert activities).
 pub fn send_tip(port: u16, cfg: &Config, name: &str, amount: f64, currency: &str, message: &str) -> Result<(), String> {
     let se = &cfg.streamelements;
     if !se.enabled { return Ok(()); }
@@ -135,14 +109,7 @@ pub fn send_tip(port: u16, cfg: &Config, name: &str, amount: f64, currency: &str
     }).to_string();
     post_json(&format!("{}/tips/{}", API, se.account_id.trim()), &sec.token, &body)?;
 
-    let usd = match rate_per_usd(currency) {
-        Ok(r) => amount / r,
-        Err(e) => {
-            log(&format!("streamelements: rate: {} (activity posts the raw amount)", e));
-            amount
-        }
-    };
-    if let Err(e) = post_activity(&se.account_id, &sec.token, user, usd, message) {
+    if let Err(e) = post_activity(&se.account_id, &sec.token, user, amount, message) {
         log(&format!("streamelements: activity: {}", e));
     }
     Ok(())
@@ -161,6 +128,12 @@ mod tests {
         assert_eq!(a, donor_identity(" Pendra "));  // trim + case only
         assert_ne!(a, donor_identity("pen dra"));   // different nickname = different donor
         assert_ne!(a, donor_identity("pependra"));
+    }
+
+    #[test]
+    fn activity_keeps_the_channel_currency_amount() {
+        let body = activity_body("pendra", 10.0, "hi");
+        assert_eq!(body["data"]["amount"].as_f64(), Some(10.0));
     }
 }
 
