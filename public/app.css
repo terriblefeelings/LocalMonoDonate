@@ -63,7 +63,7 @@ a{color:inherit}
 .head .primary.save-icon{width:38px;min-width:38px;height:36px;min-height:36px;padding:0;display:grid;place-items:center;font-size:0}
 .head .primary.save-icon svg{display:block;width:18px;height:18px}
 .head .tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.update-btn{display:none;align-items:center;padding:8px 14px;border-radius:10px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.03em}
+.update-btn{display:none;align-items:center;padding:8px 14px;border-radius:10px;background:#2ea043;color:#fff;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.03em}
 .update-btn.show{display:inline-flex}
 
 /* sections */
@@ -160,12 +160,12 @@ input:disabled{opacity:.4}
    Shared admin design: current /notify language across the other pages
    -------------------------------------------------------------------------- */
 :root{
-  --admin-blue:#CECDC3;--admin-orange:#B7B5AC;--admin-green:#A9A69F;--admin-cyan:#DAD8CE;
-  --admin-red:#F2F0E5;--admin-yellow:#E6E4D9;--admin-sunken:#1C1B1A;--admin-vermilion:#FFFCF0;
+  --admin-blue:#4385be;--admin-orange:#da702c;--admin-green:#879a39;--admin-cyan:#3aa99f;
+  --admin-red:#d14d41;--admin-yellow:#d0a215;--admin-sunken:#1C1B1A;--admin-vermilion:#f07a6a;
 }
 [data-theme="light"]{
-  --admin-blue:#100F0F;--admin-orange:#343331;--admin-green:#575653;--admin-cyan:#282726;
-  --admin-red:#100F0F;--admin-yellow:#403E3C;--admin-sunken:#E6E4D9;--admin-vermilion:#1C1B1A;
+  --admin-blue:#205ea6;--admin-orange:#bc5215;--admin-green:#66800b;--admin-cyan:#24837b;
+  --admin-red:#af3029;--admin-yellow:#d0a215;--admin-sunken:#E6E4D9;--admin-vermilion:#d14d41;
 }
 body{font-family:var(--sans);background:var(--bg);color:var(--fg)}
 .wrap{max-width:1440px;padding:28px 32px 64px}
@@ -469,9 +469,9 @@ body[data-page="setup"] .togglewrap .togglebtn.on,body[data-page="donateedit"] .
 body[data-page="setup"] .togglewrap .togglebtn:hover,body[data-page="donateedit"] .togglewrap .togglebtn:hover{border-color:var(--faint);color:var(--fg)}
 body[data-page="setup"] #addjar{margin-top:0}
 
-/* page-code accents are monochrome in the e-ink palette */
-:root{--code-blue:#CECDC3;--code-violet:#F2F0E5;--code-green:#A9A69F;--code-cyan:#DAD8CE;--code-yellow:#E6E4D9;--code-magenta:#B7B5AC;--code-lime:#878580}
-[data-theme="light"]{--code-blue:#100F0F;--code-violet:#1C1B1A;--code-green:#343331;--code-cyan:#282726;--code-yellow:#403E3C;--code-magenta:#575653;--code-lime:#6F6E69}
+/* page-code accents keep their hue: they are wayfinding, not decoration */
+:root{--code-blue:#4385be;--code-violet:#8b7cf6;--code-green:#879a39;--code-cyan:#3aa99f;--code-yellow:#d0a215;--code-magenta:#c65db5;--code-lime:#9aa63a}
+[data-theme="light"]{--code-blue:#205ea6;--code-violet:#6b4fbb;--code-green:#66800b;--code-cyan:#24837b;--code-yellow:#8a6a0a;--code-magenta:#9b3f8a;--code-lime:#6f7a1f}
 body[data-page="setup"] .admin-hero__code{--code:var(--code-blue)}
 body[data-page="bitsedit"] .admin-hero__code{--code:var(--code-green)}
 body[data-page="donateedit"] .admin-hero__code{--code:var(--code-cyan)}
