@@ -73,12 +73,12 @@ const $ = id => document.getElementById(id);
 function fitDonatePreview() {
   const box = document.querySelector('.donatePreview'), frame = $('donatePreviewFrame');
   if (!box || !frame) return;
-  const h = 900;
+  let h = 900;
+  try { h = Math.max(900, frame.contentDocument.documentElement.scrollHeight || 0); } catch {}
   frame.style.height = h + 'px';
-  // fill the panel width like every other window; taller content is cropped, not shrunk
-  const scale = Math.min(box.clientWidth / 1440, 1);
+  const scale = Math.min(box.clientWidth / 1440, box.clientHeight / h);
   frame.style.setProperty('--preview-scale', String(scale));
-  frame.style.top = '0px';
+  frame.style.top = Math.max(0, (box.clientHeight - h * scale) / 2) + 'px';
 }
 const donateFrame = $('donatePreviewFrame');
 fitDonatePreview();

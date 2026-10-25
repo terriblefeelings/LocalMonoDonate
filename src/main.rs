@@ -112,7 +112,7 @@ fn run_window() -> wry::Result<()> {
     let icon = Icon::from_rgba(icon::rgba(false), icon::ICON_W, icon::ICON_H).ok();
     let start_light = LIGHT_THEME.load(Ordering::Relaxed);
     // muted e-ink paper / ink, so no white flash and the native frame matches
-    let bg = if start_light { (250u8, 248, 239, 255) } else { (18u8, 17, 16, 255) };
+    let bg = if start_light { (250u8, 248, 239, 255) } else { (15u8, 14, 13, 255) };
 
     let window = WindowBuilder::new()
         .with_title("LocalMonoDonate")
@@ -175,7 +175,7 @@ fn paint_frame(window: &tao::window::Window, light: bool) {
     let (caption, text, border) = if light {
         (0x00EFF8FAu32, 0x000F0F10u32, 0x00CED8DAu32) // #FAF8EF / #100F0F / #DAD8CE
     } else {
-        (0x00101112u32, 0x00E5F0F2u32, 0x00292C2Eu32) // #121110 / #F2F0E5 / #2E2C29
+        (0x000D0E0Fu32, 0x00E5F0F2u32, 0x00292C2Eu32) // #0F0E0D / #F2F0E5 / #2E2C29
     };
     unsafe {
         let hwnd = window.hwnd();

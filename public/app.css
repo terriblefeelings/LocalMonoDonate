@@ -1,7 +1,7 @@
 /* LocalMonoDonate — app UI (setup + alerts). Refined, minimal. */
 :root{
-  --bg:#121110; --fg:#F2F0E5; --muted:#B7B5AC; --faint:#878580;
-  --line:#2E2C29; --line-strong:#4E4A45; --card:#171615; --card2:#1F1E1C; --field:#0E0D0C; --field2:#171615;
+  --bg:#0F0E0D; --fg:#F2F0E5; --muted:#B7B5AC; --faint:#878580;
+  --line:#2E2C29; --line-strong:#4E4A45; --card:#171615; --card2:#1F1E1C; --field:#0A0A09; --field2:#171615;
   --accent:#F2F0E5; --accent-ink:#0C0B0A; --ok:#A9DC76; --err:#D14D41;
   --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
   --mono:"Cascadia Mono","Consolas","SFMono-Regular",ui-monospace,monospace;
@@ -18,7 +18,7 @@
 [data-theme="custom"]{
   color-scheme: dark;
   --selbg:rgba(242,240,229,.28); --page:#F2F0E5;
-  --bg:#121110; --fg:#FFFCF0; --muted:#CECDC3; --faint:#A9A69F;
+  --bg:#0F0E0D; --fg:#FFFCF0; --muted:#CECDC3; --faint:#A9A69F;
   --line:rgba(242,240,229,.14); --card:rgba(18,17,16,.95); --card2:rgba(23,22,21,.96);
   --field:rgba(18,17,16,.95); --field2:rgba(23,22,21,.98);
   --accent:#FFFCF0; --accent-ink:#0C0B0A; --ok:#A9DC76;
