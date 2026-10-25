@@ -107,7 +107,6 @@ input:disabled{opacity:.4}
 /* language switch: one control, two flags, shared outline (public and admin) */
 #langseg{display:inline-flex;gap:0;padding:0;background:var(--card2);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
 #langseg button{display:grid;place-items:center;min-width:46px;height:28px;padding:0 8px;border:0;border-radius:0;background:transparent;color:var(--muted);box-shadow:none;min-height:0}
-#langseg button+button{border-left:1px solid var(--line)}
 /* the current language is still a button that switches nothing until clicked elsewhere:
    it keeps the same surface but must react to hover like its sibling */
 #langseg button.on{background:transparent;color:var(--muted)}
