@@ -136,6 +136,20 @@ fn is_older(a: &str, b: &str) -> bool {
     }
 }
 
+/// One-off for v0.2.15: older releases shipped a pinned `tailscale-setup.msi` next to the
+/// exe. Once Tailscale is installed that file is dead weight (and a stale version), so
+/// drop it. No-op for fresh installs, which no longer contain the MSI at all.
+pub fn cleanup_bundled_msi() {
+    if !installed() { return; }   // keep it: the only installer on an offline machine
+    let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.to_path_buf())) else { return; };
+    let msi = dir.join("tailscale-setup.msi");
+    if !msi.exists() { return; }
+    match std::fs::remove_file(&msi) {
+        Ok(_) => log("removed legacy tailscale-setup.msi"),
+        Err(e) => log(&format!("could not remove legacy tailscale-setup.msi: {}", e)),
+    }
+}
+
 /// Runs on every start: users who never reinstall the app and never check for
 /// updates still get a current Tailscale client.
 pub fn auto_update() {

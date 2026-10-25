@@ -48,6 +48,7 @@ fn main() {
     // LMD_NO_TAILSCALE=1 keeps tests from renaming the node / touching funnel rules
     if std::env::var_os("LMD_NO_TAILSCALE").is_none() {
         std::thread::spawn(crate::tailscale::auto_update);
+        std::thread::spawn(crate::tailscale::cleanup_bundled_msi);
         if public_port == 0 {
             // no public route wanted: drop one left behind by a previous run
             std::thread::spawn(crate::tailscale::reset_funnel);
