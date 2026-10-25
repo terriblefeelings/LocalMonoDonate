@@ -26,7 +26,6 @@ Pop-Location
 
 Copy-Item (Join-Path $root 'target\release\LocalMonoDonate.exe') $app
 Copy-Item (Join-Path $root 'WebView2Loader.dll') $app
-Copy-Item (Join-Path $root 'tools\enable-funnel.ps1') $app
 $boot = Join-Path $root 'MicrosoftEdgeWebview2Setup.exe'
 if (Test-Path $boot) { Copy-Item $boot $app }
 $ts = Join-Path $root 'tailscale-setup.msi'

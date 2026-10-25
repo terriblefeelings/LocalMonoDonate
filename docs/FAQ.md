@@ -313,7 +313,7 @@ HTTPS-сертифікати та Funnel для цього пристрою, п�
 & "C:\Program Files\Tailscale\tailscale.exe" funnel status
 ```
 
-8080 — це `publicPort` із `config.json`, не 8787. В архіві релізу є `enable-funnel.ps1`: `powershell -ExecutionPolicy Bypass -File enable-funnel.ps1` (додайте `-StatusOnly`, щоб лише подивитися стан). Далі відкрийте
+8080 — це `publicPort` із `config.json`, не 8787. Кнопка **Connect** на сторінці Setup робить це сама; команди вище — запасний варіант. Далі відкрийте
 `https://<machine>.<tailnet>.ts.net/<нік>/donation`. Скинути — `tailscale funnel reset`; змінити хост —
 `tailscale set --hostname <нік>`. Деталі — в README, розділ «Як увімкнути Funnel вручну».
 
