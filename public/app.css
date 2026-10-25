@@ -1,8 +1,8 @@
 /* LocalMonoDonate — app UI (setup + alerts). Refined, minimal. */
 :root{
-  --bg:#100F0F; --fg:#F2F0E5; --muted:#B7B5AC; --faint:#878580;
-  --line:#343331; --line-strong:#575653; --card:#1C1B1A; --card2:#282726; --field:#100F0F; --field2:#1C1B1A;
-  --accent:#F2F0E5; --accent-ink:#100F0F; --ok:#A6E22E; --err:#F92672;
+  --bg:#0C0B0A; --fg:#F2F0E5; --muted:#B7B5AC; --faint:#878580;
+  --line:#2E2C29; --line-strong:#4E4A45; --card:#171615; --card2:#1F1E1C; --field:#080807; --field2:#171615;
+  --accent:#F2F0E5; --accent-ink:#0C0B0A; --ok:#A9DC76; --err:#D14D41;
   --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
   --mono:"Cascadia Mono","Consolas","SFMono-Regular",ui-monospace,monospace;
   --r:4px; --r-sm:2px; --selbg:rgba(242,240,229,.18); --page:#F2F0E5;
@@ -11,17 +11,17 @@
 [data-theme="light"]{
   color-scheme: light;
   --selbg:rgba(16,15,15,.14); --page:#100F0F;
-  --bg:#FFFCF0; --fg:#100F0F; --muted:#6F6E69; --faint:#878580;
-  --line:#DAD8CE; --line-strong:#B7B5AC; --card:#F2F0E5; --card2:#E6E4D9; --field:#FFFCF0; --field2:#F2F0E5;
-  --accent:#100F0F; --accent-ink:#FFFCF0; --ok:#4E9A06; --err:#C7254E;
+  --bg:#F2F0E5; --fg:#100F0F; --muted:#6F6E69; --faint:#878580;
+  --line:#DAD8CE; --line-strong:#B7B5AC; --card:#E6E4D9; --card2:#DAD8CE; --field:#FFFCF0; --field2:#E6E4D9;
+  --accent:#100F0F; --accent-ink:#F2F0E5; --ok:#269D69; --err:#AF3029;
 }
 [data-theme="custom"]{
   color-scheme: dark;
   --selbg:rgba(242,240,229,.28); --page:#F2F0E5;
-  --bg:#100F0F; --fg:#FFFCF0; --muted:#CECDC3; --faint:#A9A69F;
-  --line:rgba(242,240,229,.14); --card:rgba(16,15,15,.95); --card2:rgba(28,27,26,.96);
-  --field:rgba(16,15,15,.95); --field2:rgba(28,27,26,.98);
-  --accent:#FFFCF0; --accent-ink:#100F0F; --ok:#A6E22E;
+  --bg:#0C0B0A; --fg:#FFFCF0; --muted:#CECDC3; --faint:#A9A69F;
+  --line:rgba(242,240,229,.14); --card:rgba(12,11,10,.95); --card2:rgba(23,22,21,.96);
+  --field:rgba(12,11,10,.95); --field2:rgba(23,22,21,.98);
+  --accent:#FFFCF0; --accent-ink:#0C0B0A; --ok:#A9DC76;
 }
 *{box-sizing:border-box}
 ::selection{background:var(--selbg);color:inherit}
@@ -64,7 +64,7 @@ a{color:inherit}
 .head .primary.save-icon{width:38px;min-width:38px;height:36px;min-height:36px;padding:0;display:grid;place-items:center;font-size:0}
 .head .primary.save-icon svg{display:block;width:18px;height:18px}
 .head .tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.update-btn{display:none;align-items:center;padding:8px 14px;border-radius:10px;background:#A6E22E;color:#100F0F;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.03em}
+.update-btn{display:none;align-items:center;padding:8px 14px;border-radius:10px;background:#A9DC76;color:#0C0B0A;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.03em}
 .update-btn.show{display:inline-flex}
 
 /* sections */
@@ -162,11 +162,11 @@ input:disabled{opacity:.4}
    -------------------------------------------------------------------------- */
 :root{
   --admin-blue:#78DCE8;--admin-orange:#FC9867;--admin-green:#A9DC76;--admin-cyan:#AB9DF2;
-  --admin-red:#FF6188;--admin-yellow:#FFD866;--admin-sunken:#1E1F1C;--admin-vermilion:#F92672;
+  --admin-red:#D14D41;--admin-yellow:#FFD866;--admin-sunken:#080807;--admin-vermilion:#D14D41;
 }
 [data-theme="light"]{
   --admin-blue:#1C8CA8;--admin-orange:#CC7A0A;--admin-green:#269D69;--admin-cyan:#7058BE;
-  --admin-red:#E14775;--admin-yellow:#A88600;--admin-sunken:#E7E6DC;--admin-vermilion:#D63A6A;
+  --admin-red:#AF3029;--admin-yellow:#A88600;--admin-sunken:#DAD8CE;--admin-vermilion:#AF3029;
 }
 body{font-family:var(--sans);background:var(--bg);color:var(--fg)}
 .wrap{max-width:1440px;padding:28px 32px 64px}
@@ -469,9 +469,9 @@ body[data-page="setup"] .togglewrap .togglebtn.on,body[data-page="donateedit"] .
 body[data-page="setup"] .togglewrap .togglebtn:hover,body[data-page="donateedit"] .togglewrap .togglebtn:hover{border-color:var(--faint);color:var(--fg)}
 body[data-page="setup"] #addjar{margin-top:0}
 
-/* page-code accents: Monokai Pro hues, wayfinding not decoration */
-:root{--code-blue:#78DCE8;--code-violet:#AB9DF2;--code-green:#A9DC76;--code-cyan:#66D9EF;--code-yellow:#FFD866;--code-magenta:#FF6188;--code-lime:#A9DC76}
-[data-theme="light"]{--code-blue:#1C8CA8;--code-violet:#7058BE;--code-green:#269D69;--code-cyan:#1C8CA8;--code-yellow:#A88600;--code-magenta:#E14775;--code-lime:#269D69}
+/* page-code accents: Monokai Pro, red/pink replaced by Flexoki red */
+:root{--code-blue:#78DCE8;--code-violet:#AB9DF2;--code-green:#A9DC76;--code-cyan:#66D9EF;--code-yellow:#FFD866;--code-magenta:#D14D41;--code-lime:#A9DC76}
+[data-theme="light"]{--code-blue:#1C8CA8;--code-violet:#7058BE;--code-green:#269D69;--code-cyan:#1C8CA8;--code-yellow:#A88600;--code-magenta:#AF3029;--code-lime:#269D69}
 body[data-page="setup"] .admin-hero__code{--code:var(--code-blue)}
 body[data-page="bitsedit"] .admin-hero__code{--code:var(--code-green)}
 body[data-page="donateedit"] .admin-hero__code{--code:var(--code-cyan)}
