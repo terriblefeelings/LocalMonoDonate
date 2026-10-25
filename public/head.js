@@ -14,7 +14,7 @@
   const HEAD = { bg: '', bitsBg: '', bitsPageBg: '' };
   const HEAD_I18N = {
     en: { navSetup: 'Setup', navAlerts: 'Alerts', navBits: 'Sound Alerts', navDonate: 'Donation Page', navQr: 'QR Widgets', navTimer: 'Timer', navAuction: 'Auction', save: 'Save', th_dark: 'Dark', th_light: 'Light' },
-    ua: { navSetup: 'Налаштування', navAlerts: 'Сповіщення', navBits: 'Звукові сповіщення', navDonate: 'Сторінка донатів', navQr: 'QR-віджети', navTimer: 'Таймер', navAuction: 'Аукціон', save: 'Зберегти', th_dark: 'Темна', th_light: 'Світла' }
+    ua: { navSetup: 'Налаштування', navAlerts: 'Алерти', navBits: 'Звукові сповіщення', navDonate: 'Сторінка донатів', navQr: 'QR-віджети', navTimer: 'Таймер', navAuction: 'Аукціон', save: 'Зберегти', th_dark: 'Темна', th_light: 'Світла' }
   };
   const PAGE_LABELS = {
     '/setup': { en: '://Credentials Configuration', ua: '://Налаштування доступів' },

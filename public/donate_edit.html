@@ -73,9 +73,9 @@ const $ = id => document.getElementById(id);
 function fitDonatePreview() {
   const box = document.querySelector('.donatePreview'), frame = $('donatePreviewFrame');
   if (!box || !frame) return;
-  const W = 430;                       // the donation page is a phone-first layout
+  const W = 1440;                      // desktop width, same as a browser window
   let h = 900;
-  try { h = Math.max(700, frame.contentDocument.documentElement.scrollHeight || 0); } catch {}
+  try { h = Math.max(900, frame.contentDocument.documentElement.scrollHeight || 0); } catch {}
   frame.style.height = h + 'px';
   const scale = Math.min(box.clientWidth / W, box.clientHeight / h, 1);
   frame.style.setProperty('--preview-scale', String(scale));
