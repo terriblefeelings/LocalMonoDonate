@@ -25,8 +25,6 @@
   --nt-radius-2:var(--r);
   --nt-shadow-panel:none;
   --nt-head-inset:transparent;
-  background-image:linear-gradient(color-mix(in srgb,var(--line) 55%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 55%,transparent) 1px,transparent 1px);
-  background-size:32px 32px;
 }
 .notify-page #page-zoom{min-height:100vh}
 .nt-shell{width:min(1440px,100%);margin:0 auto;padding:32px 32px 64px}
@@ -174,12 +172,9 @@ html[lang="uk"] #notifyTitle [data-i18n="titleAccent"]{color:var(--admin-vermili
 /* one-line hero intro on desktop */
 .nt-masthead__copy p{max-width:none}
 @media (min-width:901px){.nt-masthead__copy p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-/* fade the grid toward the content window */
-body.notify-page{background-image:radial-gradient(ellipse 70% 62% at 50% 38%,var(--bg) 0 55%,transparent 88%),linear-gradient(color-mix(in srgb,var(--line) 55%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 55%,transparent) 1px,transparent 1px);background-size:100% 100%,32px 32px,32px 32px;background-repeat:no-repeat,repeat,repeat}
 
 .nt-masthead__row{position:relative}
 .nt-masthead__status{position:absolute;right:0;bottom:0}
-body.notify-page{background-image:linear-gradient(color-mix(in srgb,var(--line) 55%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 55%,transparent) 1px,transparent 1px);background-size:32px 32px,32px 32px;background-repeat:repeat,repeat}
 
 .nt-masthead__copy p{margin-bottom:0!important}
 
