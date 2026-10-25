@@ -111,8 +111,8 @@ fn run_window() -> wry::Result<()> {
     let tray_proxy = event_loop.create_proxy();
     let icon = Icon::from_rgba(icon::rgba(false), icon::ICON_W, icon::ICON_H).ok();
     let start_light = LIGHT_THEME.load(Ordering::Relaxed);
-    // e-ink paper / ink, so no white flash and the native frame matches the page
-    let bg = if start_light { (255u8, 252, 240, 255) } else { (16u8, 15, 15, 255) };
+    // Monokai background, so no white flash and the native frame matches the page
+    let bg = if start_light { (248u8, 248, 242, 255) } else { (39u8, 40, 34, 255) };
 
     let window = WindowBuilder::new()
         .with_title("LocalMonoDonate")
@@ -173,9 +173,9 @@ fn paint_frame(window: &tao::window::Window, light: bool) {
     };
     // DWM wants COLORREF: 0x00BBGGRR
     let (caption, text, border) = if light {
-        (0x00F0FCFFu32, 0x000F0F10u32, 0x00CED8DAu32) // #FFFCF0 / #100F0F / #DAD8CE
+        (0x00F2F8F8u32, 0x00222827u32, 0x00C8D6D8u32) // #F8F8F2 / #272822 / #D8D6C8
     } else {
-        (0x000F0F10u32, 0x00E5F0F2u32, 0x00313334u32) // #100F0F / #F2F0E5 / #343331
+        (0x00222827u32, 0x00F2F8F8u32, 0x00323D3Eu32) // #272822 / #F8F8F2 / #3E3D32
     };
     unsafe {
         let hwnd = window.hwnd();

@@ -1,27 +1,27 @@
 /* LocalMonoDonate — app UI (setup + alerts). Refined, minimal. */
 :root{
-  --bg:#100F0F; --fg:#F2F0E5; --muted:#B7B5AC; --faint:#878580;
-  --line:#343331; --line-strong:#575653; --card:#1C1B1A; --card2:#282726; --field:#100F0F; --field2:#1C1B1A;
-  --accent:#F2F0E5; --accent-ink:#100F0F; --ok:#879A39; --err:#D14D41;
+  --bg:#272822; --fg:#F8F8F2; --muted:#B6B3A8; --faint:#75715E;
+  --line:#3E3D32; --line-strong:#575744; --card:#2D2E27; --card2:#34352C; --field:#1E1F1C; --field2:#2D2E27;
+  --accent:#F8F8F2; --accent-ink:#272822; --ok:#A6E22E; --err:#F92672;
   --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
   --mono:"Cascadia Mono","Consolas","SFMono-Regular",ui-monospace,monospace;
-  --r:4px; --r-sm:2px; --selbg:rgba(242,240,229,.18); --page:#F2F0E5;
+  --r:4px; --r-sm:2px; --selbg:rgba(248,248,242,.18); --page:#F8F8F2;
   color-scheme: dark;
 }
 [data-theme="light"]{
   color-scheme: light;
-  --selbg:rgba(16,15,15,.14); --page:#100F0F;
-  --bg:#FFFCF0; --fg:#100F0F; --muted:#6F6E69; --faint:#878580;
-  --line:#DAD8CE; --line-strong:#B7B5AC; --card:#F2F0E5; --card2:#E6E4D9; --field:#FFFCF0; --field2:#F2F0E5;
-  --accent:#100F0F; --accent-ink:#FFFCF0; --ok:#66800B; --err:#AF3029;
+  --selbg:rgba(39,40,34,.14); --page:#272822;
+  --bg:#F8F8F2; --fg:#272822; --muted:#6E6A5E; --faint:#8A8578;
+  --line:#D8D6C8; --line-strong:#B5B2A2; --card:#EFEEE6; --card2:#E7E6DC; --field:#FDFDF8; --field2:#EFEEE6;
+  --accent:#272822; --accent-ink:#F8F8F2; --ok:#4E9A06; --err:#C7254E;
 }
 [data-theme="custom"]{
   color-scheme: dark;
-  --selbg:rgba(242,240,229,.28); --page:#F2F0E5;
-  --bg:#100F0F; --fg:#FFFCF0; --muted:#CECDC3; --faint:#A9A69F;
-  --line:rgba(242,240,229,.14); --card:rgba(16,15,15,.95); --card2:rgba(28,27,26,.96);
-  --field:rgba(16,15,15,.95); --field2:rgba(28,27,26,.98);
-  --accent:#FFFCF0; --accent-ink:#100F0F; --ok:#879A39;
+  --selbg:rgba(248,248,242,.28); --page:#F8F8F2;
+  --bg:#1E1F1C; --fg:#F8F8F2; --muted:#C6C3B8; --faint:#9A9688;
+  --line:rgba(248,248,242,.14); --card:rgba(39,40,34,.95); --card2:rgba(45,46,39,.96);
+  --field:rgba(30,31,28,.95); --field2:rgba(45,46,39,.98);
+  --accent:#F8F8F2; --accent-ink:#272822; --ok:#A6E22E;
 }
 *{box-sizing:border-box}
 ::selection{background:var(--selbg);color:inherit}
@@ -33,7 +33,7 @@ select option{background-color:var(--field2);color:var(--fg)}
 .selbtn{width:100%;text-align:left;background:var(--field);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg);font:inherit;font-size:13px;padding:7px 28px 7px 10px;cursor:pointer;position:relative;line-height:1.4}
 .selbtn::after{content:'';position:absolute;right:11px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:translateY(-70%) rotate(45deg)}
 .selwrap.open .selbtn{border-color:var(--faint)}
-.selpop{position:absolute;z-index:80;left:0;right:0;top:calc(100% + 4px);background:#1C1B1A;border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:0 14px 36px rgba(0,0,0,.5);max-height:260px;overflow:auto;display:none;padding:4px}
+.selpop{position:absolute;z-index:80;left:0;right:0;top:calc(100% + 4px);background:#2D2E27;border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:0 14px 36px rgba(0,0,0,.5);max-height:260px;overflow:auto;display:none;padding:4px}
 .selwrap.open .selpop{display:block}
 .selopt{padding:6px 9px;border-radius:6px;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
 .selopt:hover{background:#282726}
@@ -161,12 +161,12 @@ input:disabled{opacity:.4}
    Shared admin design: current /notify language across the other pages
    -------------------------------------------------------------------------- */
 :root{
-  --admin-blue:#4385be;--admin-orange:#da702c;--admin-green:#879a39;--admin-cyan:#3aa99f;
-  --admin-red:#d14d41;--admin-yellow:#d0a215;--admin-sunken:#1C1B1A;--admin-vermilion:#f07a6a;
+  --admin-blue:#78DCE8;--admin-orange:#FC9867;--admin-green:#A9DC76;--admin-cyan:#AB9DF2;
+  --admin-red:#FF6188;--admin-yellow:#FFD866;--admin-sunken:#1E1F1C;--admin-vermilion:#F92672;
 }
 [data-theme="light"]{
-  --admin-blue:#205ea6;--admin-orange:#bc5215;--admin-green:#66800b;--admin-cyan:#24837b;
-  --admin-red:#af3029;--admin-yellow:#d0a215;--admin-sunken:#E6E4D9;--admin-vermilion:#d14d41;
+  --admin-blue:#1C8CA8;--admin-orange:#CC7A0A;--admin-green:#269D69;--admin-cyan:#7058BE;
+  --admin-red:#E14775;--admin-yellow:#A88600;--admin-sunken:#E7E6DC;--admin-vermilion:#D63A6A;
 }
 body{font-family:var(--sans);background:var(--bg);color:var(--fg)}
 .wrap{max-width:1440px;padding:28px 32px 64px}
@@ -255,7 +255,7 @@ body[data-page="bitsedit"] #editor .body{max-width:none}
 
 /* QR preview and timer preview */
 body[data-page="qredit"] .qrPreview{background:var(--field2);border:1px solid var(--line);border-radius:var(--r);padding:20px}
-body[data-page="qredit"] .qrprev-jar{background:#1C1B1A;border-color:var(--line)}
+body[data-page="qredit"] .qrprev-jar{background:#2D2E27;border-color:var(--line)}
 body[data-page="qredit"] .qrprev-qr{border-radius:4px}
 body[data-page="timeradmin"] .preview{background:var(--field2);border-color:var(--line);border-radius:var(--r)}
 body[data-page="timeradmin"] .preview .pv-t{color:var(--fg)}
@@ -362,7 +362,7 @@ body[data-page="auctionsettings"] .admin-main>h1,body[data-page="auctionsettings
 @media (max-width:700px){body .head{padding:10px;gap:8px;min-height:0;flex-wrap:wrap}body .head .brand{flex:1 0 100%}body .head .tools{flex:1 0 100%;gap:2px;justify-content:flex-start}}
 
 /* match the Alerts header window exactly */
-body .head{position:sticky;inset:auto;top:0;z-index:100;background:var(--bg);backdrop-filter:none;box-shadow:none;border-bottom:1px solid var(--line)}
+body .head{position:sticky;inset:auto;top:0;z-index:100;background:var(--card);backdrop-filter:none;box-shadow:none;border-bottom:1px solid var(--line)}
 body .head .brand .logo{background:var(--admin-sunken)}
 body .head .brand .logo:hover{color:var(--admin-vermilion);border-color:var(--admin-vermilion);transform:rotate(-4deg)}
 body .head .seg button{background:var(--card2)}
@@ -469,9 +469,9 @@ body[data-page="setup"] .togglewrap .togglebtn.on,body[data-page="donateedit"] .
 body[data-page="setup"] .togglewrap .togglebtn:hover,body[data-page="donateedit"] .togglewrap .togglebtn:hover{border-color:var(--faint);color:var(--fg)}
 body[data-page="setup"] #addjar{margin-top:0}
 
-/* page-code accents keep their hue: they are wayfinding, not decoration */
-:root{--code-blue:#4385be;--code-violet:#8b7cf6;--code-green:#879a39;--code-cyan:#3aa99f;--code-yellow:#d0a215;--code-magenta:#c65db5;--code-lime:#9aa63a}
-[data-theme="light"]{--code-blue:#205ea6;--code-violet:#6b4fbb;--code-green:#66800b;--code-cyan:#24837b;--code-yellow:#8a6a0a;--code-magenta:#9b3f8a;--code-lime:#6f7a1f}
+/* page-code accents: Monokai Pro hues, wayfinding not decoration */
+:root{--code-blue:#78DCE8;--code-violet:#AB9DF2;--code-green:#A9DC76;--code-cyan:#66D9EF;--code-yellow:#FFD866;--code-magenta:#FF6188;--code-lime:#A9DC76}
+[data-theme="light"]{--code-blue:#1C8CA8;--code-violet:#7058BE;--code-green:#269D69;--code-cyan:#1C8CA8;--code-yellow:#A88600;--code-magenta:#E14775;--code-lime:#269D69}
 body[data-page="setup"] .admin-hero__code{--code:var(--code-blue)}
 body[data-page="bitsedit"] .admin-hero__code{--code:var(--code-green)}
 body[data-page="donateedit"] .admin-hero__code{--code:var(--code-cyan)}
