@@ -13,7 +13,7 @@
   #win{background-size:100% 100%;background-position:center;background-repeat:no-repeat}
   .cell{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit}
   .cell .sq{width:100%;aspect-ratio:1/1;border:1px solid var(--line);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
-    font-size:22px;background-size:cover;background-position:center;overflow:hidden;transition:.12s}
+    font-size:22px;background-color:var(--card2);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;transition:.12s}
   .cell:hover .sq{border-color:var(--accent);transform:translateY(-2px)}
   .cell.empty{cursor:default}
   .cell.empty .sq{border-style:dashed;opacity:.35}
@@ -37,7 +37,8 @@
 .credits{max-width:560px;margin:16px auto 28px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
 .credits a{color:inherit;text-decoration:underline}
 .credits b{font-weight:600}
-  body.hasbg #sub,body.hasbg .credits{background:rgba(0,0,0,.46);border-radius:4px;padding:5px 8px}
+  body.hasbg #sub{background:rgba(0,0,0,.46);border-radius:4px;padding:5px 8px}
+  body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12px}
 </style>
 </head>
 <body>
@@ -74,7 +75,11 @@ function fitDeck() {
   if (!wrap) return;
   wrap.style.maxWidth = '660px';
   let guard = 0;
-  while (document.body.scrollHeight > window.innerHeight && guard++ < 60) {
+  const fits = () => {
+    const credits = document.querySelector('.credits');
+    return credits ? credits.getBoundingClientRect().bottom + 48 <= window.innerHeight : document.body.scrollHeight <= window.innerHeight;
+  };
+  while (!fits() && guard++ < 80) {
     const width = wrap.getBoundingClientRect().width;
     if (width <= 300) break;
     wrap.style.maxWidth = Math.max(300, Math.floor(width * 0.98)) + 'px';
@@ -154,6 +159,7 @@ async function load() {
   window.mountLangSeg($('langseg')); window.applyI18n();
 }
 load();
+setTimeout(fitDeck, 300);
 
 function renderCredits() {
   const el = document.getElementById('credits'); if (!el) return;
@@ -164,6 +170,7 @@ function renderCredits() {
 }
 renderCredits();
 window.applyLang = function () { renderCredits(); fitDeck(); };
+window.addEventListener('load', fitDeck);
 </script>
 </body>
 </html>

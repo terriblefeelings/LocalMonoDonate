@@ -11,7 +11,7 @@
   .bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px 10px;max-width:620px;margin:0 auto}
   .bcell{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;cursor:pointer;color:var(--fg);font:inherit}
   .bcell .sq{width:100%;aspect-ratio:1/1;border:1px solid var(--line);background:color-mix(in srgb,var(--card2) calc(var(--deck-alpha,1) * 100%),transparent);border-radius:var(--r-sm);
-    display:flex;align-items:center;justify-content:center;font-size:18px;background-size:cover;background-position:center;overflow:hidden;transition:.12s}
+    display:flex;align-items:center;justify-content:center;font-size:18px;background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;transition:.12s}
   .bcell:hover .sq{border-color:var(--faint)}
   .bcell.sel .sq{border-color:var(--accent)}
   .bcell .l{font-size:11px;font-weight:600;line-height:1.15;word-break:break-word;text-align:center}
