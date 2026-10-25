@@ -262,7 +262,7 @@ Setup → StreamElements: account id + JWT (Settings → Account → API token),
 ## 10. Голоси / TTS
 
 **Що за замовчуванням?**
-Google українська + Google англійська — безкоштовно, без ключа, потрібен інтернет.
+Google українська + Google англійська — безкоштовно, без ключа, потрібне підключення до інтернету.
 
 **Як увімкнути Azure?**
 Alerts → voice set → Azure, вставте власний ключ Speech і регіон. Голоси Azure зʼявляться лише після
