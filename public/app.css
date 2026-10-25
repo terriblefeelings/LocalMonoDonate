@@ -108,9 +108,10 @@ input:disabled{opacity:.4}
 #langseg{display:inline-flex;gap:0;padding:0;background:var(--card2);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
 #langseg button{display:grid;place-items:center;min-width:46px;height:28px;padding:0 8px;border:0;border-radius:0;background:transparent;color:var(--muted);box-shadow:none;min-height:0}
 #langseg button+button{border-left:1px solid var(--line)}
-#langseg button:hover{background:color-mix(in srgb,var(--fg) 8%,transparent)}
-/* the selected language keeps the same surface; hover is the only state */
+/* the current language is still a button that switches nothing until clicked elsewhere:
+   it keeps the same surface but must react to hover like its sibling */
 #langseg button.on{background:transparent;color:var(--muted)}
+#langseg button:hover,#langseg button.on:hover{background:color-mix(in srgb,var(--fg) 8%,transparent)}
 
 /* switch */
 .sw{position:relative;width:22px;height:22px;display:inline-block;flex:0 0 22px}
