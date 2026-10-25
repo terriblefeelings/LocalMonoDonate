@@ -9,6 +9,7 @@
   body{background-size:100% 100%;background-position:center;background-attachment:scroll;background-repeat:no-repeat;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
   body:not(.hasbg){background-image:none!important}
   .wrap{max-width:660px;width:100%}
+  #langseg{background:transparent;border:0;padding:0}
   .deck{display:grid;grid-template-columns:repeat(5,1fr);gap:14px 12px;background-size:100% 100%;background-position:center;background-repeat:no-repeat;border-radius:var(--r-sm)}
   #win{background-size:100% 100%;background-position:center;background-repeat:no-repeat}
   .cell{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit}
@@ -34,17 +35,16 @@
   #pv .ph{padding:28px 18px;color:var(--muted);font-size:14px}
   #pv .ctl{display:flex;align-items:center;gap:10px}
 
-.credits{max-width:560px;margin:16px auto 28px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
+.credits{max-width:560px;margin:18px auto 0;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
 .credits a{color:inherit;text-decoration:underline}
 .credits b{font-weight:600}
-  body.hasbg #sub{background:rgba(0,0,0,.46);border-radius:4px;padding:5px 8px}
   body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="panel" id="win">
-    <div class="sec"><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="h" data-i18n="title">Звукові сповіщення</span><span class="hint" id="sub" data-i18n="sub"></span></div><span class="sp"></span><span class="seg" id="langseg"></span></div>
+    <div class="sec"><span class="h" data-i18n="title">Звукові сповіщення</span><span class="sp"></span><span class="seg" id="langseg"></span></div>
     <div class="body">
       <div style="display:flex;gap:8px;align-items:center;margin:0 0 12px">
         <label for="nick" data-i18n="nick" style="font-size:12px;opacity:.75;white-space:nowrap">Your nickname</label>
@@ -53,9 +53,9 @@
       <div class="deck" id="deck"></div>
     </div>
   </div>
+  <div class="credits" id="credits"></div>
 </div>
 <div id="pv"><div class="box"><div class="media" id="pvMedia"></div><div class="ctl"><button id="pvPlay">▶</button><input type="range" id="pvVol" min="0" max="1" step="0.01" value="0.7" style="width:120px"><button id="pvClose">✕</button></div></div></div>
-<div class="credits" id="credits"></div>
 <script src="/i18n.js"></script>
 <script>
 window.I18N_DEFAULT = 'ua';
@@ -75,10 +75,7 @@ function fitDeck() {
   if (!wrap) return;
   wrap.style.maxWidth = '660px';
   let guard = 0;
-  const fits = () => {
-    const credits = document.querySelector('.credits');
-    return credits ? credits.getBoundingClientRect().bottom + 48 <= window.innerHeight : document.body.scrollHeight <= window.innerHeight;
-  };
+  const fits = () => wrap.getBoundingClientRect().bottom + 20 <= window.innerHeight;
   while (!fits() && guard++ < 80) {
     const width = wrap.getBoundingClientRect().width;
     if (width <= 300) break;
@@ -112,7 +109,6 @@ function render() {
     };
     g.append(cell);
   }
-  if (!bits.length) $('sub').textContent = window.t('empty');
   fitDeck();
 }
 let pvEl = null;
