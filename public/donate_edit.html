@@ -73,10 +73,11 @@ const $ = id => document.getElementById(id);
 function fitDonatePreview() {
   const box = document.querySelector('.donatePreview'), frame = $('donatePreviewFrame');
   if (!box || !frame) return;
+  const W = 430;                       // the donation page is a phone-first layout
   let h = 900;
-  try { h = Math.max(900, frame.contentDocument.documentElement.scrollHeight || 0); } catch {}
+  try { h = Math.max(700, frame.contentDocument.documentElement.scrollHeight || 0); } catch {}
   frame.style.height = h + 'px';
-  const scale = Math.min(box.clientWidth / 1440, box.clientHeight / h);
+  const scale = Math.min(box.clientWidth / W, box.clientHeight / h, 1);
   frame.style.setProperty('--preview-scale', String(scale));
   frame.style.top = Math.max(0, (box.clientHeight - h * scale) / 2) + 'px';
 }
