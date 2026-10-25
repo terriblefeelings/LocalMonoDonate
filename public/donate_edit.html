@@ -73,14 +73,15 @@ const $ = id => document.getElementById(id);
 function fitDonatePreview() {
   const box = document.querySelector('.donatePreview'), frame = $('donatePreviewFrame');
   if (!box || !frame) return;
-  let h = 900;
-  try { h = Math.max(900, frame.contentDocument.documentElement.scrollHeight || 0); } catch {}
+  const h = 900;
   frame.style.height = h + 'px';
-  const scale = Math.min(box.clientWidth / 1440, box.clientHeight / h);
+  // fill the panel width like every other window; taller content is cropped, not shrunk
+  const scale = Math.min(box.clientWidth / 1440, 1);
   frame.style.setProperty('--preview-scale', String(scale));
-  frame.style.top = Math.max(0, (box.clientHeight - h * scale) / 2) + 'px';
+  frame.style.top = '0px';
 }
 const donateFrame = $('donatePreviewFrame');
+fitDonatePreview();
 if (donateFrame) donateFrame.addEventListener('load', () => setTimeout(() => { fitDonatePreview(); pushPreviewMedia(); }, 120));
 window.addEventListener('resize', fitDonatePreview);
 function refreshDonatePreview() {
