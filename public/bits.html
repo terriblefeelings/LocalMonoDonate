@@ -37,7 +37,7 @@
 <body>
 <div class="wrap">
   <div class="panel" id="win">
-    <div class="sec"><span class="n">01</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="h" data-i18n="title">Звукові сповіщення</span><span class="hint" id="sub" data-i18n="sub"></span></div><span class="sp"></span><span class="seg" id="langseg"></span></div>
+    <div class="sec"><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="h" data-i18n="title">Звукові сповіщення</span><span class="hint" id="sub" data-i18n="sub"></span></div><span class="sp"></span><span class="seg" id="langseg"></span></div>
     <div class="body">
       <div style="display:flex;gap:8px;align-items:center;margin:0 0 12px">
         <label for="nick" data-i18n="nick" style="font-size:12px;opacity:.75;white-space:nowrap">Your nickname</label>
@@ -119,15 +119,16 @@ $('pvClose').onclick = closePv;
 $('pv').onclick = e => { if (e.target.id === 'pv') closePv(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePv(); });
 async function load() {
-  let bitsPageBg = '', bitsBg = '';
+  let bitsPageBg = '', bitsBg = '', pageBg = '';
   try { const b = await (await fetch('/api/bits')).json(); BITS = b.bits || []; JAR = (b.jars && b.jars[0]) || ''; GRID = b.grid || 5; } catch {}
-  try { const c = await (await fetch('/api/config')).json(); bitsPageBg = c.bitsPageBg || ''; bitsBg = c.bitsBg || ''; } catch {}
-  if (bitsPageBg) document.body.style.backgroundImage = 'url("' + bitsPageBg + '")';
+  try { const c = await (await fetch('/api/config')).json(); bitsPageBg = c.bitsPageBg || ''; bitsBg = c.bitsBg || ''; pageBg = bitsPageBg || c.bg || ''; } catch {}
+  document.body.classList.toggle('hasbg', !!pageBg);
+  if (pageBg) document.body.style.backgroundImage = 'url("' + pageBg + '")';
   const win = $('win');
-  const alpha = bitsBg ? 1 : (bitsPageBg ? 0.95 : 1);
+  const alpha = bitsBg ? 1 : (pageBg ? 0.95 : 1);
   if (bitsBg) win.style.backgroundImage = 'url("' + bitsBg + '")';
   win.style.backgroundColor = 'color-mix(in srgb,var(--card) ' + (alpha * 100) + '%,transparent)';
-  const cellAlpha = bitsBg ? 1 : (bitsPageBg ? 0.95 : 1);
+  const cellAlpha = bitsBg ? 1 : (pageBg ? 0.95 : 1);
   render();
   document.querySelectorAll('.cell .sq').forEach(sq => { if (!sq.style.backgroundImage) sq.style.backgroundColor = 'color-mix(in srgb,var(--card2) ' + (cellAlpha * 100) + '%,transparent)'; });
   window.mountLangSeg($('langseg')); window.applyI18n();
