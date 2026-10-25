@@ -1,4 +1,4 @@
-﻿/* Functional controller for /notify. Presentation was removed from the page; this file contains behavior and DOM contracts only. */
+/* Functional controller for /notify. Presentation was removed from the page; this file contains behavior and DOM contracts only. */
 const $ = id => document.getElementById(id);
 const DEFAULTS = Alert.DEFAULTS;
 const STYLE_KEYS = ['top_text','money_text','blue_font','blue_size','blue_weight','blue_color','blue_outline','blue_outline_op','blue_maxw','blue_tracking','blue_line','green_font','green_size','green_weight','green_color','green_outline','green_outline_op','green_maxw','green_tracking','green_line','msg_font','msg_size','msg_weight','msg_color','msg_outline','msg_outline_op','msg_maxw','msg_maxh','win_bg','win_bg_opacity','win_radius','win_maxh','win_border_color','win_border_width','win_shadow','win_padding','blue_bg','blue_bg_opacity','blue_radius','green_bg','green_bg_opacity','green_radius','red_bg','red_bg_opacity','red_radius','duration_ms','wait_media','anim_in','anim_out','anim_ms','image_url','video_url','sound_url','media_pos','media_w','media_h','media_zoom','media_radius','media_pan_x','media_pan_y','max_width'];
@@ -10,11 +10,11 @@ const DICT = {
 };
 window.I18N = { en: DICT.en, ua: DICT.ua };
 Object.assign(DICT.en, {
-  consoleSystem:'Donation alerts', consoleReady:'Preview', photoContext:'Studio mixer',
+  consoleSystem:'Donation Alerts', consoleReady:'Preview', photoContext:'Studio mixer',
   consoleTitle:'Alert setup', consoleIntro:'Tune how donation alerts look and sound, then preview the result.',
   consoleProfile:'Editing', cueBank:'Rules', cueStack:'Variations', rulesHint:'First match wins. Default is the fallback.',
   cueSingular:'variation', cuePlural:'variations', poolLabel:'Add to default pool', triggerRange:'Amount range', currencyUnit:'UAH', monitorChannel:'Stream preview',
-  monitorTitle:'Alert preview', previewOnly:'Preview', previewLocal:'Only you can see this preview; it is not broadcast.', previewDrag:'Drag media to move it',
+  monitorTitle:'Alert Preview', previewOnly:'Preview', previewLocal:'Only you can see this preview; it is not broadcast.', previewDrag:'Drag media to move it',
   settingsIndex:'Fine-tune', settingsTitle:'Cue settings', settingsHint:'Control its sound, motion, text, and media.',
   settingsHintRight:'Changes apply to the selected variation', fixedCueNote:'Fixed amount — this cue plays only for the configured range.',
   poolCueNote:'Pool cue — this variation shares equal selection chance with the default.',
@@ -34,10 +34,10 @@ Object.assign(DICT.ua, {
   specSignal:'Сигнал / локально', specOutput:'Без ефіру', specFeed:'Локальний сигнал', photoCaption:'Студійний референс', photoSource:'Деталь консолі', photoRef:'РЕФ. 01'
 });
 Object.assign(DICT.en, {
-  consoleTitle:'Alert configuration',
+  consoleTitle:'Alert Configuration',
   consoleIntro:'Shape the signal, voice, and framing of each donation alert. Every change renders in the local preview.',
-  cueBank:'Cue bank', cueBankHint:'Select a cue to inspect its range and styling.',
-  outputLabel:'Output monitor', parameterConsole:'Parameter console',
+  cueBank:'Cue Bank', cueBankHint:'Select a cue to inspect its range and styling.',
+  outputLabel:'Output Monitor', parameterConsole:'Parameter Console',
   signalCopy:'Cue copy', signalCopyType:'Copy and type', signalVoice:'Voice channel', signalTiming:'Timing and motion',
   signalMessage:'Message typography', signalTop:'Top line', signalAmount:'Amount line',
   signalFrame:'Output frame', signalMedia:'Media channel', signalData:'Configuration data',
@@ -60,17 +60,17 @@ Object.assign(DICT.ua, {
 /* Copy pass: natural bilingual wording, not a literal swap. */
 Object.assign(DICT.en, {
   save:'Save', defaultLabel:'Default (rest)', name:'Variation',
-  consoleTitle:'Alerts configuration', titleLead:'Alerts', titleAccent:'configuration', consoleIntro:'Tune how each donation alert looks and sounds, then check the result in the local preview.',
-  consoleSystem:'Donation alerts', statusLocal:'Local preview', cueBank:'Cue bank', cueStack:'Variations',
+  consoleTitle:'Alerts Configuration', titleLead:'Alerts', titleAccent:'Configuration', consoleIntro:'Tune how each donation alert looks and sounds, then check the result in the local preview.',
+  consoleSystem:'Donation Alerts', statusLocal:'Local preview', cueBank:'Cue Bank', cueStack:'Variations',
   cueBankHint:'Pick a cue to review its range and styling.', rulesHint:'First match wins; the default is the fallback.',
   addRule:'+ Add variation', triggerRange:'Amount range', currencyUnit:'UAH', from:'from', toInf:'to',
   cueSingular:'variation', cuePlural:'variations', variationName:'Variation name',
   fixedCueNote:'Fixed amount — this cue plays only in this range.', poolCueNote:'Pool cue — same chance as the default.',
   testShort:'Test', poolShort:'pool', addedToPool:'Added to pool', poolLabel:'Add to pool', poolRemove:'Remove from pool',
   testVariation:'Test this variation', deleteVariation:'Delete variation', selectVariation:'Select variation',
-  outputLabel:'Output monitor', monitorTitle:'Alert preview', previewOnly:'Preview', previewLocal:'Local preview only — nothing is broadcast.',
+  outputLabel:'Output Monitor', monitorTitle:'Alert Preview', previewOnly:'Preview', previewLocal:'Local preview only — nothing is broadcast.',
   previewDrag:'Scroll to zoom; drag to pan; double-click to center.', hoverZoomNote:'Scroll over the preview to change media zoom. Drag to pan; double-click to recenter.',
-  parameterConsole:'Parameter console', settingsHint:'Tune the voice, motion, text, media, and frame.', settingsHintRight:'Applies to the selected cue',
+  parameterConsole:'Parameter Console', settingsHint:'Tune the voice, motion, text, media, and frame.', settingsHintRight:'Applies to the selected cue',
   signalCopyType:'Copy and type', signalTop:'Top line', signalAmount:'Amount line', signalVoice:'Voice', signalTiming:'Timing and motion',
   signalFrame:'Output frame', signalMedia:'Media channel', signalData:'Configuration data',
   lineBlue:'Top line', lineGreen:'Amount line', varsHint:'%donate% = user, %money% = amount. Both work in either line.',

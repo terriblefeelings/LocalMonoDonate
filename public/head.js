@@ -13,34 +13,34 @@
   document.body.dataset.page = location.pathname.replace(/\//g, '') || 'root';
   const HEAD = { bg: '', bitsBg: '', bitsPageBg: '' };
   const HEAD_I18N = {
-    en: { navSetup: 'Setup', navAlerts: 'Alerts', navBits: 'Sound alerts', navDonate: 'Donation page', navQr: 'QR widgets', navTimer: 'Timer', navAuction: 'Auction', save: 'Save', th_dark: 'Dark', th_light: 'Light' },
+    en: { navSetup: 'Setup', navAlerts: 'Alerts', navBits: 'Sound Alerts', navDonate: 'Donation Page', navQr: 'QR Widgets', navTimer: 'Timer', navAuction: 'Auction', save: 'Save', th_dark: 'Dark', th_light: 'Light' },
     ua: { navSetup: 'Налаштування', navAlerts: 'Сповіщення', navBits: 'Звукові сповіщення', navDonate: 'Сторінка донатів', navQr: 'QR-віджети', navTimer: 'Таймер', navAuction: 'Аукціон', save: 'Зберегти', th_dark: 'Темна', th_light: 'Світла' }
   };
   const PAGE_LABELS = {
-    '/setup': { en: '://Credentials configuration', ua: '://Налаштування доступів' },
-    '/notify': { en: '://Alerts configuration', ua: '://Налаштування алертів' },
-    '/bitsedit': { en: '://Sound Alerts configuration', ua: '://Налаштування звукових сповіщень' },
-    '/donateedit': { en: '://Donate page configuration', ua: '://Налаштування сторінки донатів' },
-    '/qredit': { en: '://QR widgets configuration', ua: '://Налаштування QR-віджетів' },
-    '/timeradmin': { en: '://Marathon timer configuration', ua: '://Налаштування таймера марафону' },
-    '/auctionsettings': { en: '://Auction configuration', ua: '://Налаштування аукціону' }
+    '/setup': { en: '://Credentials Configuration', ua: '://Налаштування доступів' },
+    '/notify': { en: '://Alerts Configuration', ua: '://Налаштування алертів' },
+    '/bitsedit': { en: '://Sound Alerts Configuration', ua: '://Налаштування звукових сповіщень' },
+    '/donateedit': { en: '://Donate Page Configuration', ua: '://Налаштування сторінки донатів' },
+    '/qredit': { en: '://QR Widgets Configuration', ua: '://Налаштування QR-віджетів' },
+    '/timeradmin': { en: '://Marathon Timer Configuration', ua: '://Налаштування таймера марафону' },
+    '/auctionsettings': { en: '://Auction Configuration', ua: '://Налаштування аукціону' }
   };
   const PAGE_TITLES = {
-    '/setup': { en: 'Credentials configuration — LocalMonoDonate', ua: 'Налаштування доступів — LocalMonoDonate' },
-    '/notify': { en: 'Alerts configuration — LocalMonoDonate', ua: 'Налаштування алертів — LocalMonoDonate' },
-    '/bitsedit': { en: 'Sound Alerts configuration — LocalMonoDonate', ua: 'Налаштування звукових сповіщень — LocalMonoDonate' },
-    '/donateedit': { en: 'Donate page configuration — LocalMonoDonate', ua: 'Налаштування сторінки донатів — LocalMonoDonate' },
-    '/qredit': { en: 'QR widgets configuration — LocalMonoDonate', ua: 'Налаштування QR-віджетів — LocalMonoDonate' },
-    '/timeradmin': { en: 'Marathon timer configuration — LocalMonoDonate', ua: 'Налаштування таймера марафону — LocalMonoDonate' },
-    '/auctionsettings': { en: 'Auction configuration — LocalMonoDonate', ua: 'Налаштування аукціону — LocalMonoDonate' }
+    '/setup': { en: 'Credentials Configuration — LocalMonoDonate', ua: 'Налаштування доступів — LocalMonoDonate' },
+    '/notify': { en: 'Alerts Configuration — LocalMonoDonate', ua: 'Налаштування алертів — LocalMonoDonate' },
+    '/bitsedit': { en: 'Sound Alerts Configuration — LocalMonoDonate', ua: 'Налаштування звукових сповіщень — LocalMonoDonate' },
+    '/donateedit': { en: 'Donate Page Configuration — LocalMonoDonate', ua: 'Налаштування сторінки донатів — LocalMonoDonate' },
+    '/qredit': { en: 'QR Widgets Configuration — LocalMonoDonate', ua: 'Налаштування QR-віджетів — LocalMonoDonate' },
+    '/timeradmin': { en: 'Marathon Timer Configuration — LocalMonoDonate', ua: 'Налаштування таймера марафону — LocalMonoDonate' },
+    '/auctionsettings': { en: 'Auction Configuration — LocalMonoDonate', ua: 'Налаштування аукціону — LocalMonoDonate' }
   };
   const ADMIN_PAGES = {
-    '/setup': { code: 'S/01', kicker: { en: 'System', ua: 'Система' }, title: { en: 'Credentials configuration', ua: 'Налаштування доступів' }, intro: { en: 'Configure the Monobank jar, public link, integrations, and service endpoints.', ua: 'Налаштуйте банку Monobank, публічне посилання, інтеграції та сервісні адреси.' } },
-    '/bitsedit': { code: 'B/01', kicker: { en: 'Sound alerts', ua: 'Звукові сповіщення' }, title: { en: 'Sound Alerts configuration', ua: 'Налаштування звукових сповіщень' }, intro: { en: 'Lay out the sound-alert deck and assign clips to each slot.', ua: 'Налаштуйте дек звукових сповіщень і призначте кліпи для кожного слота.' } },
-    '/donateedit': { code: 'D/01', kicker: { en: 'Donation page', ua: 'Сторінка донатів' }, title: { en: 'Donate page configuration', ua: 'Налаштування сторінки донатів' }, intro: { en: 'Choose the donation-page background and YouTube playback rules.', ua: 'Виберіть фон сторінки донатів і правила відтворення YouTube.' } },
-    '/qredit': { code: 'Q/01', kicker: { en: 'Widgets', ua: 'Віджети' }, title: { en: 'QR widgets configuration', ua: 'Налаштування QR-віджетів' }, intro: { en: 'Design QR overlays, goal cards, alignment, and scale.', ua: 'Налаштуйте QR-оверлеї, картки цілі, вирівнювання та масштаб.' } },
-    '/timeradmin': { code: 'T/01', kicker: { en: 'Marathon', ua: 'Марафон' }, title: { en: 'Marathon timer configuration', ua: 'Налаштування таймера марафону' }, intro: { en: 'Control the stream timer, rates, and visual treatment.', ua: 'Керуйте таймером стріму, ставками часу та виглядом.' } },
-    '/auctionsettings': { code: 'A/01', kicker: { en: 'Auction', ua: 'Аукціон' }, title: { en: 'Auction configuration', ua: 'Налаштування аукціону' }, intro: { en: 'Tune timer extensions, bid modes, sources, and Twitch rewards.', ua: 'Налаштуйте продовження таймера, режими ставок, джерела та нагороди Twitch.' } }
+    '/setup': { code: 'S/01', kicker: { en: 'System', ua: 'Система' }, title: { en: 'Credentials Configuration', ua: 'Налаштування доступів' }, intro: { en: 'Configure the Monobank jar, public link, integrations, and service endpoints.', ua: 'Налаштуйте банку Monobank, публічне посилання, інтеграції та сервісні адреси.' } },
+    '/bitsedit': { code: 'B/01', kicker: { en: 'Sound Alerts', ua: 'Звукові сповіщення' }, title: { en: 'Sound Alerts Configuration', ua: 'Налаштування звукових сповіщень' }, intro: { en: 'Lay out the sound-alert deck and assign clips to each slot.', ua: 'Налаштуйте дек звукових сповіщень і призначте кліпи для кожного слота.' } },
+    '/donateedit': { code: 'D/01', kicker: { en: 'Donation Page', ua: 'Сторінка донатів' }, title: { en: 'Donate Page Configuration', ua: 'Налаштування сторінки донатів' }, intro: { en: 'Choose the donation-page background and YouTube playback rules.', ua: 'Виберіть фон сторінки донатів і правила відтворення YouTube.' } },
+    '/qredit': { code: 'Q/01', kicker: { en: 'Widgets', ua: 'Віджети' }, title: { en: 'QR Widgets Configuration', ua: 'Налаштування QR-віджетів' }, intro: { en: 'Design QR overlays, goal cards, alignment, and scale.', ua: 'Налаштуйте QR-оверлеї, картки цілі, вирівнювання та масштаб.' } },
+    '/timeradmin': { code: 'T/01', kicker: { en: 'Marathon', ua: 'Марафон' }, title: { en: 'Marathon Timer Configuration', ua: 'Налаштування таймера марафону' }, intro: { en: 'Control the stream timer, rates, and visual treatment.', ua: 'Керуйте таймером стріму, ставками часу та виглядом.' } },
+    '/auctionsettings': { code: 'A/01', kicker: { en: 'Auction', ua: 'Аукціон' }, title: { en: 'Auction Configuration', ua: 'Налаштування аукціону' }, intro: { en: 'Tune timer extensions, bid modes, sources, and Twitch rewards.', ua: 'Налаштуйте продовження таймера, режими ставок, джерела та нагороди Twitch.' } }
   };
   function syncAdminHero() {
     const wrap = document.querySelector('.wrap');
