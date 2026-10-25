@@ -7,6 +7,7 @@ mod model;
 mod mono;
 mod streamelements;
 mod tailscale;
+mod tray;
 mod tts;
 mod twitch;
 mod web;
@@ -90,11 +91,12 @@ fn run_window() -> wry::Result<()> {
     use std::time::{Duration, Instant};
     use tao::dpi::LogicalSize;
     use tao::event::{Event, WindowEvent};
-    use tao::event_loop::{ControlFlow, EventLoop};
+    use tao::event_loop::{ControlFlow, EventLoopBuilder};
     use tao::window::{Icon, WindowBuilder};
     use wry::WebViewBuilder;
 
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoopBuilder::<tray::TrayEvent>::with_user_event().build();
+    let tray_proxy = event_loop.create_proxy();
     let icon = Icon::from_rgba(icon::rgba(false), icon::ICON_W, icon::ICON_H).ok();
 
     let window = WindowBuilder::new()
@@ -112,11 +114,20 @@ fn run_window() -> wry::Result<()> {
         .with_new_window_req_handler(|url| { open_external(&url); false })
         .build(&window)?;
 
+    let tray_ok = tray::start(tray_proxy);
+
     let mut cur_light = LIGHT_THEME.load(Ordering::Relaxed);
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::WaitUntil(Instant::now() + Duration::from_millis(500));
         match event {
-            Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => *control_flow = ControlFlow::Exit,
+            Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+                if tray_ok { log("tray: hide on close"); tray::hide(&window); } else { log("tray: close exits"); *control_flow = ControlFlow::Exit; }
+            }
+            Event::WindowEvent { event: WindowEvent::Resized(_), .. } => {
+                if tray_ok && window.is_minimized() { log("tray: hide on minimize"); tray::hide(&window); }
+            }
+            Event::UserEvent(tray::TrayEvent::Show) => { log("tray: show"); tray::show(&window); }
+            Event::UserEvent(tray::TrayEvent::Quit) => *control_flow = ControlFlow::Exit,
             Event::NewEvents(_) => {
                 let l = LIGHT_THEME.load(Ordering::Relaxed);
                 if l != cur_light {
