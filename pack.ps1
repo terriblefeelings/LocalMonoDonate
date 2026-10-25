@@ -5,11 +5,16 @@
 #   powershell -File pack.ps1                          # exe + WebView2 bits only (~9 MB)
 #   powershell -File pack.ps1 -WithTts                 # + tts-engine from .\tts-engine
 #   powershell -File pack.ps1 -WithTts -TtsEngine D:\tts-engine-lite
+#   powershell -File pack.ps1 -WithMsi                 # + offline Tailscale installer
+#
+# The app downloads the current Tailscale release at install time, so the bundled MSI is
+# only for offline machines and is left out by default (~37 MB saved).
 #
 # The portable tts-engine (venv2, ffmpeg.exe, serve.py, model, tokenizer, voices) is a
 # ~550 MB runtime that is not stored in git - pass its folder with -TtsEngine.
 param(
   [switch]$WithTts,
+  [switch]$WithMsi,
   [string]$TtsEngine = (Join-Path $PSScriptRoot 'tts-engine')
 )
 $ErrorActionPreference = 'Stop'
@@ -29,7 +34,7 @@ Copy-Item (Join-Path $root 'WebView2Loader.dll') $app
 $boot = Join-Path $root 'MicrosoftEdgeWebview2Setup.exe'
 if (Test-Path $boot) { Copy-Item $boot $app }
 $ts = Join-Path $root 'tailscale-setup.msi'
-if (Test-Path $ts) { Copy-Item $ts $app }
+if ($WithMsi -and (Test-Path $ts)) { Copy-Item $ts $app }
 if ($WithTts) {
   if (-not (Test-Path (Join-Path $TtsEngine 'serve.py'))) {
     throw "tts-engine not found at '$TtsEngine' (pass -TtsEngine <folder>)"
