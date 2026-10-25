@@ -456,6 +456,13 @@ pub struct NotifyCfg {
     #[serde(default)] pub yt_playlists: bool,
     /// minimum amount for a non-YouTube media link
     #[serde(default = "n_othermin")] pub other_media_min: f64,
+    // enabled media link types (default style is the global switch)
+    #[serde(default = "d_true")] pub media_youtube: bool,
+    #[serde(default = "d_true")] pub media_instagram: bool,
+    #[serde(default = "d_true")] pub media_tiktok: bool,
+    #[serde(default = "d_true")] pub media_twitch: bool,
+    #[serde(default = "d_true")] pub media_reddit: bool,
+    #[serde(default = "d_true")] pub media_x: bool,
     // animation
     #[serde(default = "n_anin")] pub anim_in: String,
     #[serde(default = "n_anout")] pub anim_out: String,
@@ -485,10 +492,25 @@ impl Default for NotifyCfg {
             green_bg: n_outc(), green_bg_opacity: 0.0, green_radius: n_rad12(),
             red_bg: n_outc(), red_bg_opacity: 0.0, red_radius: n_rad12(),
             duration_ms: n_dur(), wait_media: false, yt_min: n_ytmin(), yt_views: n_ytviews(), yt_max_min: n_ytmaxmin(), yt_playlists: false, other_media_min: n_othermin(),
+            media_youtube: true, media_instagram: true, media_tiktok: true, media_twitch: true, media_reddit: true, media_x: true,
             anim_in: n_anin(), anim_out: n_anout(), anim_ms: n_anms(),
             image_url: n_img(), video_url: String::new(), sound_url: String::new(),
             media_pos: m_pos(), media_w: n_mw(), media_h: n_mh(), media_zoom: n_zoom(), media_radius: m_rad(),
             media_pan_x: n_panx(), media_pan_y: n_pany(), max_width: n_maxw(),
+        }
+    }
+}
+
+impl NotifyCfg {
+    pub fn media_enabled(&self, provider: &str) -> bool {
+        match provider {
+            "youtube" => self.media_youtube,
+            "instagram" => self.media_instagram,
+            "tiktok" => self.media_tiktok,
+            "twitch" => self.media_twitch,
+            "reddit" => self.media_reddit,
+            "x" => self.media_x,
+            _ => true,
         }
     }
 }
@@ -1067,6 +1089,11 @@ pub fn youtube_id(input: &str) -> Result<String, ()> {
 }
 /// Accept a public video/page URL from a known non-YouTube provider.
 pub fn other_media_url(input: &str) -> Option<String> {
+    media_provider(input).map(|_| input.trim().to_string())
+}
+
+/// Classify an allowed non-YouTube media URL by provider.
+pub fn media_provider(input: &str) -> Option<&'static str> {
     let raw = input.trim();
     if raw.is_empty() { return None; }
     let s = raw.strip_prefix("https://").or_else(|| raw.strip_prefix("http://")).unwrap_or(raw);
@@ -1074,9 +1101,12 @@ pub fn other_media_url(input: &str) -> Option<String> {
     let host = s.split('/').next().unwrap_or("").rsplit('@').next().unwrap_or("");
     let host = host.split(':').next().unwrap_or("").to_ascii_lowercase();
     let host = host.trim_start_matches("www.").trim_start_matches("m.");
-    let ok = ["tiktok.com", "instagram.com", "instagr.am", "twitch.tv", "v.redd.it", "packaged-media.redd.it", "twitter.com", "x.com"]
-        .iter().any(|d| host == *d || host.ends_with(&format!(".{}", d)));
-    if ok { Some(raw.to_string()) } else { None }
+    if host == "tiktok.com" || host.ends_with(".tiktok.com") { return Some("tiktok"); }
+    if host == "instagram.com" || host.ends_with(".instagram.com") || host == "instagr.am" { return Some("instagram"); }
+    if host == "twitch.tv" || host.ends_with(".twitch.tv") { return Some("twitch"); }
+    if host == "v.redd.it" || host == "packaged-media.redd.it" { return Some("reddit"); }
+    if host == "x.com" || host.ends_with(".x.com") || host == "twitter.com" || host.ends_with(".twitter.com") { return Some("x"); }
+    None
 }
 
 pub fn is_youtube_id(s: &str) -> bool {
@@ -1449,6 +1479,25 @@ mod youtube_id_tests {
         ] {
             assert!(other_media_url(input).is_some(), "input: {input}");
         }
+    }
+
+    #[test]
+    fn classifies_each_allowed_media_provider() {
+        assert_eq!(media_provider("https://www.instagram.com/reel/C_bnaTAO2Ll/"), Some("instagram"));
+        assert_eq!(media_provider("https://www.tiktok.com/@x/video/1"), Some("tiktok"));
+        assert_eq!(media_provider("https://clips.twitch.tv/abc"), Some("twitch"));
+        assert_eq!(media_provider("https://v.redd.it/abc"), Some("reddit"));
+        assert_eq!(media_provider("https://x.com/NASA/status/1"), Some("x"));
+        assert_eq!(media_provider("https://www.reddit.com/r/test/comments/abc/"), None);
+    }
+
+    #[test]
+    fn media_toggles_default_on_and_can_be_disabled() {
+        let mut style = NotifyCfg::default();
+        assert!(style.media_enabled("reddit"));
+        style.media_reddit = false;
+        assert!(!style.media_enabled("reddit"));
+        assert!(style.media_enabled("x"));
     }
 
     #[test]

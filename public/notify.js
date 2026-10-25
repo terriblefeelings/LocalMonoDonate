@@ -255,6 +255,7 @@ function readStyle() { const s = {}; for (const k of STYLE_KEYS) { const el = $(
   const cur = (rules[sel] && rules[sel].style) || {};
   s.media_pan_x = cur.media_pan_x || 0; s.media_pan_y = cur.media_pan_y || 0;
   s.yt_min = cur.yt_min || 0; s.yt_views = cur.yt_views || 0; s.yt_max_min = cur.yt_max_min || 0; s.yt_playlists = !!cur.yt_playlists;
+  for (const k of ['media_youtube','media_instagram','media_tiktok','media_twitch','media_reddit','media_x']) s[k] = cur[k] !== false;
   return s; }
 function writeStyle(s) { const m = Object.assign({}, DEFAULTS, s || {}); for (const k of STYLE_KEYS) { const el = $(k); if (!el) continue;
   if (BOOL.has(k)) el.checked = !!m[k];

@@ -55,13 +55,41 @@ Object.assign(window.I18N.en, { noJar: 'No jar configured - add one in Settings'
 Object.assign(window.I18N.ua, { noJar: 'Банку не додано - додай її в Налаштуваннях' });
 Object.assign(window.I18N.en, { payHintA: "If you don't want to open the Monobank app automatically, press and hold", payHintLink: 'this LINK', payHintB: ', then choose “Open in a new browser tab”.' });
 Object.assign(window.I18N.ua, { payHintA: 'Якщо ви не хочете автоматично переходити в застосунок Monobank, натисніть і утримуйте', payHintLink: 'це ПОСИЛАННЯ', payHintB: ', а потім виберіть «Відкрити в новій вкладці браузера».' });
-Object.assign(window.I18N.en, { mediaFrom: 'YouTube from %y% \u20b4; Instagram, TikTok, Twitch, Reddit and X from %o% \u20b4.', youtube: 'Media link (optional)' });
-Object.assign(window.I18N.ua, { mediaFrom: 'YouTube \u0432\u0456\u0434 %y% \u20b4; Instagram, TikTok, Twitch, Reddit \u0456 X \u2014 \u0432\u0456\u0434 %o% \u20b4.', youtube: '\u041f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f \u043d\u0430 \u043c\u0435\u0434\u0456\u0430 (\u043d\u0435\u043e\u0431\u043e\u0432\u02bc\u044f\u0437\u043a\u043e\u0432\u0435)' });
+Object.assign(window.I18N.en, { mediaFrom: 'YouTube from %y% \u20b4; Instagram, TikTok, Twitch, Reddit and X from %o% \u20b4.', mediaYtFrom: 'YouTube from %p% \u20b4', mediaOtherFrom: 'from %p% \u20b4', mediaNone: 'Media links are disabled.', youtube: 'Media link (optional)' });
+Object.assign(window.I18N.ua, { mediaFrom: 'YouTube \u0432\u0456\u0434 %y% \u20b4; Instagram, TikTok, Twitch, Reddit \u0456 X \u2014 \u0432\u0456\u0434 %o% \u20b4.', mediaYtFrom: 'YouTube \u0432\u0456\u0434 %p% \u20b4', mediaOtherFrom: '\u2014 \u0432\u0456\u0434 %p% \u20b4', mediaNone: '\u041c\u0435\u0434\u0456\u0430\u043f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f \u0432\u0438\u043c\u043a\u043d\u0435\u043d\u043e.', youtube: '\u041f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f \u043d\u0430 \u043c\u0435\u0434\u0456\u0430 (\u043d\u0435\u043e\u0431\u043e\u0432\u02bc\u044f\u0437\u043a\u043e\u0432\u0435)' });
 const $ = id => document.getElementById(id);
 const err = m => { $('err').textContent = m || ''; };
 const btn = $('btn');
 const paynote = $('paynote'), paylink = $('paylink');
 let YT_MIN = 0, OTHER_MIN = 0, BITS = [], JARS = [];
+let MEDIA = { youtube: true, instagram: true, tiktok: true, twitch: true, reddit: true, x: true };
+const MEDIA_NAMES = { instagram: 'Instagram', tiktok: 'TikTok', twitch: 'Twitch', reddit: 'Reddit', x: 'X' };
+const MEDIA_PLACEHOLDERS = { youtube: 'youtu.be', instagram: 'instagram.com', tiktok: 'tiktok.com', twitch: 'twitch.tv', reddit: 'v.redd.it', x: 'x.com' };
+function mediaOn(id) { return MEDIA[id] !== false; }
+function joinMediaNames(names) {
+  const and = window.getLang() === 'ua' ? ' і ' : ' and ';
+  if (!names.length) return '';
+  if (names.length === 1) return names[0];
+  return names.slice(0, -1).join(', ') + and + names[names.length - 1];
+}
+function enabledOtherMedia() { return ['instagram', 'tiktok', 'twitch', 'reddit', 'x'].filter(mediaOn); }
+function updateMediaHint() {
+  const parts = [];
+  if (mediaOn('youtube')) parts.push(window.t('mediaYtFrom').replace('%p%', YT_MIN));
+  const others = enabledOtherMedia();
+  if (others.length) parts.push(joinMediaNames(others.map(id => MEDIA_NAMES[id])) + ' ' + window.t('mediaOtherFrom').replace('%p%', OTHER_MIN));
+  $('hint').textContent = parts.length ? parts.join('; ') : window.t('mediaNone');
+  const ph = Object.keys(MEDIA_PLACEHOLDERS).filter(mediaOn).map(id => MEDIA_PLACEHOLDERS[id]);
+  $('youtube').placeholder = ph.length ? ph.join(' / ') : '';
+}
+window.setMediaConfig = function (cfg) {
+  if (!cfg) return;
+  ['youtube', 'instagram', 'tiktok', 'twitch', 'reddit', 'x'].forEach(id => { MEDIA[id] = cfg[id] !== false; });
+  if (cfg.ytMin != null) YT_MIN = Number(cfg.ytMin) || 0;
+  if (cfg.otherMin != null) OTHER_MIN = Number(cfg.otherMin) || 0;
+  updateMediaHint();
+  applyBit();
+};
 Promise.all([
   fetch('/api/state').then(r => r.json()).catch(() => ({})),
   fetch('/api/notify').then(r => r.json()).catch(() => ({})),
@@ -84,14 +112,16 @@ Promise.all([
   const none = document.createElement('option'); none.value = ''; none.textContent = window.t('blankBit'); bs.append(none);
   BITS.forEach(bit => { const o = document.createElement('option'); o.value = bit.code; o.textContent = (bit.label || bit.kind) + ' — ' + Math.round(bit.price) + ' ₴'; bs.append(o); });
   bs.addEventListener('change', applyBit);
-  const d = (n.rules || []).find(r => r.id === 'default'); YT_MIN = (d && d.style && d.style.yt_min) || 0; OTHER_MIN = (d && d.style && d.style.other_media_min) || 0;
+  const d = (n.rules || []).find(r => r.id === 'default'); const st = (d && d.style) || {};
+  YT_MIN = st.yt_min || 0; OTHER_MIN = st.other_media_min || 0;
+  ['youtube', 'instagram', 'tiktok', 'twitch', 'reddit', 'x'].forEach(id => { MEDIA[id] = st['media_' + id] !== false; });
   const tts = s.tts || {};
   const vsel = $('voice'); const vrow = vsel.closest('.row');
   const voices = (s.voices || []).filter(v => !tts.allowed || tts.allowed.includes(v.id));
   voices.forEach(v => { const o = document.createElement('option'); o.value = v.id; o.textContent = v.label; vsel.append(o); });
   if (tts.voice) vsel.value = tts.voice;
   if (vrow && !tts.picks) vrow.style.display = 'none';
-  $('hint').textContent = window.t('mediaFrom').replace('%y%', YT_MIN).replace('%o%', OTHER_MIN);
+  updateMediaHint(); applyBit();
   window.mountLangSeg($('langseg')); window.applyI18n();
 });
 function applyJar() {
@@ -100,15 +130,16 @@ function applyJar() {
   if (j && j.mine === false) { el.textContent = window.t('thirdParty'); el.style.display = ''; }
   else el.style.display = 'none';
 }
-window.applyLang = function () { $('hint').textContent = window.t('mediaFrom').replace('%y%', YT_MIN).replace('%o%', OTHER_MIN);
+window.applyLang = function () { updateMediaHint();
   const b0 = $('bit') && $('bit').options[0]; if (b0) b0.textContent = window.t('blankBit'); renderCredits(); };
 function applyBit() {
   const bit = BITS.find(x => x.code === $('bit').value);
   ['amount', 'name', 'message'].forEach(id => {
     const el = $(id); el.disabled = !!bit; const r = el.closest('.row'); if (r) r.style.opacity = bit ? .45 : 1;
   });
-  const ytOk = !bit || Number(bit.price) >= YT_MIN;
-  const y = $('youtube'); y.disabled = !ytOk; const yr = y.closest('.row'); if (yr) yr.style.opacity = ytOk ? 1 : .45;
+  const ytOk = mediaOn('youtube') && (!bit || Number(bit.price) >= YT_MIN);
+  const mediaOk = ytOk || enabledOtherMedia().length > 0;
+  const y = $('youtube'); y.disabled = !mediaOk; const yr = y.closest('.row'); if (yr) yr.style.opacity = mediaOk ? 1 : .45;
   if (bit) $('amount').value = bit.price;
 }
 btn.addEventListener('click', async e => {

@@ -193,6 +193,13 @@ fn read_body(request: &mut tiny_http::Request) -> serde_json::Value {
     serde_json::from_str(&s).unwrap_or(serde_json::Value::Null)
 }
 
+fn media_type_enabled(cfg: &Config, provider: &str) -> bool {
+    cfg.notify.rules.iter()
+        .find(|r| r.id == "default")
+        .map(|r| r.style.media_enabled(provider))
+        .unwrap_or(true)
+}
+
 fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     let cfg = ctx.cfg();
@@ -220,6 +227,18 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     }
     let parsed_yt = youtube_id(&yt);
     let ytid = parsed_yt.clone().unwrap_or_default();
+    let youtube_link = !ytid.is_empty() || {
+        let lower = yt.to_ascii_lowercase();
+        lower.contains("youtube.com") || lower.contains("youtu.be")
+    };
+    if youtube_link && !media_type_enabled(&cfg, "youtube") {
+        return fail(request, "YouTube links are disabled");
+    }
+    if let Some(provider) = media_provider(&yt) {
+        if !media_type_enabled(&cfg, provider) {
+            return fail(request, "This media type is disabled");
+        }
+    }
     let other_media = if !yt.is_empty() && ytid.is_empty() && !yt.contains("list=") {
         other_media_url(&yt)
     } else { None };
@@ -679,6 +698,16 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
     let test_ytid = youtube_id(&test_yt).unwrap_or_default();
     let test_rule = v.get("ruleId").and_then(|x| x.as_str()).unwrap_or("").to_string();
     let test_media = v.get("mediaUrl").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    if !test_ytid.is_empty() && !media_type_enabled(&ctx.cfg(), "youtube") {
+        let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "YouTube links are disabled" })));
+        return;
+    }
+    if let Some(provider) = media_provider(&test_media) {
+        if !media_type_enabled(&ctx.cfg(), provider) {
+            let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "This media type is disabled" })));
+            return;
+        }
+    }
     let test_media = other_media_url(&test_media).map(|u| resolve_short_media(&u)).unwrap_or_default();
     let test_style = v.get("style").cloned().unwrap_or(serde_json::Value::Null);
     let message = v.get("message").and_then(|x| x.as_str()).filter(|s| !s.trim().is_empty())
@@ -777,6 +806,16 @@ fn youtube_post(ctx: &Ctx, mut request: tiny_http::Request) {
     let amount = v.get("amount").and_then(|x| x.as_f64()).unwrap_or(0.0);
     let force = v.get("force").and_then(|x| x.as_bool()).unwrap_or(false);
     let rule = v.get("ruleId").and_then(|x| x.as_str()).unwrap_or("");
+    if !id.is_empty() && !media_type_enabled(&ctx.cfg(), "youtube") {
+        let _ = request.respond(json_resp(200, json!({ "ok": false, "error": "YouTube links are disabled" })));
+        return;
+    }
+    if let Some(provider) = media_provider(&media) {
+        if !media_type_enabled(&ctx.cfg(), provider) {
+            let _ = request.respond(json_resp(200, json!({ "ok": false, "error": "This media type is disabled" })));
+            return;
+        }
+    }
     let media = if id.is_empty() {
         crate::model::other_media_url(&media).map(|u| {
             if x_status_id(&u).is_some() {
