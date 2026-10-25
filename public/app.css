@@ -38,6 +38,7 @@ select option{background-color:var(--field2);color:var(--fg)}
 .selopt{padding:6px 9px;border-radius:6px;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
 .selopt:hover{background:#282726}
 .selopt.on{background:var(--accent);color:var(--accent-ink)}
+html{background:var(--bg)}
 html,body{margin:0}
 body{
   background:var(--bg); color:var(--fg); font-family:var(--sans); font-size:14px; line-height:1.55;
@@ -361,8 +362,7 @@ body[data-page="auctionsettings"] .admin-main>h1,body[data-page="auctionsettings
 @media (max-width:700px){body .head{padding:10px;gap:8px;min-height:0;flex-wrap:wrap}body .head .brand{flex:1 0 100%}body .head .tools{flex:1 0 100%;gap:2px;justify-content:flex-start}}
 
 /* match the Alerts header window exactly */
-body .head{position:sticky;inset:auto;top:0;z-index:100;background:var(--card);backdrop-filter:none;box-shadow:none;border-bottom:1px solid var(--line)}
-body .head::after{content:"";position:absolute;top:auto;right:0;bottom:-1px;left:0;width:auto;height:2px;background:var(--line-strong);box-shadow:none}
+body .head{position:sticky;inset:auto;top:0;z-index:100;background:var(--bg);backdrop-filter:none;box-shadow:none;border-bottom:1px solid var(--line)}
 body .head .brand .logo{background:var(--admin-sunken)}
 body .head .brand .logo:hover{color:var(--admin-vermilion);border-color:var(--admin-vermilion);transform:rotate(-4deg)}
 body .head .seg button{background:var(--card2)}

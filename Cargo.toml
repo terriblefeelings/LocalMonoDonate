@@ -17,7 +17,7 @@ ureq = { version = "2", default-features = false, features = ["tls", "gzip"] }
 tungstenite = { version = "0.24", default-features = false, features = ["handshake", "url", "rustls-tls-webpki-roots"] }
 tao = "0.30"
 wry = "0.47"
-windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_SystemInformation", "Win32_System_Console", "Win32_System_LibraryLoader", "Win32_Graphics_Gdi", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_Media_Multimedia"] }
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_SystemInformation", "Win32_System_Console", "Win32_System_LibraryLoader", "Win32_Graphics_Gdi", "Win32_Graphics_Dwm", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_Media_Multimedia"] }
 
 [build-dependencies]
 winresource = "0.1"

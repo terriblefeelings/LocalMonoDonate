@@ -104,31 +104,39 @@ fn run_window() -> wry::Result<()> {
     use tao::dpi::LogicalSize;
     use tao::event::{Event, WindowEvent};
     use tao::event_loop::{ControlFlow, EventLoopBuilder};
-    use tao::window::{Icon, WindowBuilder};
+    use tao::window::{Icon, Theme, WindowBuilder};
     use wry::WebViewBuilder;
 
     let event_loop = EventLoopBuilder::<tray::TrayEvent>::with_user_event().build();
     let tray_proxy = event_loop.create_proxy();
     let icon = Icon::from_rgba(icon::rgba(false), icon::ICON_W, icon::ICON_H).ok();
+    let start_light = LIGHT_THEME.load(Ordering::Relaxed);
+    // e-ink paper / ink, so no white flash and the native frame matches the page
+    let bg = if start_light { (255u8, 252, 240, 255) } else { (16u8, 15, 15, 255) };
 
     let window = WindowBuilder::new()
         .with_title("LocalMonoDonate")
         .with_window_icon(icon)
         .with_inner_size(LogicalSize::new(1280.0, 860.0))
+        .with_theme(Some(if start_light { Theme::Light } else { Theme::Dark }))
+        .with_background_color(bg)
         .build(&event_loop)
         .expect("failed to build window");
+
+    paint_frame(&window, start_light);
 
     let data_dir = Paths::new().base.join("WebView2");
     let mut web_context = wry::WebContext::new(Some(data_dir));
     let _webview = WebViewBuilder::with_web_context(&mut web_context)
         .with_url("http://127.0.0.1:8787/setup")
+        .with_background_color(bg)
         // open every link / window.open in the user's default system browser (never inside WebView2)
         .with_new_window_req_handler(|url| { open_external(&url); false })
         .build(&window)?;
 
     let tray_ok = tray::start(tray_proxy);
 
-    let mut cur_light = LIGHT_THEME.load(Ordering::Relaxed);
+    let mut cur_light = start_light;
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::WaitUntil(Instant::now() + Duration::from_millis(500));
         match event {
@@ -144,6 +152,8 @@ fn run_window() -> wry::Result<()> {
                 let l = LIGHT_THEME.load(Ordering::Relaxed);
                 if l != cur_light {
                     cur_light = l;
+                    window.set_theme(Some(if l { Theme::Light } else { Theme::Dark }));
+                    paint_frame(&window, l);
                     if let Ok(ic) = Icon::from_rgba(icon::rgba(l), icon::ICON_W, icon::ICON_H) {
                         window.set_window_icon(Some(ic));
                     }
@@ -153,3 +163,36 @@ fn run_window() -> wry::Result<()> {
         }
     });
 }
+
+/// Paint the native title bar in the same e-ink tones as the page.
+#[cfg(windows)]
+fn paint_frame(window: &tao::window::Window, light: bool) {
+    use tao::platform::windows::WindowExtWindows;
+    use windows_sys::Win32::Graphics::Dwm::{
+        DwmSetWindowAttribute, DWMWA_BORDER_COLOR, DWMWA_CAPTION_COLOR, DWMWA_TEXT_COLOR,
+    };
+    // DWM wants COLORREF: 0x00BBGGRR
+    let (caption, text, border) = if light {
+        (0x00F0FCFFu32, 0x000F0F10u32, 0x00CED8DAu32) // #FFFCF0 / #100F0F / #DAD8CE
+    } else {
+        (0x000F0F10u32, 0x00E5F0F2u32, 0x00313334u32) // #100F0F / #F2F0E5 / #343331
+    };
+    unsafe {
+        let hwnd = window.hwnd();
+        for (attr, value) in [
+            (DWMWA_CAPTION_COLOR, caption),
+            (DWMWA_TEXT_COLOR, text),
+            (DWMWA_BORDER_COLOR, border),
+        ] {
+            DwmSetWindowAttribute(
+                hwnd as *mut core::ffi::c_void,
+                attr as u32,
+                &value as *const u32 as *mut core::ffi::c_void,
+                4,
+            );
+        }
+    }
+}
+
+#[cfg(not(windows))]
+fn paint_frame(_window: &tao::window::Window, _light: bool) {}
