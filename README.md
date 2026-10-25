@@ -129,9 +129,11 @@
 | `LocalMonoDonate.exe` | застосунок |
 | `WebView2Loader.dll` | хостинг WebView2 |
 | `MicrosoftEdgeWebview2Setup.exe` | тихе встановлення WebView2, якщо його немає |
-| `tailscale-setup.msi` | публічна сторінка донатів одним кліком |
 | `tts-engine\` | портативний Python + голоси Google/Azure, модель StyleTTS2-UA і yt-dlp для Instagram |
 | `config.example.json` | лише приклад структури — застосунок його не читає |
+
+Tailscale в архів не входить: інсталятор завантажується під час встановлення, а клієнт перевіряється й
+оновлюється під час кожного запуску. Для офлайн-машини зберіть архів із `-WithMsi`.
 
 Node, Python, Rust та інсталятор не потрібні. Налаштування й токени створюються під час першого запуску
 в `%APPDATA%\LocalMonoDonate\` — ніколи в папці застосунку.
@@ -224,7 +226,7 @@ Tunnel або власний реверс-проксі з HTTPS на `publicPort
 
 Посилання `*.localhost` резолвляться лише на ПК стрімера — OBS їх бачить, глядачі ні. Tailscale Funnel
 дає безкоштовну публічну HTTPS-адресу без домену, пробросу портів і проблем із CGNAT. Застосунок керує
-Tailscale CLI: один клік на встановлення (MSI у комплекті), один вхід — і він тримає funnel на
+Tailscale CLI: один клік на встановлення (інсталятор завантажується автоматично), один вхід — і він тримає funnel на
 публічному порту. Досвідчені користувачі можуть замінити це власним реверс-проксі та `publicBase`/`publicPort`,
 але UI й посилання розраховані саме на Tailscale.
 
@@ -292,15 +294,17 @@ Tailscale CLI: один клік на встановлення (MSI у комп�
 
 ```powershell
 cargo build --release
-# чиста збірка для роздачі (exe + WebView2 + tailscale msi + tts-engine; без секретів і конфігурації)
+# чиста збірка для роздачі (exe + WebView2 + tts-engine; без секретів і конфігурації)
 powershell -File pack.ps1 -WithTts -TtsEngine <шлях-до-lite-tts-engine>
+# для машини без інтернету додайте -WithMsi (вкладе інсталятор Tailscale)
 # результат: dist\MONOBANK-lite-<version>.zip
 ```
 
 `include_str!` вбудовує всі файли з `public/` у exe — **після редагування HTML/JS/CSS потрібна перезбірка**.
 
-Портативний `tts-engine` (venv2 + ffmpeg + serve.py + модель/голоси, ~560 МБ) і Tailscale MSI не зберігаються в git —
-вони є в релізному архіві.
+Портативний `tts-engine` (venv2 + ffmpeg + serve.py + модель/голоси, ~560 МБ) не зберігається в git —
+він є в релізному архіві. `tailscale-setup.msi` теж у git відсутній: застосунок завантажує актуальний
+інсталятор сам, тому файл потрібен лише для `-WithMsi`.
 
 ### Тести
 

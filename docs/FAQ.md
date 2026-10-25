@@ -486,8 +486,9 @@ node _deeptest.mjs        # потрібен playwright-core
 ```powershell
 powershell -File pack.ps1 -WithTts -TtsEngine <шлях-до-lite-tts-engine>
 ```
-Створює `dist\MONOBANK-lite-<version>.zip`: exe, WebView2 loader/інсталятор, Tailscale MSI, TTS-рушій
-і порожній `config.example.json`; без конфігурації, секретів і медіа.
+Створює `dist\MONOBANK-lite-<version>.zip`: exe, WebView2 loader/інсталятор, TTS-рушій
+і порожній `config.example.json`; без конфігурації, секретів і медіа. Інсталятор Tailscale
+додається лише з `-WithMsi` — інакше застосунок завантажує актуальну версію під час встановлення.
 
 ---
 
