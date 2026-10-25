@@ -9,8 +9,8 @@
   body{background-size:100% 100%;background-position:center;background-attachment:scroll;background-repeat:no-repeat;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
   body:not(.hasbg){background-image:none!important}
   .wrap{max-width:660px;width:100%}
-  .deck{display:grid;grid-template-columns:repeat(5,1fr);gap:14px 12px;background-size:100% 100%;background-position:center;border-radius:var(--r-sm)}
-  #win{background-size:100% 100%;background-position:center}
+  .deck{display:grid;grid-template-columns:repeat(5,1fr);gap:14px 12px;background-size:100% 100%;background-position:center;background-repeat:no-repeat;border-radius:var(--r-sm)}
+  #win{background-size:100% 100%;background-position:center;background-repeat:no-repeat}
   .cell{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit}
   .cell .sq{width:100%;aspect-ratio:1/1;border:1px solid var(--line);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
     font-size:22px;background-size:cover;background-position:center;overflow:hidden;transition:.12s}
@@ -34,6 +34,7 @@
 .credits{max-width:560px;margin:16px auto 28px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
 .credits a{color:inherit;text-decoration:underline}
 .credits b{font-weight:600}
+  body.hasbg #sub,body.hasbg .credits{background:rgba(0,0,0,.46);border-radius:4px;padding:5px 8px}
 </style>
 </head>
 <body>
@@ -65,9 +66,21 @@ try { $('nick').value = localStorage.getItem('lmd:nick') || ''; } catch (e) {}
 let BITS = [], JAR = '', GRID = 5;
 const fmt = n => Math.round(Number(n) || 0).toLocaleString('uk-UA') + ' \u20B4';
 const icon = k => k === 'video' ? '🎬' : k === 'sound' ? '🔊' : '✨';
+function fitDeck() {
+  const wrap = document.querySelector('.wrap');
+  if (!wrap) return;
+  wrap.style.maxWidth = '660px';
+  let guard = 0;
+  while (document.body.scrollHeight > window.innerHeight && guard++ < 60) {
+    const width = wrap.getBoundingClientRect().width;
+    if (width <= 300) break;
+    wrap.style.maxWidth = Math.max(300, Math.floor(width * 0.98)) + 'px';
+  }
+}
+window.addEventListener('resize', fitDeck);
 function render() {
   const g = $('deck'); g.innerHTML = '';
-  const bits = BITS.slice().sort((a, b) => (Number(a.slot) || 0) - (Number(b.slot) || 0));
+  const bits = BITS.filter(b => Number(b.slot) < GRID * GRID).sort((a, b) => (Number(a.slot) || 0) - (Number(b.slot) || 0));
   const cols = Math.max(1, Math.min(GRID, bits.length || 1));
   g.style.gridTemplateColumns = 'repeat(' + cols + ',1fr)';
   for (const bit of bits) {
@@ -91,6 +104,7 @@ function render() {
     g.append(cell);
   }
   if (!bits.length) $('sub').textContent = window.t('empty');
+  fitDeck();
 }
 let pvEl = null;
 function openPv(bit) {
@@ -145,7 +159,7 @@ function renderCredits() {
     : 'Nothing here was made by <b>terriblefeelings</b> — the code was written by opencode models. The marathon timer\'s original code is by <a href="https://github.com/stalexteam" target="_blank" rel="noopener">stalexteam</a>, remade by opencode models.';
 }
 renderCredits();
-window.applyLang = renderCredits;
+window.applyLang = function () { renderCredits(); fitDeck(); };
 </script>
 </body>
 </html>

@@ -17,6 +17,7 @@
 .paynote{margin:10px 2px 0;text-align:center;font-size:12.5px;line-height:1.55;color:var(--muted)}
 .paynote a{font-weight:700;color:var(--fg);text-decoration:underline}
 .paynote[hidden]{display:none}
+body.hasbg .note{background:rgba(0,0,0,.46);border-radius:4px;padding:5px 8px}
 .credits a{color:inherit;text-decoration:underline}
 .credits b{font-weight:600}
 </style>
@@ -159,7 +160,8 @@ btn.addEventListener('click', async e => {
 });
 fetch('/api/config').then(r => r.json()).then(c => {
   if (c && c.bg) {
-    document.body.style.backgroundImage = 'url("' + c.bg + '")';
+    document.body.classList.toggle('hasbg', !!c.bg);
+    if (c.bg) document.body.style.backgroundImage = 'url("' + c.bg + '")';
     const card = document.querySelector('.panel');
     if (card) card.style.background = 'color-mix(in srgb,var(--card) 95%,transparent)';
   }

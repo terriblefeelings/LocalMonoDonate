@@ -22,8 +22,8 @@
   .bitpv{width:100%;max-width:360px;height:150px;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--card2)}
   .bitpv img,.bitpv video{height:100%;width:auto;max-width:none;display:block}
   .bitpv .ph{font-size:12px;color:var(--faint);padding:0 8px;text-align:center}
-  #deck{background-size:100% 100%;background-position:center;border-radius:var(--r-sm)}
-  #win{max-width:660px;margin:0 auto;background-color:color-mix(in srgb,var(--card) calc(var(--win-alpha,1) * 100%),transparent);background-size:100% 100%;background-position:center}
+  #deck{background-size:100% 100%;background-position:center;background-repeat:no-repeat;border-radius:var(--r-sm)}
+  #win{max-width:660px;margin:0 auto;background-color:color-mix(in srgb,var(--card) calc(var(--win-alpha,1) * 100%),transparent);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
 </style>
 </head>
 <body>
@@ -33,7 +33,7 @@
 <div class="wrap">
   <div class="status" id="status"></div>
   <div class="panel" id="win">
-    <div class="sec"><span class="n">01</span><span class="h" data-i18n="deck">Bits deck</span><span class="sp"></span><span id="gridbtns" style="display:inline-flex;gap:6px"></span><span id="bgbtns"></span></div>
+    <div class="sec"><span class="h" data-i18n="deck">Bits deck</span><span class="sp"></span><span id="gridbtns" style="display:inline-flex;gap:6px"></span><span id="bgbtns"></span></div>
     <div class="body"><div class="bgrid" id="deck"></div></div>
   </div>
 
