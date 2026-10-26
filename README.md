@@ -417,6 +417,12 @@ docs/screenshots/      зображення для README
 
 Не повʼязано з Monobank, Twitch, StreamElements чи Tailscale.
 
+## Участь
+
+Помилки та пропозиції — через [issues](https://github.com/terriblefeelings/LocalMonoDonate/issues/new/choose).
+Правила внеску — [CONTRIBUTING.md](CONTRIBUTING.md), політика безпеки — [SECURITY.md](SECURITY.md),
+кодекс поведінки — [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
 ## Ліцензія
 
 Поширюється за **MIT License** — див. [LICENSE](LICENSE).
