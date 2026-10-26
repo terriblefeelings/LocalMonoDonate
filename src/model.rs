@@ -8,6 +8,9 @@ use rand::Rng;
 /// Set by the UI theme toggle; drives the taskbar/window icon colour.
 pub static LIGHT_THEME: AtomicBool = AtomicBool::new(false);
 
+/// ports this instance actually listens on (used by the setup page status)
+pub static BOUND_PORTS: std::sync::Mutex<Vec<u16>> = std::sync::Mutex::new(Vec::new());
+
 /* ---------------------------------------------------------------- time */
 
 pub fn now_ms() -> i64 {
@@ -71,9 +74,9 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) {
 /* ---------------------------------------------------------------- config */
 
 fn d_host() -> String { "127.0.0.1".into() }
-fn d_port() -> u16 { 8787 }
-fn d_aport() -> u16 { 8788 }
-fn d_public_port() -> u16 { 8080 }   // public (tunnel-facing) server; 0 = off
+fn d_port() -> u16 { 27183 }
+fn d_aport() -> u16 { 27184 }
+fn d_public_port() -> u16 { 27185 }   // public (tunnel-facing) server; 0 = off
 fn d_min() -> f64 { 10.0 }
 fn d_max() -> f64 { 29999.0 }
 fn d_prefix() -> String { "tf".into() }

@@ -34,7 +34,12 @@ fn serve_oauth_shim(main_port: u16) {
     };
     log(&format!("twitch oauth shim 127.0.0.1:{} -> {}", crate::twitch::OAUTH_PORT, main_port));
     for request in server.incoming_requests() {
-        let target = format!("http://127.0.0.1:{}{}", main_port, request.url());
+        let url = request.url().to_string();
+        if !url.starts_with("/twitch/callback") {
+            let _ = request.respond(tiny_http::Response::empty(404));
+            continue;
+        }
+        let target = format!("http://127.0.0.1:{}{}", main_port, url);
         let header = tiny_http::Header::from_bytes(&b"Location"[..], target.as_bytes()).unwrap();
         let _ = request.respond(tiny_http::Response::empty(302).with_header(header));
     }
@@ -90,34 +95,47 @@ fn main() {
     let mut cfg = load_config(&base);
     let headless = std::env::args().any(|a| a == "--headless");
 
-    // Every listener must land on a free port: an unrelated app holding 8787/8788
-    // would otherwise take the pages and links down without any visible error.
-    // 8787 belongs to the Twitch callback shim and is never handed out automatically.
+    // Dedicated, uncommon ports per listener. 8787 stays reserved for the Twitch
+    // callback; legacy defaults are migrated once so links stop shifting.
     let oauth = crate::twitch::OAUTH_PORT;
+    const LEGACY_APP: [u16; 3] = [8787, 8789, 8080];
+    const LEGACY_AUC: [u16; 2] = [8788, 8790];
+    const LEGACY_PUB: [u16; 1] = [8080];
     let mut moved = false;
-    if !port_free(cfg.port) {
+
+    let app_target = if LEGACY_APP.contains(&cfg.port) || cfg.port == oauth { 27183 } else { cfg.port };
+    if app_target != cfg.port || !port_free(app_target) {
         let old = cfg.port;
-        cfg.port = pick_free_port(old, &[cfg.auction_port, oauth]);
-        log(&format!("port {} is busy, using {}", old, cfg.port));
+        cfg.port = pick_free_port(app_target, &[cfg.auction_port, oauth]);
+        log(&format!("port {} is reserved or busy, using {}", old, cfg.port));
         moved = true;
     }
-    if cfg.auction_port != 0
-        && (cfg.auction_port == cfg.port || cfg.auction_port == oauth || !port_free(cfg.auction_port))
-    {
-        let old = cfg.auction_port;
-        cfg.auction_port = pick_free_port(old, &[cfg.port, oauth]);
-        log(&format!("auction port {} is busy, using {}", old, cfg.auction_port));
-        moved = true;
+
+    if cfg.auction_port != 0 {
+        let target = if LEGACY_AUC.contains(&cfg.auction_port) || cfg.auction_port == oauth {
+            27184
+        } else {
+            cfg.auction_port
+        };
+        if target != cfg.auction_port || target == cfg.port || !port_free(target) {
+            let old = cfg.auction_port;
+            cfg.auction_port = pick_free_port(target, &[cfg.port, oauth]);
+            log(&format!("auction port {} is reserved or busy, using {}", old, cfg.auction_port));
+            moved = true;
+        }
     }
+
     if cfg.public_port != 0 {
-        let busy = cfg.public_port == cfg.port
-            || cfg.public_port == cfg.auction_port
-            || cfg.public_port == oauth
-            || !port_free(cfg.public_port);
+        let target = if LEGACY_PUB.contains(&cfg.public_port) { 27185 } else { cfg.public_port };
+        let busy = target != cfg.public_port
+            || target == cfg.port
+            || target == cfg.auction_port
+            || target == oauth
+            || !port_free(target);
         if busy {
             let old = cfg.public_port;
             let skip = [cfg.port, cfg.auction_port, oauth];
-            cfg.public_port = pick_free_port(old, &skip);
+            cfg.public_port = pick_free_port(target, &skip);
             log(&format!("public port {} is busy, using {}", old, cfg.public_port));
             moved = true;
         }
@@ -132,6 +150,7 @@ fn main() {
     }
 
     let main_port = cfg.port;
+    *model::BOUND_PORTS.lock().unwrap() = vec![cfg.port, cfg.auction_port, cfg.public_port, crate::twitch::OAUTH_PORT];
     let auc_port = cfg.auction_port;
     let public_port = cfg.public_port;
     let ctx = app::Ctx::new(cfg, base.clone());

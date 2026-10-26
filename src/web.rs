@@ -1628,6 +1628,57 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
+    if path == "/api/ports" {
+        if method == Method::Get {
+            let (app, auc, pubp) = { let c = ctx.cfg(); (c.port, c.auction_port, c.public_port) };
+            let body = json!({
+                "app": { "port": app, "free": crate::model::BOUND_PORTS.lock().unwrap().contains(&app) || crate::model::port_free(app) },
+                "auction": { "port": auc, "free": auc == 0 || crate::model::BOUND_PORTS.lock().unwrap().contains(&auc) || crate::model::port_free(auc) },
+                "public": { "port": pubp, "free": pubp == 0 || crate::model::BOUND_PORTS.lock().unwrap().contains(&pubp) || crate::model::port_free(pubp) },
+                "oauth": crate::twitch::OAUTH_PORT
+            });
+            let _ = request.respond(json_resp(200, body));
+        } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
+    if path == "/api/ports/pick" {
+        if method == Method::Post {
+            let v = read_body(&mut request);
+            let which = v.get("which").and_then(|x| x.as_str()).unwrap_or("");
+            let mut cfg = ctx.cfg();
+            let skip = [cfg.port, cfg.auction_port, cfg.public_port, crate::twitch::OAUTH_PORT];
+            let default = match which {
+                "app" => 27183u16,
+                "auction" => 27184u16,
+                "public" => 27185u16,
+                _ => { let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "unknown listener" }))); return; }
+            };
+            let port = crate::model::pick_free_port(default, &skip);
+            match which {
+                "app" => cfg.port = port,
+                "auction" => cfg.auction_port = port,
+                _ => cfg.public_port = port,
+            }
+            save_config(&ctx.paths, &cfg);
+            log(&format!("ports: {} moved to {}", which, port));
+            let _ = request.respond(json_resp(200, json!({ "ok": true, "port": port, "restart": true })));
+        } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
+    if path == "/api/app/restart" {
+        if method == Method::Post {
+            let _ = request.respond(json_resp(200, json!({ "ok": true })));
+            log("restart requested from the setup page");
+            std::thread::spawn(|| {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                if let Ok(exe) = std::env::current_exe() {
+                    let _ = std::process::Command::new(exe).spawn();
+                }
+                std::process::exit(0);
+            });
+        } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
     if method == Method::Get && path == "/api/poll" { poll_events(&ctx, request, &full); return; }
     if path == "/api/qr" {
         if method == Method::Get { qr_get(&ctx, request); }
