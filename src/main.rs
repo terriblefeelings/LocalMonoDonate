@@ -92,26 +92,31 @@ fn main() {
 
     // Every listener must land on a free port: an unrelated app holding 8787/8788
     // would otherwise take the pages and links down without any visible error.
+    // 8787 belongs to the Twitch callback shim and is never handed out automatically.
+    let oauth = crate::twitch::OAUTH_PORT;
     let mut moved = false;
     if !port_free(cfg.port) {
         let old = cfg.port;
-        cfg.port = pick_free_port(old, &[cfg.auction_port]);
+        cfg.port = pick_free_port(old, &[cfg.auction_port, oauth]);
         log(&format!("port {} is busy, using {}", old, cfg.port));
         moved = true;
     }
-    if cfg.auction_port != 0 && (cfg.auction_port == cfg.port || !port_free(cfg.auction_port)) {
+    if cfg.auction_port != 0
+        && (cfg.auction_port == cfg.port || cfg.auction_port == oauth || !port_free(cfg.auction_port))
+    {
         let old = cfg.auction_port;
-        cfg.auction_port = pick_free_port(old, &[cfg.port]);
+        cfg.auction_port = pick_free_port(old, &[cfg.port, oauth]);
         log(&format!("auction port {} is busy, using {}", old, cfg.auction_port));
         moved = true;
     }
     if cfg.public_port != 0 {
         let busy = cfg.public_port == cfg.port
             || cfg.public_port == cfg.auction_port
+            || cfg.public_port == oauth
             || !port_free(cfg.public_port);
         if busy {
             let old = cfg.public_port;
-            let skip = [cfg.port, cfg.auction_port];
+            let skip = [cfg.port, cfg.auction_port, oauth];
             cfg.public_port = pick_free_port(old, &skip);
             log(&format!("public port {} is busy, using {}", old, cfg.public_port));
             moved = true;
@@ -165,7 +170,7 @@ fn main() {
     }
 
     std::thread::sleep(std::time::Duration::from_millis(500));
-    if let Err(e) = run_window() {
+    if let Err(e) = run_window(main_port) {
         log(&format!("window error: {}", e));
         // WebView2 runtime missing => run the bundled evergreen bootstrapper next to the exe
         if let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.to_path_buf())) {
@@ -186,7 +191,7 @@ fn open_external(url: &str) {
     unsafe { ShellExecuteW(std::ptr::null_mut(), op.as_ptr(), file.as_ptr(), std::ptr::null(), std::ptr::null(), 1); }
 }
 
-fn run_window() -> wry::Result<()> {
+fn run_window(main_port: u16) -> wry::Result<()> {
     use std::sync::atomic::Ordering;
     use std::time::{Duration, Instant};
     use tao::dpi::LogicalSize;
@@ -216,7 +221,7 @@ fn run_window() -> wry::Result<()> {
     let data_dir = Paths::new().base.join("WebView2");
     let mut web_context = wry::WebContext::new(Some(data_dir));
     let _webview = WebViewBuilder::with_web_context(&mut web_context)
-        .with_url("http://127.0.0.1:8787/setup")
+        .with_url(&format!("http://127.0.0.1:{}/setup", main_port))
         .with_background_color(bg)
         // open every link / window.open in the user's default system browser (never inside WebView2)
         .with_new_window_req_handler(|url| { open_external(&url); false })

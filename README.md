@@ -361,7 +361,7 @@ docs/screenshots/      зображення для README
 | Помилка WebView2 під час старту | встановіть WebView2; застосунок запускає вбудований інсталятор тихо |
 | Порт зайнятий | застосунок сам бере наступний вільний для `port`, `auctionPort` і `publicPort` та зберігає його в `config.json` |
 | Алерти або YouTube не грають в OBS | спершу запустіть LocalMonoDonate, потім OBS; якщо OBS уже відкритий, застосунок покаже попередження, а джерело доведеться оновити |
-| Twitch не завершує авторизацію | у застосунку Twitch має бути вказано `http://localhost:8787/twitch/callback`; цей порт фіксований, навіть коли решта застосунку працює на іншому |
+| Twitch не завершує авторизацію | у застосунку Twitch має бути вказано `http://localhost:8787/twitch/callback`; цей порт фіксований, навіть коли решта застосунку працює на іншому; автоматичний вибір портів ніколи не займає 8787 |
 | `Host header is specified and is not an IP address or localhost` | Funnel дивиться на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 8080` |
 
 Логи: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.
