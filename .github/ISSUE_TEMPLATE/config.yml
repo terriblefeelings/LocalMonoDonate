@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Часті питання та налаштування
+    url: https://github.com/terriblefeelings/LocalMonoDonate/blob/main/docs/FAQ.md
+    about: Покрокові відповіді щодо встановлення, Tailscale, алертів, таймера й аукціону
+  - name: Приватний звіт про вразливість
+    url: https://github.com/terriblefeelings/LocalMonoDonate/security/advisories/new
+    about: Проблеми безпеки не обговорюють у публічних issues

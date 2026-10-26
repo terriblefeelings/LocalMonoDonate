@@ -1,0 +1,51 @@
+name: Пропозиція
+description: Ідея функції або покращення
+title: "[Ідея] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Опишіть задачу, а не готове рішення: так простіше знайти найпростіший спосіб її закрити.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Яку задачу це вирішує
+      description: Що зараз незручно або неможливо зробити
+      placeholder: Під час стріму доводиться вручну ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Як це могло б працювати
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Що ви пробували або розглядали
+      description: Обхідні шляхи, інші застосунки, ручні дії
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Ділянка застосунку
+      options:
+        - Інтерфейс і налаштування
+        - Сторінка донатів
+        - Алерти й оверлеї
+        - Звукові сповіщення
+        - QR-віджети
+        - Таймер марафону
+        - Аукціон
+        - Tailscale або Funnel
+        - Twitch
+        - StreamElements
+        - Озвучення (TTS)
+        - Інше
+    validations:
+      required: true

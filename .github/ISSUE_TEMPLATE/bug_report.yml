@@ -1,0 +1,90 @@
+name: Повідомлення про помилку
+description: Щось працює не так, як описано в README або FAQ
+title: "[Помилка] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Дякую за звіт. Не додавайте токени, ключі доступу й приватні дані — для діагностики достатньо логу без них.
+
+  - type: input
+    id: version
+    attributes:
+      label: Версія застосунку
+      description: Показана в заголовку вікна або в Setup
+      placeholder: 0.2.16
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Версія Windows
+      placeholder: Windows 11 24H2 (26100)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Що саме не працює
+      options:
+        - Інтерфейс і налаштування
+        - Сторінка донатів
+        - Алерти й оверлеї
+        - Звукові сповіщення
+        - QR-віджети
+        - Таймер марафону
+        - Аукціон
+        - Tailscale або Funnel
+        - Twitch
+        - StreamElements
+        - Озвучення (TTS)
+        - Інше
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Кроки відтворення
+      description: Що ви натиснули або відкрили, у якій послідовності
+      placeholder: |
+        1. Відкрив Setup → ...
+        2. Натиснув ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Очікуваний результат
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Фактичний результат
+      description: Що сталося насправді; за можливості — скріншот
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Лог
+      description: "`%APPDATA%\\LocalMonoDonate\\LocalMonoDonate.log`, останні 30–50 рядків. Видаліть токени й ключі."
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Перед надсиланням
+      options:
+        - label: Перевірив останню версію застосунку
+          required: true
+        - label: У звіті немає токенів, ключів і приватних даних
+          required: true
