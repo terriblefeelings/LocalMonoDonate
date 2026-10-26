@@ -19,12 +19,73 @@ fn ts_cleanup() {
     if std::env::var_os("LMD_NO_TAILSCALE").is_none() { tailscale::reset_funnel(); }
 }
 
+/// OBS keeps its browser sources loaded until the scene is refreshed, so a source
+/// that opened before the app never recovers on its own.
+#[cfg(windows)]
+fn obs_running() -> bool {
+    use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
+    use windows_sys::Win32::System::Diagnostics::ToolHelp::{
+        CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
+    };
+    unsafe {
+        let snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if snap == INVALID_HANDLE_VALUE { return false; }
+        let mut entry: PROCESSENTRY32W = std::mem::zeroed();
+        entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
+        let mut more = Process32FirstW(snap, &mut entry) != 0;
+        let mut found = false;
+        while more {
+            let end = entry.szExeFile.iter().position(|&c| c == 0).unwrap_or(entry.szExeFile.len());
+            let name = String::from_utf16_lossy(&entry.szExeFile[..end]).to_ascii_lowercase();
+            if name == "obs64.exe" || name == "obs32.exe" { found = true; break; }
+            more = Process32NextW(snap, &mut entry) != 0;
+        }
+        CloseHandle(snap);
+        found
+    }
+}
+
+#[cfg(not(windows))]
+fn obs_running() -> bool { false }
+
+#[cfg(windows)]
+fn warn_obs_start_order() {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        MessageBoxW, MB_ICONWARNING, MB_OK, MB_SETFOREGROUND, MB_TOPMOST,
+    };
+    let text: Vec<u16> = "LocalMonoDonate потрібно запускати до OBS.\n\nStart LocalMonoDonate before OBS.\0"
+        .encode_utf16().collect();
+    let caption: Vec<u16> = "LocalMonoDonate\0".encode_utf16().collect();
+    unsafe {
+        MessageBoxW(std::ptr::null_mut(), text.as_ptr(), caption.as_ptr(),
+            MB_OK | MB_ICONWARNING | MB_TOPMOST | MB_SETFOREGROUND);
+    }
+}
+
+#[cfg(not(windows))]
+fn warn_obs_start_order() {}
+
 fn main() {
     let base = Paths::new();
     init_logging(&base);
     let mut cfg = load_config(&base);
-    // the configured public port may already be taken (another app, a second copy, a dev
-    // server). Pick the next free one, persist it and let Tailscale Funnel follow.
+    let headless = std::env::args().any(|a| a == "--headless");
+
+    // Every listener must land on a free port: an unrelated app holding 8787/8788
+    // would otherwise take the pages and links down without any visible error.
+    let mut moved = false;
+    if !port_free(cfg.port) {
+        let old = cfg.port;
+        cfg.port = pick_free_port(old, &[cfg.auction_port]);
+        log(&format!("port {} is busy, using {}", old, cfg.port));
+        moved = true;
+    }
+    if cfg.auction_port != 0 && (cfg.auction_port == cfg.port || !port_free(cfg.auction_port)) {
+        let old = cfg.auction_port;
+        cfg.auction_port = pick_free_port(old, &[cfg.port]);
+        log(&format!("auction port {} is busy, using {}", old, cfg.auction_port));
+        moved = true;
+    }
     if cfg.public_port != 0 {
         let busy = cfg.public_port == cfg.port
             || cfg.public_port == cfg.auction_port
@@ -33,13 +94,18 @@ fn main() {
             let old = cfg.public_port;
             let skip = [cfg.port, cfg.auction_port];
             cfg.public_port = pick_free_port(old, &skip);
-            save_config(&base, &cfg);
             log(&format!("public port {} is busy, using {}", old, cfg.public_port));
+            moved = true;
         }
     }
-    let headless = std::env::args().any(|a| a == "--headless");
+    if moved { save_config(&base, &cfg); }
 
     log("LocalMonoDonate starting");
+    if !headless && obs_running() {
+        // OBS caches browser sources, so the app has to be up before OBS loads them
+        log("OBS is already running: showing the start-order warning");
+        std::thread::spawn(warn_obs_start_order);
+    }
 
     let main_port = cfg.port;
     let auc_port = cfg.auction_port;

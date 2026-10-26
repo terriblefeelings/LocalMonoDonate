@@ -359,7 +359,8 @@ docs/screenshots/      зображення для README
 | Немає тіпів у StreamElements | увімкніть перемикач у *Links*, натисніть *Test connection*, перевірте журнал |
 | Немає голосу | немає TTS-рушія або Google недоступний; для Azure потрібні ключ і регіон |
 | Помилка WebView2 під час старту | встановіть WebView2; застосунок запускає вбудований інсталятор тихо |
-| Порт зайнятий | `publicPort` застосунок вибирає сам (наступний вільний і зберігає в `config.json`); `port`/`auctionPort` змініть вручну |
+| Порт зайнятий | застосунок сам бере наступний вільний для `port`, `auctionPort` і `publicPort` та зберігає його в `config.json` |
+| Алерти або YouTube не грають в OBS | спершу запустіть LocalMonoDonate, потім OBS; якщо OBS уже відкритий, застосунок покаже попередження, а джерело доведеться оновити |
 | `Host header is specified and is not an IP address or localhost` | Funnel дивиться на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 8080` |
 
 Логи: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.
