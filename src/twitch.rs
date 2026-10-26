@@ -13,7 +13,11 @@ const API_BASE: &str = "https://api.twitch.tv/helix";
 const WS_URL: &str = "wss://eventsub.wss.twitch.tv/ws";
 const SCOPES: &str = "channel:read:subscriptions channel:read:redemptions channel:manage:redemptions";
 
-pub fn redirect_uri(port: u16) -> String { format!("http://localhost:{}/twitch/callback", port) }
+/// Twitch matches the redirect URI exactly against the app registration, so the
+/// callback keeps this fixed port even when the main listener had to move.
+pub const OAUTH_PORT: u16 = 8787;
+
+pub fn redirect_uri() -> String { format!("http://localhost:{}/twitch/callback", OAUTH_PORT) }
 
 fn urlencode(s: &str) -> String {
     let mut out = String::new();
@@ -41,7 +45,7 @@ pub fn auth_url(port: u16) -> String {
     let state: String = rand::thread_rng().sample_iter(&Alphanumeric).take(24).map(|c| (c as char).to_ascii_lowercase()).collect();
     *state_cell().lock().unwrap() = state.clone();
     format!("{}/oauth2/authorize?response_type=code&client_id={}&redirect_uri={}&scope={}&state={}",
-        ID_BASE, s.client_id, urlencode(&redirect_uri(port)), urlencode(SCOPES), state)
+        ID_BASE, s.client_id, urlencode(&redirect_uri()), urlencode(SCOPES), state)
 }
 pub fn check_state(s: &str) -> bool { let cur = state_cell().lock().unwrap().clone(); !cur.is_empty() && cur == s }
 
@@ -111,7 +115,7 @@ pub fn exchange_code_at(port: u16, code: &str) -> Result<TwitchSecrets, String> 
     if s.client_secret.is_empty() { return Err("client secret not set".into()); }
     if s.client_id.is_empty() { return Err("client id not set".into()); }
     let body = format!("client_id={}&client_secret={}&code={}&grant_type=authorization_code&redirect_uri={}",
-        urlencode(&s.client_id), urlencode(&s.client_secret), urlencode(code), urlencode(&redirect_uri(port)));
+        urlencode(&s.client_id), urlencode(&s.client_secret), urlencode(code), urlencode(&redirect_uri()));
     let v = post_form(&format!("{}/oauth2/token", ID_BASE), &body)?;
     s.access_token = v["access_token"].as_str().unwrap_or("").to_string();
     s.refresh_token = v["refresh_token"].as_str().unwrap_or("").to_string();

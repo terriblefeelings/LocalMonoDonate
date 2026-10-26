@@ -1,4 +1,4 @@
-﻿use crate::app::Ctx;
+use crate::app::Ctx;
 use crate::model::*;
 use crate::mono;
 use serde_json::json;
@@ -1115,7 +1115,7 @@ fn twitch_json(_ctx: &Ctx, port: u16) -> serde_json::Value {
         "hasSecret": !s.client_secret.is_empty(), "authorized": !s.access_token.is_empty(),
         "connected": crate::twitch::is_connected(port),
         "login": s.login, "broadcasterId": s.broadcaster_id,
-        "redirect": crate::twitch::redirect_uri(port)
+        "redirect": crate::twitch::redirect_uri()
     })
 }
 

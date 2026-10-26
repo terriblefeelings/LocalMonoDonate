@@ -21,6 +21,25 @@ fn ts_cleanup() {
 
 /// OBS keeps its browser sources loaded until the scene is refreshed, so a source
 /// that opened before the app never recovers on its own.
+/// Twitch redirects the browser to a fixed loopback port; when the app itself had to
+/// move, forward that one request so the registered redirect URI keeps working.
+fn serve_oauth_shim(main_port: u16) {
+    let addr = ("127.0.0.1", crate::twitch::OAUTH_PORT);
+    let server = match tiny_http::Server::http(addr) {
+        Ok(s) => s,
+        Err(e) => {
+            log(&format!("twitch oauth port {} unavailable: {}", crate::twitch::OAUTH_PORT, e));
+            return;
+        }
+    };
+    log(&format!("twitch oauth shim 127.0.0.1:{} -> {}", crate::twitch::OAUTH_PORT, main_port));
+    for request in server.incoming_requests() {
+        let target = format!("http://127.0.0.1:{}{}", main_port, request.url());
+        let header = tiny_http::Header::from_bytes(&b"Location"[..], target.as_bytes()).unwrap();
+        let _ = request.respond(tiny_http::Response::empty(302).with_header(header));
+    }
+}
+
 #[cfg(windows)]
 fn obs_running() -> bool {
     use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
@@ -137,6 +156,9 @@ fn main() {
     }
     if !headless && std::env::var_os("LMD_NO_UPDATE").is_none() { web::start_update_check(); }
     { let c = ctx.clone(); std::thread::spawn(move || web::serve(c)); }
+    if main_port != crate::twitch::OAUTH_PORT {
+        std::thread::spawn(move || serve_oauth_shim(main_port));
+    }
 
     if headless {
         loop { std::thread::sleep(std::time::Duration::from_secs(3600)); }
