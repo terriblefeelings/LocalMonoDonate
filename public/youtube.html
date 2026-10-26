@@ -166,20 +166,31 @@ async function play(d) {
 }
 let lastId = 0, firstPoll = true;
 async function tick() {
+  // same watchdog as the alert overlay: never let one dead request stop polling
+  let d = null;
+  const ctrl = new AbortController();
+  const kill = setTimeout(() => ctrl.abort(), 3000);
   try {
-    const d = await (await fetch('/api/poll?since=' + lastId)).json();
-    if (typeof d.last === 'number') lastId = d.last;
-    if (firstPoll) { firstPoll = false; setTimeout(tick, 800); return; }
-    const yts = (d.events || []).map(raw => { try { return JSON.parse(raw); } catch { return null; } }).filter(e => e && e.type === 'youtube');
-    if (yts.length) await loadSettings();
-    for (const ev of yts) {
-      if (ev.data && ev.data.stop) { stopCurrent(); continue; }
-      play(ev.data).catch(() => {});
+    d = await (await fetch('/api/poll?since=' + lastId, { cache: 'no-store', signal: ctrl.signal })).json();
+  } catch {}
+  clearTimeout(kill);
+  try {
+    if (d) {
+      if (typeof d.last === 'number') lastId = d.last;
+      if (firstPoll) { firstPoll = false; setTimeout(tick, 800); return; }
+      const yts = (d.events || []).map(raw => { try { return JSON.parse(raw); } catch { return null; } }).filter(e => e && e.type === 'youtube');
+      if (yts.length) await loadSettings();
+      for (const ev of yts) {
+        if (ev.data && ev.data.stop) { stopCurrent(); continue; }
+        play(ev.data).catch(() => {});
+      }
     }
   } catch {}
   setTimeout(tick, 800);
 }
 tick();
+window.addEventListener('online', () => tick());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 </script>
 </body>
 </html>

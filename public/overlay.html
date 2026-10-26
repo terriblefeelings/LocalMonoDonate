@@ -123,20 +123,32 @@ async function play(d) {
 let lastId = 0, firstPoll = true;
 const seen = new Set();
 async function tick() {
+  // a restarted app or a dead keep-alive socket must not freeze the overlay:
+  // abort the request and keep the loop alive whatever happens
+  let d = null;
+  const ctrl = new AbortController();
+  const kill = setTimeout(() => ctrl.abort(), 3000);
   try {
-    const d = await (await fetch('/api/poll?since=' + lastId)).json();
-    if (typeof d.last === 'number') lastId = d.last;
-    // never replay history when the overlay is (re)opened — only new events play
-    if (firstPoll) { firstPoll = false; setTimeout(tick, 800); return; }
-    const parsed = (d.events || []).map(raw => { try { return JSON.parse(raw); } catch { return null; } }).filter(Boolean);
-    const donations = parsed.filter(e => e.type === 'donation');
-    if (donations.length) await loadSettings();
-    for (const ev of donations) if (!seen.has(ev.data.id)) { seen.add(ev.data.id); enqueue(ev.data); }
-    for (const ev of parsed) if (ev.type === 'tts' && ev.data && ev.data.url) playTts(ev.data.url);
+    d = await (await fetch('/api/poll?since=' + lastId, { cache: 'no-store', signal: ctrl.signal })).json();
+  } catch {}
+  clearTimeout(kill);
+  try {
+    if (d) {
+      if (typeof d.last === 'number') lastId = d.last;
+      // never replay history when the overlay is (re)opened — only new events play
+      if (firstPoll) { firstPoll = false; setTimeout(tick, 800); return; }
+      const parsed = (d.events || []).map(raw => { try { return JSON.parse(raw); } catch { return null; } }).filter(Boolean);
+      const donations = parsed.filter(e => e.type === 'donation');
+      if (donations.length) await loadSettings();
+      for (const ev of donations) if (!seen.has(ev.data.id)) { seen.add(ev.data.id); enqueue(ev.data); }
+      for (const ev of parsed) if (ev.type === 'tts' && ev.data && ev.data.url) playTts(ev.data.url);
+    }
   } catch {}
   setTimeout(tick, 800);
 }
 tick();
+window.addEventListener('online', () => tick());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 </script>
 </body>
 </html>
