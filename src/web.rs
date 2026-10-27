@@ -1678,6 +1678,7 @@ fn public_allowed(method: Method, path: &str, cfg: &Config) -> bool {
         | (Method::Post, "/api/submit")
         | (Method::Post, "/api/test")
         | (Method::Post, "/api/replay")
+        | (Method::Post, "/api/bits/order")
         | (Method::Post, "/api/bits/pre_done")
         | (Method::Post, "/api/youtube") => true,
         (Method::Get, p) if p.starts_with("/media/") => true,
@@ -1897,6 +1898,65 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
             let token = v.get("token").and_then(|x| x.as_str()).unwrap_or("");
             let ok = crate::app::pre_alert_done(&ctx, token);
             let _ = request.respond(json_resp(200, json!({ "ok": ok })));
+        } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
+
+    if path == "/api/bits/order" {
+        if method == Method::Post {
+            let v = read_body(&mut request);
+            let cfg = ctx.cfg();
+            let modes = cfg.enabled_bits_modes();
+            let mode = v.get("mode").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            if !modes.iter().any(|m| m == &mode) {
+                let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "mode is disabled" })));
+                return;
+            }
+            let mut bits: Vec<Bit> = Vec::new();
+            if let Some(arr) = v.get("bits").and_then(|x| x.as_array()) {
+                for item in arr {
+                    let code = item.as_str().map(|s| s.to_string())
+                        .or_else(|| item.get("code").and_then(|c| c.as_str()).map(|s| s.to_string()));
+                    if let Some(code) = code {
+                        if let Some(b) = cfg.bits.iter().find(|b| !b.code.is_empty() && b.code == code) {
+                            if !bits.iter().any(|x| x.code == b.code) { bits.push(b.clone()); }
+                        }
+                    }
+                }
+            }
+            if bits.is_empty() || (mode == "single" && bits.len() != 1) {
+                let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "pick the alerts again" })));
+                return;
+            }
+            let jar_idx = 0usize;
+            let Some(jar_code) = cfg.jars.get(jar_idx).cloned() else {
+                let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "no jar" })));
+                return;
+            };
+            if !cfg.jar_mine.get(jar_idx).copied().unwrap_or(true) {
+                let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "3rd-party jar" })));
+                return;
+            }
+            let amount = bits.iter().map(|b| b.price).sum::<f64>();
+            let code = {
+                let mut st = ctx.state.lock().unwrap();
+                let Some(j) = st.jars.iter_mut().find(|j| j.code == jar_code) else {
+                    let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "no jar" })));
+                    return;
+                };
+                let mut code = gen_code(&cfg.code_prefix, &j.issued, &j.pending);
+                while j.bit_orders.iter().any(|o| o.code == code) || cfg.bits.iter().any(|b| b.code == code) {
+                    code = gen_code(&cfg.code_prefix, &j.issued, &j.pending);
+                }
+                j.issued.push(code.clone());
+                if j.issued.len() > 5000 { let n = j.issued.len() - 5000; j.issued.drain(0..n); }
+                j.bit_orders.push(BitOrder { code: code.clone(), bits, mode: mode.clone(), amount, created_at: now_ms() });
+                while j.bit_orders.len() > 200 { j.bit_orders.remove(0); }
+                code
+            };
+            ctx.save();
+            log(&format!("bit order {} ({}): {:.0} UAH", code, mode, amount));
+            let _ = request.respond(json_resp(200, json!({ "ok": true, "code": code, "amount": amount, "jar": jar_code })));
         } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }

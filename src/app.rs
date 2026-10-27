@@ -36,30 +36,15 @@ fn bit_display_name(comment: &str) -> String {
     "Анонім SA".to_string()
 }
 
-/// Public-deck order: `s:0,2,1 | mode:adhd | name: Nick`.
-/// Returns the picked bits in the listed order and the playback mode.
-fn parse_slot_order(comment: &str, bits: &[Bit]) -> Option<(Vec<Bit>, String)> {
-    if !comment.contains("донат сповіщення bits:") { return None; }
-    let pos = comment.find("bits:")?;
-    let rest = &comment[pos + 5..];
-    let list = rest.split(|c: char| c.is_whitespace() || c == '|').next().unwrap_or("");
-    let mut picked: Vec<Bit> = Vec::new();
-    for n in list.split(',') {
-        if let Ok(slot) = n.trim().parse::<u32>() {
-            if let Some(b) = bits.iter().find(|b| b.slot == slot) {
-                if !picked.iter().any(|x| x.code == b.code) { picked.push(b.clone()); }
-            }
-        }
-    }
-    if picked.is_empty() { return None; }
-    let lc = comment.to_ascii_lowercase();
-    let mode = if lc.contains("mode:adhd") { "adhd" }
-        else if lc.contains("mode:order") { "order" }
-        else if picked.len() > 1 { "order" }
-        else { "single" };
-    Some((picked, mode.to_string()))
+/// Match a single-use deck-order token (and its exact amount) in a payment comment.
+fn find_bit_order(orders: &[BitOrder], comment: &str, amount: f64) -> Option<usize> {
+    let lc = comment.to_lowercase();
+    orders.iter().position(|o| {
+        !o.code.is_empty()
+            && lc.contains(&o.code.to_lowercase())
+            && (o.amount - amount).abs() <= 1.0f64.max(o.amount * 0.02)
+    })
 }
-
 #[cfg(test)]
 mod bit_name_tests {
     use super::*;
@@ -81,20 +66,17 @@ mod bit_name_tests {
     }
 
     #[test]
-    fn slot_orders_keep_click_order_and_mode() {
-        let bits = vec![
-            Bit { slot: 0, label: "A".into(), code: "a".into(), price: 10.0, ..Default::default() },
-            Bit { slot: 1, label: "B".into(), code: "b".into(), price: 20.0, ..Default::default() },
-            Bit { slot: 2, label: "C".into(), code: "c".into(), price: 30.0, ..Default::default() },
+    fn bit_orders_match_the_token_and_the_paid_amount() {
+        let one = Bit { slot: 0, label: "A".into(), code: "a".into(), price: 10.0, ..Default::default() };
+        let orders = vec![
+            BitOrder { code: "AbC123".into(), bits: vec![one], mode: "order".into(), amount: 10.0, created_at: 0 },
+            BitOrder { code: "DeF456".into(), bits: vec![], mode: "adhd".into(), amount: 45.0, created_at: 0 },
         ];
-        let (picked, mode) = parse_slot_order("донат сповіщення bits:2,0 | mode:adhd | name: Nick", &bits).unwrap();
-        assert_eq!(picked.iter().map(|b| b.code.as_str()).collect::<Vec<_>>(), vec!["c", "a"]);
-        assert_eq!(mode, "adhd");
-        let (picked, mode) = parse_slot_order("донат сповіщення bits:1 | name: Nick", &bits).unwrap();
-        assert_eq!(picked[0].code, "b");
-        assert_eq!(mode, "single");
-        assert!(parse_slot_order("донат сповіщення bits:9", &bits).is_none());
-        assert!(parse_slot_order("my message bits:0", &bits).is_none());
+        assert_eq!(find_bit_order(&orders, "донат сповіщення abc123 | name: Nick", 10.0), Some(0));
+        assert_eq!(find_bit_order(&orders, "донат сповіщення ABC123", 10.5), Some(0));
+        assert_eq!(find_bit_order(&orders, "донат сповіщення abc123", 8.0), None);
+        assert_eq!(find_bit_order(&orders, "донат сповіщення def456", 45.0), Some(1));
+        assert_eq!(find_bit_order(&orders, "manual donation", 10.0), None);
     }
 }
 
@@ -266,38 +248,38 @@ impl Ctx {
         let cur = crate::model::currency_symbol(jar.currency);
         let iso = crate::model::currency_iso(jar.currency);
 
-        // public deck order: slots + mode, e.g. "bits:0,1,2 | mode:adhd | name: Nick"
-        let slot_order = parse_slot_order(&comment, &cfg.bits);
-        if let Some((picked, mode)) = slot_order {
+        // public deck orders are single-use tokens, like donation pending codes
+        if let Some(k) = find_bit_order(&jar.bit_orders, &comment, uah) {
+            let order = jar.bit_orders.remove(k);
             let name = bit_display_name(&comment);
             let msg = "Нічого не написав".to_string();
-            let labels = picked.iter().map(|b| b.label.clone()).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(", ");
-            let codes = picked.iter().map(|b| b.code.clone()).collect::<Vec<_>>().join(",");
+            let labels = order.bits.iter().map(|b| b.label.clone()).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(", ");
+            let codes = order.bits.iter().map(|b| b.code.clone()).collect::<Vec<_>>().join(",");
             jar.history.insert(0, HistoryItem {
                 id: tx.id.clone(), name: name.clone(), amount: uah, message: msg.clone(),
                 youtube_id: String::new(), media_url: String::new(), bit_label: labels.clone(), bit_code: codes,
-                matched: "bit".into(), code: if picked.len() == 1 { Some(picked[0].code.clone()) } else { None }, at: now_ms(),
+                matched: "bit".into(), code: if order.bits.len() == 1 { Some(order.bits[0].code.clone()) } else { None }, at: now_ms(),
             });
             jar.stats.count += 1; jar.stats.total += uah;
             if uah > jar.stats.biggest { jar.stats.biggest = uah; }
             drop(st);
-            if picked.len() == 1 {
+            if order.bits.len() == 1 {
                 if !quiet {
                     self.broadcast(json!({ "type": "bit", "data": {
-                        "id": tx.id, "name": name, "amount": uah, "message": msg, "currency": cur, "bit": picked[0].clone() } }));
+                        "id": tx.id, "name": name, "amount": uah, "message": msg, "currency": cur, "bit": order.bits[0].clone() } }));
                 }
             } else {
-                let sounds: Vec<String> = picked.iter().filter_map(|b| {
+                let sounds: Vec<String> = order.bits.iter().filter_map(|b| {
                     let s = if b.kind == "sound" { b.url.clone() } else { b.sound.clone() };
                     if s.is_empty() { None } else { Some(s) }
                 }).collect();
                 if !quiet && !sounds.is_empty() {
                     self.broadcast(json!({ "type": "bits_play", "data": {
-                        "id": tx.id, "name": name, "amount": uah, "sounds": sounds, "mode": mode.clone() } }));
+                        "id": tx.id, "name": name, "amount": uah, "sounds": sounds, "mode": order.mode.clone() } }));
                 }
             }
             if !quiet {
-                log(&format!("[{}] bit order {} ({}) {:.0} from {}", jar_code, labels, mode, uah, name));
+                log(&format!("[{}] bit order {} ({}) {:.0} from {}", jar_code, labels, order.mode, uah, name));
                 crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&msg, "", "", &labels));
             }
             self.timer_add_donation(uah, &name, quiet);
@@ -305,30 +287,6 @@ impl Ctx {
             self.save();
             return false;
         }
-
-        // bits have their own codes: a donation whose comment contains a bit code plays on the bits overlay
-        if let Some(bit) = cfg.bits.iter().find(|b| !b.code.is_empty() && low.contains(&b.code.to_lowercase())).cloned() {
-            let name = bit_display_name(&comment);
-            let msg = "Нічого не написав".to_string();
-            jar.history.insert(0, HistoryItem {
-                id: tx.id.clone(), name: name.clone(), amount: uah, message: msg.clone(),
-                youtube_id: String::new(), media_url: String::new(), bit_label: bit.label.clone(), bit_code: bit.code.clone(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
-            });
-            jar.stats.count += 1; jar.stats.total += uah;
-            if uah > jar.stats.biggest { jar.stats.biggest = uah; }
-            drop(st);
-            if !quiet {
-                self.broadcast(json!({ "type": "bit", "data": {
-                    "id": tx.id, "name": name, "amount": uah, "message": msg, "currency": cur, "bit": bit.clone() } }));
-                log(&format!("[{}] bit '{}' ({}) {:.0} from {}", jar_code, bit.label, bit.kind, uah, name));
-                crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&msg, "", "", &bit.label));
-            }
-            self.timer_add_donation(uah, &name, quiet);
-            if !quiet { self.auction_bid(&name, uah, "monobank"); }
-            self.save();
-            return false;
-        }
-
         // match a pending donation by code first, else by amount + recency
         let mut idx = jar.pending.iter().position(|p| low.contains(&p.code.to_lowercase()));
         let mut matched = "code";
@@ -496,6 +454,7 @@ impl Ctx {
                         j.backfilled = true;
                         while j.seen.len() > 2000 { j.seen.remove(0); }
                         j.pending.retain(|p| p.created_at >= ttl);
+                        j.bit_orders.retain(|o| o.created_at >= ttl);
                     }
                     self.save();
                 }

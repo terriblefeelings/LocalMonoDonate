@@ -939,6 +939,16 @@ pub struct Pending {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct BitOrder {
+    pub code: String,
+    #[serde(default)] pub bits: Vec<Bit>,
+    #[serde(default)] pub mode: String,
+    #[serde(default)] pub amount: f64,
+    pub created_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct HistoryItem {
     pub id: String,
     pub name: String,
@@ -989,6 +999,7 @@ pub struct JarState {
     #[serde(default)] pub seen: Vec<String>,
     #[serde(default)] pub backfilled: bool,
     #[serde(default)] pub pending: Vec<Pending>,
+    #[serde(default)] pub bit_orders: Vec<BitOrder>,
     #[serde(default)] pub history: Vec<HistoryItem>,
     #[serde(default)] pub stats: Stats,
     #[serde(default)] pub issued: Vec<String>,
@@ -1020,7 +1031,7 @@ pub fn load_state(paths: &Paths, codes: &[String]) -> State {
                     code, title: lt, balance: lb, goal: lg, currency: 980,
                     statement_account: legacy.statement_account,
                     last_ts: legacy.last_ts,
-                    seen: legacy.seen, pending: legacy.pending,
+                    seen: legacy.seen, pending: legacy.pending, bit_orders: Vec::new(),
                     history: legacy.history, stats: legacy.stats, issued: Vec::new(), updated_at: now_ms(),
                     backfilled: false,
                 });

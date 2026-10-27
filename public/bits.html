@@ -225,40 +225,59 @@ async function load() {
   window.mountLangSeg($('langseg')); window.applyI18n();
 }
 function payLink(order, nick) {
-  const bits = order.bits || [];
-  let comment;
-  if (order.mode === 'single' && bits.length === 1) {
-    comment = 'донат сповіщення ' + bits[0].code + (nick ? ' | name: ' + nick : '');
-  } else {
-    const slots = bits.map(b => b.slot).join(',');
-    comment = 'донат сповіщення bits:' + slots + ' | mode:' + order.mode + (nick ? ' | name: ' + nick : '');
-  }
+  if (!order || !order.code) return '';
+  const comment = 'донат сповіщення ' + order.code + (nick ? ' | name: ' + nick : '');
   return 'https://send.monobank.ua/jar/' + encodeURIComponent(JAR) + '?a=' + encodeURIComponent(order.total) + '&t=' + encodeURIComponent(comment);
 }
 function payNickValue() {
   return (($('payNick') && $('payNick').value) || '').trim().slice(0, 40);
 }
+function payTitleText(order) {
+  const bits = order.bits || [];
+  if (order.mode === 'single' && bits.length === 1) return (bits[0].label || bits[0].kind) + ' — ' + fmt(order.total);
+  return bits.map(b => b.label || b.kind).join(', ') + ' — ' + fmt(order.total);
+}
 function syncPayLink() {
-  if (payOrder) $('payGo').href = payLink(payOrder, payNickValue());
+  const go = $('payGo');
+  if (!payOrder || !payOrder.code) { go.removeAttribute('href'); go.style.opacity = .45; return; }
+  go.href = payLink(payOrder, payNickValue());
+  go.style.opacity = 1;
+}
+async function createPayOrder() {
+  const order = payOrder;
+  if (!order) return;
+  try {
+    const r = await fetch('/api/bits/order', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bits: order.bits.map(b => b.code), mode: order.mode }) });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'error');
+    if (payOrder !== order) return;
+    order.code = d.code;
+    order.total = Number(d.amount) || order.total;
+    $('payTitle').textContent = payTitleText(order);
+    syncPayLink();
+  } catch (e) {
+    if (payOrder === order) { order.code = ''; $('payTitle').textContent = 'Error: ' + (e.message || 'try again'); syncPayLink(); }
+  }
 }
 function openPay(bit) {
-  payOrder = { mode: 'single', bits: [bit], total: Number(bit.price) || 0 };
-  $('payTitle').textContent = (bit.label || bit.kind) + ' — ' + fmt(bit.price);
+  payOrder = { mode: 'single', bits: [bit], total: Number(bit.price) || 0, code: '' };
+  $('payTitle').textContent = payTitleText(payOrder);
   $('payNick').value = (($('nick') && $('nick').value) || '').trim();
   syncPayLink();
   $('paydlg').style.display = 'flex';
+  createPayOrder();
 }
 function openPayMulti() {
   const bits = selectedBits();
   if (!bits.length || !(MODE === 'order' || MODE === 'adhd')) return;
-  const total = bits.reduce((s, b) => s + (Number(b.price) || 0), 0);
-  payOrder = { mode: MODE, bits, total };
-  $('payTitle').textContent = bits.map(b => b.label || b.kind).join(', ') + ' — ' + fmt(total);
+  payOrder = { mode: MODE, bits, total: bits.reduce((s, b) => s + (Number(b.price) || 0), 0), code: '' };
+  $('payTitle').textContent = payTitleText(payOrder);
   $('payNick').value = (($('nick') && $('nick').value) || '').trim();
   syncPayLink();
   $('paydlg').style.display = 'flex';
-}
-$('payNick').oninput = syncPayLink;
+  createPayOrder();
+}$('payNick').oninput = syncPayLink;
 $('payGo').onclick = () => {
   const nick = payNickValue();
   try { localStorage.setItem('lmd:nick', nick); } catch (e) {}
