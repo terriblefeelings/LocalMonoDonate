@@ -74,6 +74,7 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) {
 /* ---------------------------------------------------------------- config */
 
 fn d_host() -> String { "127.0.0.1".into() }
+fn d_bits_mode() -> String { "single".into() }
 fn d_port() -> u16 { 27183 }
 fn d_aport() -> u16 { 27184 }
 fn d_public_port() -> u16 { 27185 }   // public (tunnel-facing) server; 0 = off
@@ -640,6 +641,7 @@ pub struct Config {
     #[serde(default)] pub overlay: OverlayCfg,
     #[serde(default = "default_rules")] pub notify: NotifyRules,
     #[serde(default)] pub bits: Vec<Bit>,
+    #[serde(default = "d_bits_mode")] pub bits_mode: String,
     #[serde(default = "d_grid")] pub bits_grid: u32,
     #[serde(default)] pub timer: TimerCfg,
     #[serde(default)] pub features: Features,
@@ -662,7 +664,7 @@ impl Default for Config {
             min_amount: d_min(), max_amount: d_max(), code_prefix: d_prefix(),
             notify_unmatched: true, poll_seconds: d_poll(), idle_poll_seconds: d_idle(),
             pending_ttl_hours: d_ttl(), limits: Limits::default(), overlay: OverlayCfg::default(),
-            notify: default_rules(), bits: Vec::new(), bits_grid: d_grid(),
+            notify: default_rules(), bits: Vec::new(), bits_mode: d_bits_mode(), bits_grid: d_grid(),
             timer: TimerCfg::default(),
             features: Features::default(),
             auction: AuctionCfg::default(),
@@ -903,6 +905,9 @@ pub struct Pending {
     #[serde(default)] pub voice: String,
     /// bit chosen on the donation form (plays on the bits overlay instead of a normal alert)
     #[serde(default)] pub bit: Option<Bit>,
+    /// several sound alerts picked on the donation form (order/adhd modes)
+    #[serde(default)] pub bits: Vec<Bit>,
+    #[serde(default)] pub bits_mode: String,
     /// fallback-link twin code; both are consumed by the first matching payment
     #[serde(default)] pub pair: String,
     pub created_at: i64,

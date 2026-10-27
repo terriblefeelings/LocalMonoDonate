@@ -77,8 +77,14 @@ function enqueue(d) { queue.push(d); if (!busy) pump(); }
 async function pump() { if (!queue.length) { busy = false; return; } busy = true; try { await play(queue.shift()); } catch (e) { console.warn(e); } pump(); }
 
 async function play(d) {
-  // a sound alert picked on the donation form plays first, then the donation in 2 s
-  if (d.soundUrl) { await soundEnd(d.soundUrl, CFG.videoMaxMs, 1500); await sleep(2000); }
+  // sound alerts picked on the donation form play first (in order or all at once),
+  // then the donation starts 2 s after the last one ends
+  const sounds = Array.isArray(d.soundUrls) && d.soundUrls.length ? d.soundUrls : (d.soundUrl ? [d.soundUrl] : []);
+  if (sounds.length) {
+    if (d.soundMode === 'adhd') await Promise.all(sounds.map(s => soundEnd(s, CFG.videoMaxMs, 1500)));
+    else for (const s of sounds) await soundEnd(s, CFG.videoMaxMs, 1500);
+    await sleep(2000);
+  }
   const N = Object.assign({}, Alert.DEFAULTS, d.style || pickStyle(d.amount || 0, d.ruleId));
   const stage = document.getElementById('stage');
   const { notif, red, msgBase, msgH } = Alert.build(d, N);

@@ -209,9 +209,28 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     let yt = v.get("youtube").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
     let voice = v.get("voice").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
     // optional bit picked on the donation form (must exist in the configured deck)
-    let bit_sel: Option<Bit> = v.get("bit").and_then(|b| serde_json::from_value::<Bit>(b.clone()).ok())
-        .filter(|b| cfg.bits.iter().any(|x| !x.code.is_empty() && x.code == b.code));
-    let amount = if amount_in > 0.0 { amount_in } else { bit_sel.as_ref().map(|b| b.price).unwrap_or(0.0) };
+    // only the code is trusted from the client; price/label/url come from the local deck
+    let bit_sel: Option<Bit> = v.get("bit").and_then(|b| b.get("code")).and_then(|c| c.as_str())
+        .and_then(|c| cfg.bits.iter().find(|x| !x.code.is_empty() && x.code == c).cloned());
+    let bits_sel: Vec<Bit> = {
+        let mut out: Vec<Bit> = Vec::new();
+        if let Some(arr) = v.get("bits").and_then(|b| b.as_array()) {
+            for item in arr {
+                let Some(c) = item.get("code").and_then(|c| c.as_str()) else { continue };
+                if let Some(b) = cfg.bits.iter().find(|x| !x.code.is_empty() && x.code == c) {
+                    if !out.iter().any(|o| o.code == b.code) { out.push(b.clone()); }
+                }
+            }
+        }
+        if out.is_empty() { if let Some(b) = bit_sel.clone() { out.push(b); } }
+        out
+    };
+    let mode = cfg.bits_mode.clone();
+    let amount = if amount_in > 0.0 { amount_in } else if bits_sel.is_empty() {
+        0.0
+    } else {
+        bits_sel.iter().map(|b| b.price).sum()
+    };
 
     let fail = |req: tiny_http::Request, m: &str| { let _ = req.respond(json_resp(400, json!({"ok": false, "error": m}))); };
     if !cfg.features.donate { return fail(request, "Донати вимкнено"); }
@@ -221,7 +240,7 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     }
     if name.chars().count() > cfg.limits.name_max { return fail(request, "Занадто довге ім'я"); }
     if message.chars().count() > cfg.limits.message_max { return fail(request, "Занадто довге повідомлення"); }
-    if bit_sel.is_none() {
+    if bits_sel.is_empty() {
         if name.is_empty() { name = "Анонім".into(); }
         if message.is_empty() { message = format!("{} нічого не написав", name); }
     }
@@ -289,8 +308,8 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     {
         let mut st = ctx.state.lock().unwrap();
         if let Some(j) = st.jars.iter_mut().find(|j| j.code == jar_code) {
-            j.pending.push(Pending { code: code.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), media_url: media_url.clone(), voice: voice.clone(), bit: bit_sel.clone(), pair: code2.clone(), created_at: now_ms() });
-            j.pending.push(Pending { code: code2.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), media_url: media_url.clone(), voice: voice.clone(), bit: bit_sel.clone(), pair: code.clone(), created_at: now_ms() });
+            j.pending.push(Pending { code: code.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), media_url: media_url.clone(), voice: voice.clone(), bit: bit_sel.clone(), bits: bits_sel.clone(), bits_mode: mode.clone(), pair: code2.clone(), created_at: now_ms() });
+            j.pending.push(Pending { code: code2.clone(), amount, name: name.clone(), message: message.clone(), youtube_id: ytid.clone(), media_url: media_url.clone(), voice: voice.clone(), bit: bit_sel.clone(), bits: bits_sel.clone(), bits_mode: mode.clone(), pair: code.clone(), created_at: now_ms() });
             j.issued.push(code.clone());
             j.issued.push(code2.clone());
             if j.issued.len() > 5000 { let n = j.issued.len() - 5000; j.issued.drain(0..n); }
@@ -303,7 +322,7 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     let mut flags = String::new();
     if name.trim().is_empty() || name == "Анонім" { flags.push('A'); }
     if !ytid.is_empty() || !media_url.is_empty() { flags.push('M'); }
-    if bit_sel.is_some() { flags.push_str("SA"); }
+    if !bits_sel.is_empty() { flags.push_str("SA"); }
     let comment = donate_comment(&flags, &code).replace(' ', "%20");
     let comment2 = donate_comment(&flags, &code2).replace(' ', "%20");
     let redirect = format!("https://send.monobank.ua/jar/{}?a={:.0}&t={}", jar_code, amount, comment);
@@ -892,12 +911,22 @@ fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
     match found {
         Some((h, currency)) => {
             let cfg = ctx.cfg();
-            let bit = if !h.bit_code.is_empty() {
-                cfg.bits.iter().find(|b| b.code == h.bit_code).cloned()
-            } else {
-                cfg.bits.iter().find(|b| !b.label.is_empty() && b.label == h.bit_label).cloned()
-            };
-            let sound_url = bit.as_ref().map(|b| if b.kind == "sound" { b.url.clone() } else { b.sound.clone() }).unwrap_or_default();
+            let mut bits: Vec<crate::model::Bit> = h.bit_code.split(',')
+                .filter(|c| !c.is_empty())
+                .filter_map(|c| cfg.bits.iter().find(|b| b.code == c).cloned())
+                .collect();
+            if bits.is_empty() && !h.bit_label.is_empty() {
+                for label in h.bit_label.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {
+                    if let Some(b) = cfg.bits.iter().find(|b| !b.label.is_empty() && b.label == label) {
+                        bits.push(b.clone());
+                    }
+                }
+            }
+            let bit = bits.first().cloned();
+            let sound_urls: Vec<String> = bits.iter()
+                .map(|b| if b.kind == "sound" { b.url.clone() } else { b.sound.clone() })
+                .filter(|s| !s.is_empty())
+                .collect();
             let replay_id = format!("replay-{}", now_ms());
 
             let direct_bit = h.matched == "bit";
@@ -934,14 +963,15 @@ fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
                 }
             }
 
-            let (yt, media, sound) = if mode == "full" {
-                (h.youtube_id.clone(), h.media_url.clone(), sound_url.clone())
+            let (yt, media, sounds) = if mode == "full" {
+                (h.youtube_id.clone(), h.media_url.clone(), sound_urls.clone())
             } else {
-                (String::new(), String::new(), String::new())
+                (String::new(), String::new(), Vec::new())
             };
             ctx.broadcast(json!({ "type": "donation", "data": {
                 "id": replay_id, "name": h.name, "amount": h.amount, "message": h.message,
-                "youtubeId": yt, "mediaUrl": media, "soundUrl": sound, "ttsUrl": tts_url,
+                "youtubeId": yt, "mediaUrl": media, "soundUrls": sounds, "soundMode": "order",
+                "soundUrl": "", "ttsUrl": tts_url,
                 "matched": "replay", "jar": "", "currency": "" } }));
             log(&format!("replay {}: {:.0} from {}", mode, h.amount, h.name));
             let _ = request.respond(json_resp(200, json!({ "ok": true })));
@@ -1784,9 +1814,24 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         return;
     }
     if path == "/api/bits" {
-        if method == Method::Get { let _ = request.respond(json_resp(200, json!({ "bits": ctx.cfg().bits, "grid": ctx.cfg().bits_grid, "jars": ctx.cfg().jars }))); }
+        if method == Method::Get { let _ = request.respond(json_resp(200, json!({ "bits": ctx.cfg().bits, "mode": ctx.cfg().bits_mode, "grid": ctx.cfg().bits_grid, "jars": ctx.cfg().jars }))); }
         else if method == Method::Post { bits_post(&ctx, request); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
+
+    if path == "/api/bits/mode" {
+        if method == Method::Post {
+            let v = read_body(&mut request);
+            let m = v.get("mode").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            if !["single", "order", "adhd"].contains(&m.as_str()) {
+                let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "unknown mode" })));
+                return;
+            }
+            { let mut cfg = ctx.cfg(); cfg.bits_mode = m.clone(); save_config(&ctx.paths, &cfg); *ctx.cfg.lock().unwrap() = cfg.clone(); }
+            log(&format!("bits mode: {}", m));
+            let _ = request.respond(json_resp(200, json!({ "ok": true, "mode": m })));
+        } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
 

@@ -206,27 +206,30 @@ impl Ctx {
         }
 
         // resolve the alert payload (if any) plus the local history record
-        let (name, message, youtube_id, media_url, kind, code, alert, voice, sound_url, bit_label, bit_code) = if let Some(k) = idx {
+        let (name, message, youtube_id, media_url, kind, code, alert, voice, sound_urls, bit_label, bit_code, sound_mode) = if let Some(k) = idx {
             let p = jar.pending.remove(k);
             // the fallback-link twin is the same intent, never a second alert
             if !p.pair.is_empty() { jar.pending.retain(|x| x.code != p.pair); }
-            let sound_url = p.bit.as_ref().map(|b| {
-                if b.kind == "sound" { b.url.clone() } else { b.sound.clone() }
-            }).unwrap_or_default();
-            let bit_label = p.bit.as_ref().map(|b| b.label.clone()).unwrap_or_default();
-            let bit_code = p.bit.as_ref().map(|b| b.code.clone()).unwrap_or_default();
+            let bits_all: Vec<crate::model::Bit> = if !p.bits.is_empty() { p.bits.clone() } else { p.bit.clone().into_iter().collect() };
+            let sound_urls: Vec<String> = bits_all.iter().filter_map(|b| {
+                let s = if b.kind == "sound" { b.url.clone() } else { b.sound.clone() };
+                if s.is_empty() { None } else { Some(s) }
+            }).collect();
+            let sound_mode = if p.bits_mode.is_empty() { cfg.bits_mode.clone() } else { p.bits_mode.clone() };
+            let bit_label = bits_all.iter().map(|b| b.label.clone()).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(", ");
+            let bit_code = bits_all.iter().map(|b| b.code.clone()).collect::<Vec<_>>().join(",");
             let pname = if p.name.trim().is_empty() {
-                if p.bit.is_some() { "Анонім SA".to_string() } else { "Анонім".to_string() }
+                if p.bit.is_some() || !p.bits.is_empty() { "Анонім SA".to_string() } else { "Анонім".to_string() }
             } else { p.name.trim().to_string() };
             let pmsg = if p.message.trim().is_empty() { "Нічого не написав".to_string() } else { p.message.clone() };
-            (pname, pmsg, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice, sound_url, bit_label, bit_code)
+            (pname, pmsg, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice, sound_urls, bit_label, bit_code, sound_mode)
         } else {
             let name = "Анонім".to_string();
             let raw: String = comment.chars().take(cfg.limits.message_max).collect();
             let msg = if raw.trim().is_empty() { format!("{} нічого не написав", name) } else { raw };
             let v = String::new();
-            if cfg.notify_unmatched { (name, msg, String::new(), String::new(), "unmatched", None, true, v, String::new(), String::new(), String::new()) }
-            else { (name, msg, String::new(), String::new(), "none", None, false, v, String::new(), String::new(), String::new()) }
+            if cfg.notify_unmatched { (name, msg, String::new(), String::new(), "unmatched", None, true, v, Vec::new(), String::new(), String::new(), String::new()) }
+            else { (name, msg, String::new(), String::new(), "none", None, false, v, Vec::new(), String::new(), String::new(), String::new()) }
         };
 
         // every positive transaction is kept in the local history + stats, whether or not it alerts
@@ -270,7 +273,7 @@ impl Ctx {
             self.broadcast(json!({ "type": "donation", "data": {
                 "id": tx.id, "name": name, "amount": uah, "message": message,
                 "youtubeId": youtube_id, "mediaUrl": media_url, "matched": kind, "jar": jar_code, "currency": cur,
-                "ttsUrl": tts_url, "soundUrl": sound_url } }));
+                "ttsUrl": tts_url, "soundUrls": sound_urls, "soundMode": sound_mode } }));
             log(&format!("[{}] notification ({}) {:.0} UAH from {}", jar_code, kind, uah, name));
             // StreamElements: mirror the live donation as a tip so the SE alert box plays
             crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&message, &media_url, &youtube_id, &bit_label));
