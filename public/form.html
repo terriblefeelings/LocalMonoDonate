@@ -45,7 +45,7 @@ body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12p
     <div class="sec"><span class="h" id="brand">Підтримати стрім</span><span class="sp"></span><span class="seg" id="langseg"></span></div>
     <div class="body">
       <div class="row" id="row_jar"><label data-i18n="jar">Банка</label><div class="ctl"><select id="jar"></select><div class="note" id="jarThNote" style="display:none"></div></div></div>
-      <div class="row" id="row_bit"><label data-i18n="bit">Сповіщення (біт)</label><div class="ctl"><select id="bit"></select></div></div>
+      <div class="row" id="row_bit"><label data-i18n="bit">Режим звукових сповіщень</label><div class="ctl"><select id="bit"></select></div></div>
       <div class="row" id="row_bits_pick" hidden><label data-i18n="bitsLabel">Звукові сповіщення</label><div class="ctl">
         <div id="bitsGrid"></div>
         <div class="note" id="bitsOrderLine" style="display:none;margin-top:8px"></div>
@@ -74,15 +74,15 @@ body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12p
 <script>
 window.I18N_DEFAULT = 'ua';
 window.I18N = {
-  en: { amount: 'Amount, ₴', name: 'Name', message: 'Message', youtube: 'YouTube link (optional)', voice: 'Voice', pay: 'Generate link', payDirect: 'Pay directly in the streamer\'s Monobank', payGo: 'Open', payNote: "Note: If you do not want the Monobank app to open automatically, long press the Open button and choose either Open in new browser tab or, if you want to do it manually, Copy link.", ytFrom: 'The YouTube video plays from %p% ₴.', namePh: 'e.g. Alien', msgPh: 'e.g. Hello everyone!', payWait: 'One moment…', payErr: 'Could not connect. Try again.', jar: 'Jar', bit: 'Sound alert', blankBit: 'Regular donation', thirdParty: 'No alerts from this jar \u2014 3rd-party jar' },
-  ua: { amount: 'Сума, ₴', name: "Ім'я", message: 'Повідомлення', youtube: "Посилання на YouTube (необов'язково)", voice: 'Голос', pay: 'Згенерувати лінк', payDirect: 'Перейти до оплати напряму до Монобанки пана стрімера', payGo: 'Перейти', payNote: 'Примітка: якщо не хочете, щоб застосунок Monobank відкривався автоматично, натисніть і утримуйте кнопку «Перейти» і виберіть «Відкрити в новій вкладці браузера» або, за потреби, «Копіювати посилання».', ytFrom: 'YouTube-відео зіграє від %p% ₴.', namePh: 'Напр. Alien', msgPh: 'Напр. Привіт усім!', payWait: 'Хвилинку…', payErr: 'Не вдалося з\'єднатися. Спробуй ще раз.', jar: 'Банка', bit: 'Звукове сповіщення', blankBit: 'Звичайний донат', thirdParty: 'Без сповіщень \u2014 стороння банка' }
+  en: { amount: 'Amount, ₴', name: 'Name', message: 'Message', youtube: 'YouTube link (optional)', voice: 'Voice', pay: 'Generate link', payDirect: 'Pay directly in the streamer\'s Monobank', payGo: 'Open', payNote: "Note: If you do not want the Monobank app to open automatically, long press the Open button and choose either Open in new browser tab or, if you want to do it manually, Copy link.", ytFrom: 'The YouTube video plays from %p% ₴.', namePh: 'e.g. Alien', msgPh: 'e.g. Hello everyone!', payWait: 'One moment…', payErr: 'Could not connect. Try again.', jar: 'Jar', bit: 'Sound Alerts Mode', blankBit: 'Regular Donation', thirdParty: 'No alerts from this jar \u2014 3rd-party jar' },
+  ua: { amount: 'Сума, ₴', name: "Ім'я", message: 'Повідомлення', youtube: "Посилання на YouTube (необов'язково)", voice: 'Голос', pay: 'Згенерувати лінк', payDirect: 'Перейти до оплати напряму до Монобанки пана стрімера', payGo: 'Перейти', payNote: 'Примітка: якщо не хочете, щоб застосунок Monobank відкривався автоматично, натисніть і утримуйте кнопку «Перейти» і виберіть «Відкрити в новій вкладці браузера» або, за потреби, «Копіювати посилання».', ytFrom: 'YouTube-відео зіграє від %p% ₴.', namePh: 'Напр. Alien', msgPh: 'Напр. Привіт усім!', payWait: 'Хвилинку…', payErr: 'Не вдалося з\'єднатися. Спробуй ще раз.', jar: 'Банка', bit: 'Режим звукових сповіщень', blankBit: 'Звичайний донат', thirdParty: 'Без сповіщень \u2014 стороння банка' }
 };
 Object.assign(window.I18N.en, { noJar: 'No jar configured - add one in Settings' });
 Object.assign(window.I18N.ua, { noJar: 'Банку не додано - додай її в Налаштуваннях' });
 Object.assign(window.I18N.en, { mediaFrom: 'YouTube from %y% \u20b4; Instagram, TikTok, Twitch, Reddit and X from %o% \u20b4.', mediaYtFrom: 'YouTube from %p% \u20b4', mediaOtherFrom: 'from %p% \u20b4', mediaNone: 'Media links are disabled.', youtube: 'Media link (optional)' });
 Object.assign(window.I18N.ua, { mediaFrom: 'YouTube \u0432\u0456\u0434 %y% \u20b4; Instagram, TikTok, Twitch, Reddit \u0456 X \u2014 \u0432\u0456\u0434 %o% \u20b4.', mediaYtFrom: 'YouTube \u0432\u0456\u0434 %p% \u20b4', mediaOtherFrom: '\u2014 \u0432\u0456\u0434 %p% \u20b4', mediaNone: '\u041c\u0435\u0434\u0456\u0430\u043f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f \u0432\u0438\u043c\u043a\u043d\u0435\u043d\u043e.', youtube: '\u041f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f \u043d\u0430 \u043c\u0435\u0434\u0456\u0430 (\u043d\u0435\u043e\u0431\u043e\u0432\u02bc\u044f\u0437\u043a\u043e\u0432\u0435)' });
-Object.assign(window.I18N.en, { bitsLabel: 'Sound alerts', bitsLabelOrder: 'Sound Alerts Order', bitsLabelAdhd: 'Sound Alerts ADHD', bitsTotal: 'Sound alerts, ₴', bitsOrderLine: 'Play order: %list%', bitsPicked: 'Selected: %list%' });
-Object.assign(window.I18N.ua, { bitsLabel: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f', bitsLabelOrder: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f: \u043f\u043e \u0447\u0435\u0440\u0437\u0456', bitsLabelAdhd: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f: ADHD', bitsTotal: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f, \u20b4', bitsOrderLine: '\u041f\u043e\u0440\u044f\u0434\u043e\u043a: %list%', bitsPicked: '\u041e\u0431\u0440\u0430\u043d\u0456: %list%' });
+Object.assign(window.I18N.en, { bitsLabel: 'Sound Alerts', bitsLabelOrder: 'Sound Alerts Order', bitsLabelAdhd: 'Sound Alerts ADHD', bitsTotal: 'Sound Alerts, ₴', bitsOrderLine: 'Playback order: %list%', bitsPicked: 'Selected alerts: %list%' });
+Object.assign(window.I18N.ua, { bitsLabel: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f', bitsLabelOrder: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f: \u043f\u043e \u0447\u0435\u0440\u0437\u0456', bitsLabelAdhd: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f: ADHD', bitsTotal: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f, \u20b4', bitsOrderLine: '\u041f\u043e\u0440\u044f\u0434\u043e\u043a \u0432\u0456\u0434\u0442\u0432\u043e\u0440\u0435\u043d\u043d\u044f: %list%', bitsPicked: '\u041e\u0431\u0440\u0430\u043d\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f: %list%' });
 const $ = id => document.getElementById(id);
 const err = m => { $('err').textContent = m || ''; };
 const btn = $('btn');
@@ -139,7 +139,7 @@ Promise.all([
   JARS.forEach(j => { const o = document.createElement('option'); o.value = j.code; o.textContent = j.title || j.code; $('jar').append(o); });
   if (JARS.length <= 1) $('row_jar').style.display = 'none';
   $('jar').addEventListener('change', applyJar); applyJar();
-  // bits picker: the configured selectors become options (regular donation first)
+  // bits picker: the configured selectors become options (Regular Donation first)
   BITS = ((b && b.bits) || []).slice().sort((a, b) => (Number(a.slot) || 0) - (Number(b.slot) || 0));
   const list = Array.isArray(b && b.modes) ? b.modes : (['single', 'order', 'adhd'].includes(b && b.mode) ? [b.mode] : ['single']);
   MODES = ['order', 'adhd', 'single'].filter(m => list.includes(m));
@@ -181,7 +181,7 @@ function fillBitOptions() {
   bs.innerHTML = '';
   const add = (v, text) => { const o = document.createElement('option'); o.value = v; o.textContent = text; bs.append(o); };
   add('', window.t('blankBit'));
-  // the extra selectors sit between Regular donation and the normal Sound alerts
+  // the extra selectors sit between Regular Donation and the normal Sound Alerts
   const keys = { order: 'bitsLabelOrder', adhd: 'bitsLabelAdhd', single: 'bitsLabel' };
   ['order', 'adhd', 'single'].forEach(m => { if (MODES.includes(m)) add(m, window.t(keys[m])); });
   bs.value = keep === '' || MODES.includes(keep) ? keep : '';

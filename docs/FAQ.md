@@ -91,7 +91,7 @@ API-токен Monobank і хоча б одна банка. Решта — оп�
 ## 3. Оверлей алертів
 
 **Як додати оверлей в OBS?**
-Browser source → `http://<нік>.overlay.localhost:27183/main` (1280×720 або 1920×1080), після зміни стилів —
+Browser source → `http://<нік>.overlay.localhost:27183/main` (рекомендовано 750×500; розмір джерела можна масштабувати), після зміни стилів —
 «Refresh cache of current page».
 
 **Оверлей порожній.**

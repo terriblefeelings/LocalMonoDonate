@@ -40,7 +40,7 @@
     <div class="body">
       <div class="modes" id="modes">
         <button type="button" class="modebtn" data-mode="single" data-i18n="modeSingle">Single</button>
-        <button type="button" class="modebtn" data-mode="order" data-i18n="modeOrder">In order</button>
+        <button type="button" class="modebtn" data-mode="order" data-i18n="modeOrder">In Order</button>
         <button type="button" class="modebtn" data-mode="adhd" data-i18n="modeAdhd">ADHD</button>
       </div>
       <div class="bgrid" id="deck"></div>
@@ -72,11 +72,11 @@
 <script>
 window.HEAD_THEMES = ['dark', 'light'];
 window.I18N = {
-  en: { deck: 'Sound Alerts Deck', clickEdit: 'click a cell to edit', bit: 'Sound Alert', newBit: 'New sound alert', label: 'Label', buttonImage: 'Button image', kind: 'Type', optSound: 'Sound', optVideo: 'Video', optImage: 'Image', optAlert: 'Alert (existing)', media: 'Media', sound: 'Sound (with image)', alert: 'Alert', price: 'Price (₴)', remove: 'Remove', apply: 'Apply', preview: 'Preview', vol: 'Volume', codeOnSave: 'a code is generated on save' },
+  en: { deck: 'Sound Alerts Deck', clickEdit: 'click a cell to edit', bit: 'Sound Alert', newBit: 'New Sound Alert', label: 'Label', buttonImage: 'Button image', kind: 'Type', optSound: 'Sound', optVideo: 'Video', optImage: 'Image', optAlert: 'Alert (existing)', media: 'Media', sound: 'Sound (with image)', alert: 'Alert', price: 'Price (₴)', remove: 'Remove', apply: 'Apply', preview: 'Preview', vol: 'Volume', codeOnSave: 'a code is generated on save' },
   ua: { deck: 'Дек звукових сповіщень', clickEdit: 'натисніть клітинку, щоб редагувати', bit: 'Звукове сповіщення', newBit: 'Нове звукове сповіщення', label: 'Назва', buttonImage: 'Зображення кнопки', kind: 'Тип', optSound: 'Звук', optVideo: 'Відео', optImage: 'Зображення', optAlert: 'Сповіщення (наявне)', media: 'Медіа', sound: 'Звук (із зображенням)', alert: 'Сповіщення', price: 'Ціна (₴)', remove: 'Видалити', apply: 'Застосувати', preview: 'Перегляд', vol: 'Гучність', codeOnSave: 'код згенерується при збереженні' }
 };
-Object.assign(window.I18N.en, { modeSingle: 'Single', modeOrder: 'In order', modeAdhd: 'ADHD' });
-Object.assign(window.I18N.ua, { modeSingle: '\u041e\u0434\u043d\u0435', modeOrder: '\u041f\u043e \u0447\u0435\u0440\u0437\u0456', modeAdhd: 'ADHD' });
+Object.assign(window.I18N.en, { modeSingle: 'Single', modeOrder: 'In Order', modeAdhd: 'ADHD', applied: 'Applied. Press Save to store.', removed: 'Removed. Press Save to store.', saved: 'Saved', saveError: 'Save error' });
+Object.assign(window.I18N.ua, { modeSingle: 'Одне', modeOrder: 'По черзі', modeAdhd: 'ADHD', applied: 'Застосовано. Натисніть «Зберегти», щоб записати зміни.', removed: 'Видалено. Натисніть «Зберегти», щоб записати зміни.', saved: 'Збережено', saveError: 'Помилка збереження' });
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const icon = k => k === 'video' ? '🎬' : k === 'image' ? '🖼️' : k === 'sound' ? '🔊' : '✨';
@@ -102,7 +102,7 @@ function syncModes() {
 document.querySelectorAll('.modebtn').forEach(b => b.addEventListener('click', () => {
   const m = b.dataset.mode;
   MODES_ON = MODES_ON.includes(m) ? MODES_ON.filter(x => x !== m) : [...MODES_ON, m];
-  syncModes(); status('applied — press Save to store');
+  syncModes(); status(window.t('applied'));
 }));
 
 function enhanceSelects() {
@@ -233,13 +233,13 @@ $('b_apply').onclick = () => {
   const bit = { slot: selSlot, label: $('b_label').value.trim(), kind, img: $('b_img').value.trim(), url: kind === 'alert' ? '' : $('b_url').value.trim(), sound: kind === 'image' ? $('b_sound').value.trim() : '', ruleId: kind === 'alert' ? $('b_rule').value : '', price: Number($('b_price').value) || 0, code: '' };
   const prev = BITS.find(x => Number(x.slot) === selSlot); if (prev && prev.code) bit.code = prev.code;
   BITS = BITS.filter(x => Number(x.slot) !== selSlot); BITS.push(bit);
-  render(); status('applied — press Save to store');
+  render(); status(window.t('applied'));
 };
-$('b_del').onclick = () => { if (selSlot < 0) return; BITS = BITS.filter(x => Number(x.slot) !== selSlot); $('editor').style.display = 'none'; selSlot = -1; render(); status('removed — press Save to store'); };
+$('b_del').onclick = () => { if (selSlot < 0) return; BITS = BITS.filter(x => Number(x.slot) !== selSlot); $('editor').style.display = 'none'; selSlot = -1; render(); status(window.t('removed')); };
 window.savePage = async () => {
   try {     const r = await fetch('/api/bits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bits: BITS, grid: GRID, modes: MODES_ON }) });
-    const d = await r.json(); if (d.ok) { BITS = d.bits || BITS; render(); status('saved'); } else status('save error', true);
-  } catch { status('save error', true); }
+    const d = await r.json(); if (d.ok) { BITS = d.bits || BITS; render(); status(window.t('saved')); } else status(window.t('saveError'), true);
+  } catch { status(window.t('saveError'), true); }
 };
 async function load() {
   try { const b = await (await fetch('/api/bits')).json(); BITS = b.bits || []; GRID = b.grid || 5; MODES_ON = Array.isArray(b.modes) ? b.modes.filter(m => ['single','order','adhd'].includes(m)) : (['single','order','adhd'].includes(b.mode) ? [b.mode] : ['single']); } catch {}

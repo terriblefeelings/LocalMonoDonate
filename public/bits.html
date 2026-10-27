@@ -62,7 +62,7 @@
       </div>
       <div class="modes" id="modes">
         <button type="button" class="modebtn" data-mode="single" data-i18n="modeSingle">Single</button>
-        <button type="button" class="modebtn" data-mode="order" data-i18n="modeOrder">In order</button>
+        <button type="button" class="modebtn" data-mode="order" data-i18n="modeOrder">In Order</button>
         <button type="button" class="modebtn" data-mode="adhd" data-i18n="modeAdhd">ADHD</button>
       </div>
       <div class="deck" id="deck"></div>
@@ -89,14 +89,14 @@
 <script>
 window.I18N_DEFAULT = 'ua';
 window.I18N = {
-  en: { title: 'Sound Alerts', sub: 'Pick what plays on stream — payment opens in Monobank', empty: 'No alerts yet' },
+  en: { title: 'Sound Alerts', sub: 'Pick what plays on your stream — payment opens in Monobank', empty: 'No alerts yet' },
   ua: { title: 'Звукові сповіщення', sub: 'Обери, що зіграє в ефірі — оплата відкриється в Monobank', empty: 'Поки що немає жодного сповіщення' }
 };
 const $ = id => document.getElementById(id);
 Object.assign(window.I18N.en, { nick: 'Your nickname', nickPh: 'nickname (optional)', payDirect: 'Pay directly in the streamer\'s Monobank', payGo: 'Open', payClose: 'Close', payNote: 'Note: If you do not want the Monobank app to open automatically, long press the Open button and choose either Open in new browser tab or, if you want to do it manually, Copy link.' });
 Object.assign(window.I18N.ua, { nick: 'Твій нік', nickPh: 'нік (необовʼязково)', payDirect: 'Перейти до оплати напряму до Монобанки пана стрімера', payGo: 'Перейти', payClose: 'Закрити', payNote: 'Примітка: якщо не хочете, щоб застосунок Monobank відкривався автоматично, натисніть і утримуйте кнопку «Перейти» і виберіть «Відкрити в новій вкладці браузера» або, за потреби, «Копіювати посилання».' });
-Object.assign(window.I18N.en, { modeSingle: 'Single', modeOrder: 'In order', modeAdhd: 'ADHD', paySelected: 'Pay', orderText: 'Order', selectedText: 'Selected' });
-Object.assign(window.I18N.ua, { modeSingle: '\u041e\u0434\u043d\u0435', modeOrder: '\u041f\u043e \u0447\u0435\u0440\u0437\u0456', modeAdhd: 'ADHD', paySelected: '\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u0438', orderText: '\u041f\u043e\u0440\u044f\u0434\u043e\u043a', selectedText: '\u041e\u0431\u0440\u0430\u043d\u0456' });
+Object.assign(window.I18N.en, { modeSingle: 'Single', modeOrder: 'In Order', modeAdhd: 'ADHD', paySelected: 'Pay', orderText: 'Order', selectedText: 'Selected', payOrderError: 'Could not create the order. Try again.' });
+Object.assign(window.I18N.ua, { modeSingle: '\u041e\u0434\u043d\u0435', modeOrder: '\u041f\u043e \u0447\u0435\u0440\u0437\u0456', modeAdhd: 'ADHD', paySelected: '\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u0438', orderText: '\u041f\u043e\u0440\u044f\u0434\u043e\u043a', selectedText: '\u041e\u0431\u0440\u0430\u043d\u0456', payOrderError: '\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0441\u0442\u0432\u043e\u0440\u0438\u0442\u0438 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f. \u0421\u043f\u0440\u043e\u0431\u0443\u0439 \u0449\u0435 \u0440\u0430\u0437.' });
 Object.assign(window.I18N.en, { totalAmount: 'Total Amount' });
 Object.assign(window.I18N.ua, { totalAmount: '\u0417\u0430\u0433\u0430\u043b\u044c\u043d\u0430 \u0441\u0443\u043c\u0430' });
 try { $('nick').value = localStorage.getItem('lmd:nick') || ''; } catch (e) {}
