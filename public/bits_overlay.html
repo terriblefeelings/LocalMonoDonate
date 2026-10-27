@@ -9,7 +9,8 @@
   #stage { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); }
   .notif { display: flex; flex-direction: column; align-items: center; }
   .bitmedia { overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .bitmedia img, .bitmedia video { height: 100%; width: auto; max-width: none; max-height: none; display: block; }
+  .bitmedia img { height: 100%; width: auto; max-width: none; max-height: none; display: block; }
+  .bitmedia video { width: 100%; height: 100%; max-width: none; max-height: none; display: block; object-fit: contain; background: #000; }
 </style>
 </head>
 <body>
@@ -17,7 +18,8 @@
 <script src="/alert.js"></script>
 <script>
 const CFG = { videoMaxMs: 180000 };
-const MEDIA_W = 720, MEDIA_H = 300;
+// same video geometry as the Media overlay: 640x360, full height, letterboxed
+const MEDIA_W = 640, MEDIA_H = 360;
 let RULES = [];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function pickStyle(amount, ruleId) {
@@ -77,9 +79,11 @@ async function playPre(d) {
 }
 
 function mediaBox(url, w, h) {
-  const box = document.createElement('div'); box.className = 'bitmedia';
-  box.style.width = (w || MEDIA_W) + 'px'; box.style.height = (h || MEDIA_H) + 'px';
   const isVid = Alert.isVidUrl(url);
+  // videos always use the Media overlay's 640x360 frame, whatever style sized them
+  const bw = isVid ? MEDIA_W : (w || MEDIA_W), bh = isVid ? MEDIA_H : (h || MEDIA_H);
+  const box = document.createElement('div'); box.className = 'bitmedia';
+  box.style.width = bw + 'px'; box.style.height = bh + 'px';
   const el = document.createElement(isVid ? 'video' : 'img'); el.src = url;
   if (isVid) { el.playsInline = true; el.autoplay = true; el.loop = false; el.muted = false; el.preload = 'auto'; }
   box.append(el);
