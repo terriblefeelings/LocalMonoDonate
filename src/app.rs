@@ -174,7 +174,7 @@ impl Ctx {
         // bits have their own codes: a donation whose comment contains a bit code plays on the bits overlay
         if let Some(bit) = cfg.bits.iter().find(|b| !b.code.is_empty() && low.contains(&b.code.to_lowercase())).cloned() {
             let name = bit_display_name(&comment);
-            let msg: String = comment.chars().take(cfg.limits.message_max).collect();
+            let msg = "Нічого не написав".to_string();
             jar.history.insert(0, HistoryItem {
                 id: tx.id.clone(), name: name.clone(), amount: uah, message: msg.clone(),
                 youtube_id: String::new(), media_url: String::new(), bit_label: bit.label.clone(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
