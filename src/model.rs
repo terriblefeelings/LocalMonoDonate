@@ -642,6 +642,8 @@ pub struct Config {
     #[serde(default = "default_rules")] pub notify: NotifyRules,
     #[serde(default)] pub bits: Vec<Bit>,
     #[serde(default = "d_bits_mode")] pub bits_mode: String,
+    /// enabled selectors on the donation page; absent means the legacy single bits_mode
+    #[serde(default)] pub bits_modes: Option<Vec<String>>,
     #[serde(default = "d_grid")] pub bits_grid: u32,
     #[serde(default)] pub timer: TimerCfg,
     #[serde(default)] pub features: Features,
@@ -656,6 +658,18 @@ pub struct Config {
     #[serde(default = "d_qr_size")] pub qr_size: u32,      // 0..=200 %
 
 }
+
+impl Config {
+    /// selectors the donation page may offer, in a stable order
+    pub fn enabled_bits_modes(&self) -> Vec<String> {
+        let raw = self.bits_modes.clone().unwrap_or_else(|| vec![self.bits_mode.clone()]);
+        let mut out = Vec::new();
+        for m in raw {
+            if ["single", "order", "adhd"].contains(&m.as_str()) && !out.contains(&m) { out.push(m); }
+        }
+        out
+    }
+}
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -664,7 +678,7 @@ impl Default for Config {
             min_amount: d_min(), max_amount: d_max(), code_prefix: d_prefix(),
             notify_unmatched: true, poll_seconds: d_poll(), idle_poll_seconds: d_idle(),
             pending_ttl_hours: d_ttl(), limits: Limits::default(), overlay: OverlayCfg::default(),
-            notify: default_rules(), bits: Vec::new(), bits_mode: d_bits_mode(), bits_grid: d_grid(),
+            notify: default_rules(), bits: Vec::new(), bits_mode: d_bits_mode(), bits_modes: None, bits_grid: d_grid(),
             timer: TimerCfg::default(),
             features: Features::default(),
             auction: AuctionCfg::default(),

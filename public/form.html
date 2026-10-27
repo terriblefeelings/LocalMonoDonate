@@ -47,11 +47,11 @@ body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12p
         <div id="bitsGrid"></div>
         <div class="note" id="bitsOrderLine" style="display:none;margin-top:8px"></div>
       </div></div>
-      <div class="row"><label data-i18n="amount">Сума, ₴</label><div class="ctl"><input id="amount" type="number" inputmode="numeric" step="1" required></div></div>
+      <div class="row"><label data-i18n="amount">Сума, ₴</label><div class="ctl"><input id="amount" type="number" inputmode="numeric" step="1" autocomplete="off" required></div></div>
       <div class="row" id="row_bits_total" hidden><label data-i18n="bitsTotal">Звукові сповіщення, ₴</label><div class="ctl"><input id="bits_total" type="number" disabled value="0"></div></div>
-      <div class="row"><label data-i18n="name">Ім'я</label><div class="ctl"><input id="name" type="text" maxlength="40" data-i18n-ph="namePh" placeholder="Напр. Alien"></div></div>
-      <div class="row"><label data-i18n="message">Повідомлення</label><div class="ctl"><textarea id="message" maxlength="500" data-i18n-ph="msgPh" placeholder="Напр. Привіт усім!" style="min-height:84px;resize:vertical"></textarea></div></div>
-      <div class="row"><label data-i18n="youtube">Media link (optional)</label><div class="ctl"><input id="youtube" type="text" placeholder="youtu.be / instagram.com / tiktok.com / twitch.tv / v.redd.it / x.com"></div></div>
+      <div class="row"><label data-i18n="name">Ім'я</label><div class="ctl"><input id="name" type="text" maxlength="40" autocomplete="off" data-i18n-ph="namePh" placeholder="Напр. Alien"></div></div>
+      <div class="row"><label data-i18n="message">Повідомлення</label><div class="ctl"><textarea id="message" maxlength="500" autocomplete="off" data-i18n-ph="msgPh" placeholder="Напр. Привіт усім!" style="min-height:84px;resize:vertical"></textarea></div></div>
+      <div class="row"><label data-i18n="youtube">Media link (optional)</label><div class="ctl"><input id="youtube" type="text" autocomplete="off" placeholder="youtu.be / instagram.com / tiktok.com / twitch.tv / v.redd.it / x.com"></div></div>
       <div class="row"><label data-i18n="voice">Голос</label><div class="ctl"><select id="voice"></select></div></div>
       <div class="note" id="hint"></div>
       <button class="primary" id="btn" data-i18n="pay" style="width:100%;justify-content:center;margin-top:16px;padding:13px">Згенерувати лінк</button>
@@ -78,15 +78,20 @@ Object.assign(window.I18N.en, { noJar: 'No jar configured - add one in Settings'
 Object.assign(window.I18N.ua, { noJar: 'Банку не додано - додай її в Налаштуваннях' });
 Object.assign(window.I18N.en, { mediaFrom: 'YouTube from %y% \u20b4; Instagram, TikTok, Twitch, Reddit and X from %o% \u20b4.', mediaYtFrom: 'YouTube from %p% \u20b4', mediaOtherFrom: 'from %p% \u20b4', mediaNone: 'Media links are disabled.', youtube: 'Media link (optional)' });
 Object.assign(window.I18N.ua, { mediaFrom: 'YouTube \u0432\u0456\u0434 %y% \u20b4; Instagram, TikTok, Twitch, Reddit \u0456 X \u2014 \u0432\u0456\u0434 %o% \u20b4.', mediaYtFrom: 'YouTube \u0432\u0456\u0434 %p% \u20b4', mediaOtherFrom: '\u2014 \u0432\u0456\u0434 %p% \u20b4', mediaNone: '\u041c\u0435\u0434\u0456\u0430\u043f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f \u0432\u0438\u043c\u043a\u043d\u0435\u043d\u043e.', youtube: '\u041f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f \u043d\u0430 \u043c\u0435\u0434\u0456\u0430 (\u043d\u0435\u043e\u0431\u043e\u0432\u02bc\u044f\u0437\u043a\u043e\u0432\u0435)' });
-Object.assign(window.I18N.en, { bitsLabel: 'Sound alerts', bitsTotal: 'Sound alerts, ₴', bitsOrderLine: 'Play order: %list%', bitsPicked: 'Selected: %list%' });
-Object.assign(window.I18N.ua, { bitsLabel: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f', bitsTotal: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f, \u20b4', bitsOrderLine: '\u041f\u043e\u0440\u044f\u0434\u043e\u043a: %list%', bitsPicked: '\u041e\u0431\u0440\u0430\u043d\u0456: %list%' });
+Object.assign(window.I18N.en, { bitsLabel: 'Sound alerts', bitsLabelOrder: 'Sound Alerts Order', bitsLabelAdhd: 'Sound Alerts ADHD', bitsTotal: 'Sound alerts, ₴', bitsOrderLine: 'Play order: %list%', bitsPicked: 'Selected: %list%' });
+Object.assign(window.I18N.ua, { bitsLabel: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f', bitsLabelOrder: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f: \u043f\u043e \u0447\u0435\u0440\u0437\u0456', bitsLabelAdhd: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f: ADHD', bitsTotal: '\u0417\u0432\u0443\u043a\u043e\u0432\u0456 \u0441\u043f\u043e\u0432\u0456\u0449\u0435\u043d\u043d\u044f, \u20b4', bitsOrderLine: '\u041f\u043e\u0440\u044f\u0434\u043e\u043a: %list%', bitsPicked: '\u041e\u0431\u0440\u0430\u043d\u0456: %list%' });
 const $ = id => document.getElementById(id);
 const err = m => { $('err').textContent = m || ''; };
 const btn = $('btn');
 const payopts = $('payopts'), paylink = $('paylink');
 let YT_MIN = 0, OTHER_MIN = 0, BITS = [], JARS = [];
-let MODE = 'single', SELECTED = [], AUTO_AMOUNT = '', GRID = 3;
-try { $('name').value = localStorage.getItem('lmd:nick') || ''; } catch (e) {}
+let MODES = [], MODE = '', SELECTED = [], GRID = 3;
+// a reload is a fresh donation: don't restore the previous donor's fields
+try { localStorage.removeItem('lmd:nick'); } catch (e) {}
+['amount', 'name', 'message', 'youtube'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+window.addEventListener('pageshow', () => {
+  ['amount', 'name', 'message', 'youtube'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+});
 let MEDIA = { youtube: true, instagram: true, tiktok: true, twitch: true, reddit: true, x: true };
 const MEDIA_NAMES = { instagram: 'Instagram', tiktok: 'TikTok', twitch: 'Twitch', reddit: 'Reddit', x: 'X' };
 const MEDIA_PLACEHOLDERS = { youtube: 'youtu.be', instagram: 'instagram.com', tiktok: 'tiktok.com', twitch: 'twitch.tv', reddit: 'v.redd.it', x: 'x.com' };
@@ -131,21 +136,21 @@ Promise.all([
   JARS.forEach(j => { const o = document.createElement('option'); o.value = j.code; o.textContent = j.title || j.code; $('jar').append(o); });
   if (JARS.length <= 1) $('row_jar').style.display = 'none';
   $('jar').addEventListener('change', applyJar); applyJar();
-  // bits picker
+  // bits picker: the configured selectors become options (regular donation first)
   BITS = (b && b.bits) || [];
-  MODE = ['single', 'order', 'adhd'].includes(b && b.mode) ? b.mode : 'single';
+  const list = Array.isArray(b && b.modes) ? b.modes : (['single', 'order', 'adhd'].includes(b && b.mode) ? [b.mode] : ['single']);
+  MODES = ['order', 'adhd', 'single'].filter(m => list.includes(m));
   GRID = Number(b && b.grid) || 3;
+  fillBitOptions();
   const bs = $('bit');
-  const none = document.createElement('option'); none.value = ''; none.textContent = window.t('blankBit'); bs.append(none);
-  if (MODE === 'single') {
-    BITS.forEach(bit => { const o = document.createElement('option'); o.value = bit.code; o.textContent = (bit.label || bit.kind) + ' — ' + Math.round(bit.price) + ' ₴'; bs.append(o); });
-  } else {
-    const both = document.createElement('option'); both.value = 'bits'; both.textContent = window.t('bitsLabel'); bs.append(both);
-    renderBitsGrid();
-  }
-  bs.addEventListener('change', () => { payopts.hidden = true;
-    if (MODE !== 'single' && bs.value !== 'bits') SELECTED = [];
-    syncBitsGrid(); applyBit(); });
+  bs.addEventListener('change', () => {
+    payopts.hidden = true;
+    MODE = bs.value;
+    if (!MODE) SELECTED = [];
+    if (MODE === 'single' && SELECTED.length > 1) SELECTED = [SELECTED[SELECTED.length - 1]];
+    syncBitsGrid(); applyBit();
+  });
+  if (MODES.length) renderBitsGrid();
   const d = (n.rules || []).find(r => r.id === 'default'); const st = (d && d.style) || {};
   YT_MIN = st.yt_min || 0; OTHER_MIN = st.other_media_min || 0;
   ['youtube', 'instagram', 'tiktok', 'twitch', 'reddit', 'x'].forEach(id => { MEDIA[id] = st['media_' + id] !== false; });
@@ -165,10 +170,20 @@ function applyJar() {
   else el.style.display = 'none';
 }
 window.applyLang = function () { updateMediaHint();
-  const bs = $('bit');
-  if (bs && bs.options[0]) bs.options[0].textContent = window.t('blankBit');
-  if (bs && MODE !== 'single' && bs.options[1]) bs.options[1].textContent = window.t('bitsLabel');
+  fillBitOptions();
   syncBitsGrid(); renderCredits(); };
+function fillBitOptions() {
+  const bs = $('bit');
+  const keep = bs.value;
+  bs.innerHTML = '';
+  const add = (v, text) => { const o = document.createElement('option'); o.value = v; o.textContent = text; bs.append(o); };
+  add('', window.t('blankBit'));
+  // the extra selectors sit between Regular donation and the normal Sound alerts
+  const keys = { order: 'bitsLabelOrder', adhd: 'bitsLabelAdhd', single: 'bitsLabel' };
+  ['order', 'adhd', 'single'].forEach(m => { if (MODES.includes(m)) add(m, window.t(keys[m])); });
+  bs.value = keep === '' || MODES.includes(keep) ? keep : '';
+  MODE = bs.value;
+}
 function renderBitsGrid() {
   const g = $('bitsGrid'); if (!g) return; g.innerHTML = '';
   const cols = Math.max(1, Math.min(GRID, BITS.length || 1));
@@ -183,14 +198,16 @@ function renderBitsGrid() {
   syncBitsGrid();
 }
 function toggleBit(code) {
-  const i = SELECTED.indexOf(code);
-  if (i >= 0) SELECTED.splice(i, 1); else SELECTED.push(code);
+  if (MODE === 'single') {
+    SELECTED = SELECTED[0] === code ? [] : [code];
+  } else {
+    const i = SELECTED.indexOf(code);
+    if (i >= 0) SELECTED.splice(i, 1); else SELECTED.push(code);
+  }
   payopts.hidden = true; syncBitsGrid(); applyBit();
 }
-function multiOn() { return MODE !== 'single' && $('bit').value === 'bits'; }
 function syncBitsGrid() {
-  if (MODE === 'single') return;
-  const on = multiOn();
+  const on = MODE !== '';
   $('row_bits_pick').hidden = !on;
   document.querySelectorAll('#bitsGrid .pick').forEach(b => {
     const picked = SELECTED.includes(b.dataset.code);
@@ -198,63 +215,53 @@ function syncBitsGrid() {
     b.setAttribute('aria-pressed', String(picked));
   });
   const line = $('bitsOrderLine'); if (!line) return;
-  if (!on || !SELECTED.length) { line.style.display = 'none'; return; }
+  if (!on || MODE === 'single' || !SELECTED.length) { line.style.display = 'none'; return; }
   const names = SELECTED.map(c => (BITS.find(x => x.code === c) || {}).label || c);
   const list = names.join(MODE === 'adhd' ? ', ' : ' → ');
   line.textContent = window.t(MODE === 'adhd' ? 'bitsPicked' : 'bitsOrderLine').replace('%list%', list);
   line.style.display = '';
 }
 function chosenBits() {
-  if (MODE === 'single') {
-    const bit = BITS.find(x => x.code === $('bit').value);
-    return bit ? [bit] : [];
-  }
-  if (!multiOn()) return [];
+  if (!MODE) return [];
   return SELECTED.map(c => BITS.find(x => x.code === c)).filter(Boolean);
 }
 function applyBit() {
   const bits = chosenBits();
-  const sum = bits.reduce((s, b) => s + (Number(b.price) || 0), 0);
-  const extra = MODE === 'single' ? 0 : sum;
+  const extra = bits.reduce((s, b) => s + (Number(b.price) || 0), 0);
   ['amount', 'name', 'message'].forEach(id => {
     const el = $(id); el.disabled = false; const r = el.closest('.row'); if (r) r.style.opacity = 1;
   });
   // the alert total is its own read-only field; the regular amount stays the donor's input
   const btr = $('row_bits_total'), bt = $('bits_total');
-  const showExtra = MODE !== 'single' && multiOn();
+  const showExtra = MODE !== '';
   if (btr) btr.hidden = !showExtra;
   if (bt) bt.value = String(extra);
   const base = Number($('amount').value) || 0;
-  const priced = MODE === 'single' ? (bits.length ? sum : base) : base + extra;
-  const ytOk = mediaOn('youtube') && (!bits.length || priced >= YT_MIN);
+  // media limits are about the donation itself, never the sound-alert total
+  const ytOk = mediaOn('youtube') && base >= YT_MIN;
   const mediaOk = ytOk || enabledOtherMedia().length > 0;
   const y = $('youtube'); y.disabled = !mediaOk; const yr = y.closest('.row'); if (yr) yr.style.opacity = mediaOk ? 1 : .45;
-  if (MODE === 'single' && bits.length && (!$('amount').value || $('amount').value === AUTO_AMOUNT)) {
-    AUTO_AMOUNT = String(sum); $('amount').value = AUTO_AMOUNT;
-  }
 }
 btn.addEventListener('click', async e => {
   e.preventDefault(); err(''); btn.disabled = true; btn.textContent = window.t('payWait');
   payopts.hidden = true; paylink.removeAttribute('href');
   try { const bits = chosenBits();
     const body = { jar: $('jar').value, youtube: $('youtube').value, voice: $('voice').value };
-    const extra = MODE === 'single' ? 0 : bits.reduce((s, b) => s + (Number(b.price) || 0), 0);
+    const extra = bits.reduce((s, b) => s + (Number(b.price) || 0), 0);
     body.amount = (Number($('amount').value) || 0) + extra;
     body.name = $('name').value; body.message = $('message').value;
-    if (MODE !== 'single' && bits.length) body.bits = bits;
-    else if (bits.length) body.bit = bits[0];
+    if (bits.length) { body.bits = bits; body.mode = MODE; }
     const r = await fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json();
     if (!d.ok) { err(d.error || 'Error'); btn.disabled = false; btn.textContent = window.t('pay'); return; }
     paylink.href = d.fallback || d.redirect; payopts.hidden = false;
-    try { localStorage.setItem('lmd:nick', $('name').value.trim()); } catch (e) {}
     btn.disabled = false; btn.textContent = window.t('pay');
   } catch { err(window.t('payErr')); btn.disabled = false; btn.textContent = window.t('pay'); }
 });
 ['amount', 'name', 'message', 'youtube', 'bit', 'jar', 'voice'].forEach(id => {
   const el = $(id);
   if (!el) return;
-  el.addEventListener('input', () => { payopts.hidden = true; paylink.removeAttribute('href'); });
+  el.addEventListener('input', () => { payopts.hidden = true; paylink.removeAttribute('href'); if (id === 'amount') applyBit(); });
   el.addEventListener('change', () => { payopts.hidden = true; paylink.removeAttribute('href'); });
 });
 fetch('/api/config').then(r => r.json()).then(c => {

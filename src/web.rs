@@ -225,12 +225,23 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
         if out.is_empty() { if let Some(b) = bit_sel.clone() { out.push(b); } }
         out
     };
-    let mode = cfg.bits_mode.clone();
+    let enabled_modes = cfg.enabled_bits_modes();
+    let bits_sel = if enabled_modes.is_empty() { Vec::new() } else { bits_sel };
+    let requested_mode = v.get("mode").and_then(|x| x.as_str()).unwrap_or("").to_string();
+    let mode = if bits_sel.is_empty() {
+        String::new()
+    } else if enabled_modes.contains(&requested_mode) {
+        requested_mode
+    } else {
+        enabled_modes.first().cloned().unwrap_or_default()
+    };
     let amount = if amount_in > 0.0 { amount_in } else if bits_sel.is_empty() {
         0.0
     } else {
         bits_sel.iter().map(|b| b.price).sum()
     };
+    // media limits look at the donation itself, not the paid sound alerts
+    let media_amount = (amount - bits_sel.iter().map(|b| b.price).sum::<f64>()).max(0.0);
 
     let fail = |req: tiny_http::Request, m: &str| { let _ = req.respond(json_resp(400, json!({"ok": false, "error": m}))); };
     if !cfg.features.donate { return fail(request, "Донати вимкнено"); }
@@ -269,14 +280,14 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     // a watch link with &list= still points at one video and is allowed; a pure playlist has no id
     if ytid.is_empty() && yt.contains("list=") && !ystyle.yt_playlists { return fail(request, "Playlist is not allowed"); }
     if !ytid.is_empty() {
-        if ystyle.yt_min > 0.0 && amount < ystyle.yt_min { return fail(request, &format!("YouTube requires at least {:.0} UAH", ystyle.yt_min)); }
+        if ystyle.yt_min > 0.0 && media_amount < ystyle.yt_min { return fail(request, &format!("YouTube requires at least {:.0} UAH", ystyle.yt_min)); }
         if let Some((views, secs)) = mono::youtube_meta(&ytid) {
             if ystyle.yt_views > 0 && views < ystyle.yt_views { return fail(request, &format!("Video needs at least {} views", ystyle.yt_views)); }
             if ystyle.yt_max_min > 0 && secs > ystyle.yt_max_min * 60 { return fail(request, &format!("Video must be at most {} min", ystyle.yt_max_min)); }
         }
     }
     if let Some(_url) = &other_media {
-        if ystyle.other_media_min > 0.0 && amount < ystyle.other_media_min {
+        if ystyle.other_media_min > 0.0 && media_amount < ystyle.other_media_min {
             return fail(request, &format!("Other media requires at least {:.0} UAH", ystyle.other_media_min));
         }
     }
@@ -1814,23 +1825,32 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         return;
     }
     if path == "/api/bits" {
-        if method == Method::Get { let _ = request.respond(json_resp(200, json!({ "bits": ctx.cfg().bits, "mode": ctx.cfg().bits_mode, "grid": ctx.cfg().bits_grid, "jars": ctx.cfg().jars }))); }
+        if method == Method::Get { let _ = request.respond(json_resp(200, json!({ "bits": ctx.cfg().bits, "mode": ctx.cfg().bits_mode, "modes": ctx.cfg().enabled_bits_modes(), "grid": ctx.cfg().bits_grid, "jars": ctx.cfg().jars }))); }
         else if method == Method::Post { bits_post(&ctx, request); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
 
-    if path == "/api/bits/mode" {
+    if path == "/api/bits/modes" {
         if method == Method::Post {
             let v = read_body(&mut request);
-            let m = v.get("mode").and_then(|x| x.as_str()).unwrap_or("").to_string();
-            if !["single", "order", "adhd"].contains(&m.as_str()) {
-                let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "unknown mode" })));
-                return;
+            let raw = v.get("modes").and_then(|x| x.as_array()).cloned().unwrap_or_default();
+            let mut modes: Vec<String> = Vec::new();
+            for m in raw {
+                let m = m.as_str().unwrap_or("").to_string();
+                if !["single", "order", "adhd"].contains(&m.as_str()) {
+                    let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "unknown mode" })));
+                    return;
+                }
+                if !modes.contains(&m) { modes.push(m); }
             }
-            { let mut cfg = ctx.cfg(); cfg.bits_mode = m.clone(); save_config(&ctx.paths, &cfg); *ctx.cfg.lock().unwrap() = cfg.clone(); }
-            log(&format!("bits mode: {}", m));
-            let _ = request.respond(json_resp(200, json!({ "ok": true, "mode": m })));
+            { let mut cfg = ctx.cfg();
+              cfg.bits_modes = Some(modes.clone());
+              // keep the legacy field in sync for older state files and pending fallbacks
+              if let Some(first) = modes.first() { cfg.bits_mode = first.clone(); }
+              save_config(&ctx.paths, &cfg); *ctx.cfg.lock().unwrap() = cfg.clone(); }
+            log(&format!("bits modes: {:?}", modes));
+            let _ = request.respond(json_resp(200, json!({ "ok": true, "modes": modes })));
         } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
