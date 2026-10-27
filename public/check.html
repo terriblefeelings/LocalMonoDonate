@@ -220,7 +220,7 @@ function render() {
     };
     act.append(
       mk('↻', window.t('replayFull'), !h.id, () => replayFull(h)),
-      mk('✦', window.t('repeatDonation'), !h.id, () => repeatDonation(h)),
+      mk('✦', window.t('repeatDonation'), !h.id || h.matched === 'bit', () => repeatDonation(h)),
       mk('♪', window.t('replaySound'), !h.id || !h.bitLabel, () => replaySound(h)),
       mk('▶', window.t('playMedia'), !h.id || !media, () => playMedia(h))
     );
