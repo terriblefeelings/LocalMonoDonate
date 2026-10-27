@@ -44,8 +44,23 @@ function playAudio(src, maxMs) { if (!src) return Promise.resolve();
     setTimeout(fin, maxMs || CFG.videoMaxMs); }); }
 
 const queue = []; let busy = false;
-function enqueue(d) { queue.push(d); if (!busy) pump(); }
-async function pump() { if (!queue.length) { busy = false; return; } busy = true; try { await play(queue.shift()); } catch (e) { console.warn(e); } pump(); }
+function enqueue(d) { queue.push({ bit: d }); if (!busy) pump(); }
+function enqueuePre(d) { queue.push({ pre: d }); if (!busy) pump(); }
+async function pump() { if (!queue.length) { busy = false; return; } busy = true;
+  const item = queue.shift();
+  try { if (item.pre) await playPre(item.pre); else await play(item.bit); } catch (e) { console.warn(e); }
+  pump(); }
+
+// clips chosen on the donation page play here, before the donation alert
+async function playPre(d) {
+  const urls = Array.isArray(d.sounds) ? d.sounds.filter(Boolean) : [];
+  if (d.mode === 'adhd') await Promise.all(urls.map(u => playAudio(u, CFG.videoMaxMs)));
+  else for (const u of urls) await playAudio(u, CFG.videoMaxMs);
+  try {
+    await fetch('/api/bits/pre_done', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: d.token }) });
+  } catch {}
+}
 
 function mediaBox(url, w, h) {
   const box = document.createElement('div'); box.className = 'bitmedia';
@@ -124,16 +139,17 @@ async function tick() {
   const ctrl = new AbortController();
   const kill = setTimeout(() => ctrl.abort(), 3000);
   try {
-    d = await (await fetch('/api/poll?since=' + lastId, { cache: 'no-store', signal: ctrl.signal })).json();
+    d = await (await fetch('/api/poll?since=' + lastId + '&o=bits', { cache: 'no-store', signal: ctrl.signal })).json();
   } catch {}
   clearTimeout(kill);
   try {
     if (d) {
       if (typeof d.last === 'number') lastId = d.last;
       if (firstPoll) { firstPoll = false; setTimeout(tick, 800); return; }
-      const bits = (d.events || []).map(raw => { try { return JSON.parse(raw); } catch { return null; } }).filter(e => e && e.type === 'bit');
+      const bits = (d.events || []).map(raw => { try { return JSON.parse(raw); } catch { return null; } })
+        .filter(e => e && (e.type === 'bit' || e.type === 'bits_pre'));
       if (bits.length) await loadSettings();
-      for (const ev of bits) enqueue(ev.data);
+      for (const ev of bits) { if (ev.type === 'bits_pre') enqueuePre(ev.data); else enqueue(ev.data); }
     }
   } catch {}
   setTimeout(tick, 800);

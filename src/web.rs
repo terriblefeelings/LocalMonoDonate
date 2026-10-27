@@ -127,9 +127,12 @@ fn query(full: &str, key: &str) -> Option<String> {
 /* ---------------------------------------------------------------- events */
 
 fn poll_events(ctx: &Ctx, request: tiny_http::Request, full: &str) {
-    let since: u64 = full.split('?').nth(1).unwrap_or("")
+    let query = full.split('?').nth(1).unwrap_or("");
+    let since: u64 = query
         .split('&').find_map(|kv| kv.strip_prefix("since="))
         .and_then(|v| v.parse().ok()).unwrap_or(0);
+    if query.split('&').any(|kv| kv == "o=bits") { crate::app::mark_bits_overlay(); }
+    crate::app::expire_pre_alerts(ctx);
     let (items, last) = ctx.events_since(since);
     let _ = request.respond(json_resp(200, json!({ "events": items, "last": last })));
 }
@@ -778,6 +781,29 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
     }
     // speak the test donation (synth first, so the alert and audio appear together)
     let cfg = ctx.cfg();
+    // optional multi-alert test: bit codes and/or explicit sound urls, plus the playback mode
+    let mut test_bits: Vec<Bit> = Vec::new();
+    if let Some(arr) = v.get("bits").and_then(|x| x.as_array()) {
+        for item in arr {
+            let code = item.as_str().map(|s| s.to_string())
+                .or_else(|| item.get("code").and_then(|c| c.as_str()).map(|s| s.to_string()));
+            if let Some(code) = code {
+                if let Some(b) = cfg.bits.iter().find(|b| b.code == code) { test_bits.push(b.clone()); }
+            }
+        }
+    }
+    let mut sound_urls: Vec<String> = test_bits.iter().filter_map(|b| {
+        let s = if b.kind == "sound" { b.url.clone() } else { b.sound.clone() };
+        if s.is_empty() { None } else { Some(s) }
+    }).collect();
+    if let Some(arr) = v.get("soundUrls").and_then(|x| x.as_array()) {
+        let explicit: Vec<String> = arr.iter().filter_map(|x| x.as_str().map(|s| s.to_string()))
+            .filter(|s| !s.is_empty()).collect();
+        if !explicit.is_empty() { sound_urls = explicit; }
+    }
+    let sound_mode = v.get("mode").and_then(|x| x.as_str()).unwrap_or("order").to_string();
+    let amount = if amount > 0.0 || test_bits.is_empty() { amount } else { test_bits.iter().map(|b| b.price).sum() };
+    let missing_sound = !test_bits.is_empty() && sound_urls.is_empty();
     let mut tts_url = String::new();
     if cfg.tts.enabled() {
         let allowed = cfg.tts.allowed_in(&cfg.tts.dir);
@@ -796,11 +822,14 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
             }
         }
     }
-    ctx.broadcast(json!({ "type": "donation", "data": {
+    let sound_count = sound_urls.len();
+    crate::app::send_donation(ctx, json!({
         "id": format!("test-{}", now_ms()), "name": name, "amount": amount,
         "message": message, "youtubeId": test_ytid, "mediaUrl": test_media, "ruleId": test_rule, "style": test_style, "matched": "test", "jar": "", "currency": "",
-        "ttsUrl": tts_url }}));
-    let _ = request.respond(json_resp(200, json!({ "ok": true })));
+        "ttsUrl": tts_url }), sound_urls, &sound_mode);
+    let warn = if missing_sound { vec!["selected alerts have no sound file".to_string()] } else { Vec::new() };
+    log(&format!("test donation: {:.0} from {} sounds={} mode={}", amount, name, sound_count, sound_mode));
+    let _ = request.respond(json_resp(200, json!({ "ok": true, "warnings": warn })));
 }
 
 /// Called by the donation overlay after the alert (and TTS) finished; the YouTube
@@ -979,11 +1008,10 @@ fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
             } else {
                 (String::new(), String::new(), Vec::new())
             };
-            ctx.broadcast(json!({ "type": "donation", "data": {
+            crate::app::send_donation(ctx, json!({
                 "id": replay_id, "name": h.name, "amount": h.amount, "message": h.message,
-                "youtubeId": yt, "mediaUrl": media, "soundUrls": sounds, "soundMode": "order",
-                "soundUrl": "", "ttsUrl": tts_url,
-                "matched": "replay", "jar": "", "currency": "" } }));
+                "youtubeId": yt, "mediaUrl": media, "soundUrl": "", "ttsUrl": tts_url,
+                "matched": "replay", "jar": "", "currency": "" }), sounds, "order");
             log(&format!("replay {}: {:.0} from {}", mode, h.amount, h.name));
             let _ = request.respond(json_resp(200, json!({ "ok": true })));
         }
@@ -1619,6 +1647,7 @@ fn public_allowed(method: Method, path: &str, cfg: &Config) -> bool {
         | (Method::Post, "/api/submit")
         | (Method::Post, "/api/test")
         | (Method::Post, "/api/replay")
+        | (Method::Post, "/api/bits/pre_done")
         | (Method::Post, "/api/youtube") => true,
         (Method::Get, p) if p.starts_with("/media/") => true,
         (Method::Get, p) if p.starts_with("/media-x/") => true,
@@ -1828,6 +1857,16 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         if method == Method::Get { let _ = request.respond(json_resp(200, json!({ "bits": ctx.cfg().bits, "mode": ctx.cfg().bits_mode, "modes": ctx.cfg().enabled_bits_modes(), "grid": ctx.cfg().bits_grid, "jars": ctx.cfg().jars }))); }
         else if method == Method::Post { bits_post(&ctx, request); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
+
+    if path == "/api/bits/pre_done" {
+        if method == Method::Post {
+            let v = read_body(&mut request);
+            let token = v.get("token").and_then(|x| x.as_str()).unwrap_or("");
+            let ok = crate::app::pre_alert_done(&ctx, token);
+            let _ = request.respond(json_resp(200, json!({ "ok": ok })));
+        } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
 

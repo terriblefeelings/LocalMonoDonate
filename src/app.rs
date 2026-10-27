@@ -56,6 +56,59 @@ mod bit_name_tests {
     }
 }
 
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
+use std::sync::OnceLock;
+
+/// Donation events held back while the sound-alerts overlay plays the chosen clips.
+struct PreAlert { data: serde_json::Value, at: i64 }
+static PRE_ALERTS: OnceLock<Mutex<HashMap<String, PreAlert>>> = OnceLock::new();
+static PRE_SEQ: AtomicU64 = AtomicU64::new(1);
+static BITS_OVERLAY: AtomicI64 = AtomicI64::new(0);
+fn pre_map() -> &'static Mutex<HashMap<String, PreAlert>> { PRE_ALERTS.get_or_init(|| Mutex::new(HashMap::new())) }
+
+/// The sound-alerts overlay polls with `&o=bits`; that is how we know it is open.
+pub fn mark_bits_overlay() { BITS_OVERLAY.store(now_ms(), Ordering::Relaxed); }
+fn bits_overlay_alive() -> bool {
+    let t = BITS_OVERLAY.load(Ordering::Relaxed);
+    t > 0 && now_ms() - t < 5000
+}
+
+/// A donation with sound alerts plays its clips on the bits overlay first; the
+/// donation alert is broadcast only after that overlay reports the clips finished.
+/// With no bits overlay open the alert goes out immediately (and silently).
+pub fn send_donation(ctx: &Ctx, data: serde_json::Value, sound_urls: Vec<String>, sound_mode: &str) {
+    if sound_urls.is_empty() || !bits_overlay_alive() {
+        if !sound_urls.is_empty() { log("bits overlay is not open, sending the alert without sounds"); }
+        ctx.broadcast(json!({ "type": "donation", "data": data }));
+        return;
+    }
+    let token = format!("snd-{}-{}", now_ms(), PRE_SEQ.fetch_add(1, Ordering::Relaxed));
+    pre_map().lock().unwrap().insert(token.clone(), PreAlert { data, at: now_ms() });
+    log(&format!("sounds pre-roll: {} clip(s) mode={}", sound_urls.len(), sound_mode));
+    ctx.broadcast(json!({ "type": "bits_pre", "data": {
+        "token": token, "sounds": sound_urls, "mode": sound_mode } }));
+}
+
+pub fn pre_alert_done(ctx: &Ctx, token: &str) -> bool {
+    let item = pre_map().lock().unwrap().remove(token);
+    match item {
+        Some(p) => { log("sounds pre-roll done, sending the donation"); ctx.broadcast(json!({ "type": "donation", "data": p.data })); true }
+        None => { log("sounds pre-roll done for an unknown/expired token"); false }
+    }
+}
+
+/// Safety net: if the bits overlay dies mid-play, do not lose the alert.
+pub fn expire_pre_alerts(ctx: &Ctx) {
+    let now = now_ms();
+    let expired: Vec<PreAlert> = {
+        let mut m = pre_map().lock().unwrap();
+        let keys: Vec<String> = m.iter().filter(|(_, v)| now - v.at > 30000).map(|(k, _)| k.clone()).collect();
+        keys.into_iter().filter_map(|k| m.remove(&k)).collect()
+    };
+    for p in expired { log("sounds pre-roll timed out, sending the donation"); ctx.broadcast(json!({ "type": "donation", "data": p.data })); }
+}
+
 pub struct Ctx {
     pub cfg: Mutex<Config>,
     pub state: Mutex<State>,
@@ -270,10 +323,10 @@ impl Ctx {
                     }
                 }
             }
-            self.broadcast(json!({ "type": "donation", "data": {
+            crate::app::send_donation(self, json!({
                 "id": tx.id, "name": name, "amount": uah, "message": message,
                 "youtubeId": youtube_id, "mediaUrl": media_url, "matched": kind, "jar": jar_code, "currency": cur,
-                "ttsUrl": tts_url, "soundUrls": sound_urls, "soundMode": sound_mode } }));
+                "ttsUrl": tts_url }), sound_urls, &sound_mode);
             log(&format!("[{}] notification ({}) {:.0} UAH from {}", jar_code, kind, uah, name));
             // StreamElements: mirror the live donation as a tip so the SE alert box plays
             crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&message, &media_url, &youtube_id, &bit_label));
