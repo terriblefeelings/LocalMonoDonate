@@ -143,11 +143,26 @@ function render() {
       tb.onclick = e => { e.stopPropagation(); testBit(bit); }; c.append(tb); }
     g.append(c);
   }
+  fitDeck();
 }
+function fitDeck() {
+  const win = document.getElementById('win');
+  if (!win) return;
+  if (getComputedStyle(document.getElementById('editor')).display !== 'none') { win.style.removeProperty('max-width'); return; }
+  win.style.setProperty('max-width', '820px', 'important');
+  let guard = 0;
+  while (win.getBoundingClientRect().bottom + 16 > window.innerHeight && guard++ < 100) {
+    const w = win.getBoundingClientRect().width;
+    if (w <= 320) break;
+    win.style.setProperty('max-width', Math.max(320, Math.floor(w * 0.98)) + 'px', 'important');
+  }
+}
+window.addEventListener('resize', fitDeck);
 function openEditor(slot) {
   selSlot = slot; render();
   const bit = BITS.find(x => Number(x.slot) === slot);
   $('editor').style.display = 'block';
+  fitDeck();
   $('edtitle').textContent = (bit ? window.t('bit') : window.t('newBit')) + ' · ' + (slot + 1);
   $('b_label').value = bit ? (bit.label || '') : '';
   $('b_img').value = bit ? (bit.img || '') : '';
