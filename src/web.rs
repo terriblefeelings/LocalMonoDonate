@@ -179,7 +179,7 @@ fn state_json(ctx: &Ctx) -> serde_json::Value {
         "maxAmount": cfg.max_amount,
         "tts": { "mode": cfg.tts.mode, "voice": cfg.tts.default_voice(), "readMode": cfg.tts.read_mode,
                  "allowed": cfg.tts.allowed_in(&cfg.tts.dir), "picks": cfg.tts.donor_picks() },
-        "voices": [{"id": "google:uk", "label": "Google (українська)", "lang": "uk"}],
+        "voices": crate::tts::voices(&cfg.tts.dir, cfg.tts.has_azure()),
         "limits": { "nameMax": cfg.limits.name_max, "messageMax": cfg.limits.message_max },
         "overlay": { "durationMs": cfg.overlay.duration_ms, "videoMaxMs": cfg.overlay.video_max_ms },
         "jars": jars,
@@ -1110,8 +1110,16 @@ fn tts_post(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     let mut cfg = ctx.cfg();
     let t = &mut cfg.tts;
-    t.mode = if v.get("mode").and_then(|x| x.as_str()) == Some("off") { "off".into() } else { "google:uk".into() };
-    t.voice = "google:uk".into();
+    let mode_in = v.get("mode").and_then(|x| x.as_str()).unwrap_or("google:uk").to_string();
+    let voice_in = v.get("voice").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    t.mode = if mode_in == "off" { "off".into() }
+        else if mode_in == "custom" || mode_in == "default" || mode_in == "edge" { mode_in.clone() }
+        else if mode_in == "google:uk" || mode_in == "google:us" { mode_in.clone() }
+        else { "google:uk".into() };
+    t.voice = if voice_in.starts_with("google:") || voice_in.starts_with("edge:") { voice_in }
+        else if mode_in == "off" { String::new() }
+        else if mode_in == "edge" { "edge:uk-UA-PolinaNeural".into() }
+        else { "google:uk".into() };
     t.azure_key.clear();
     t.azure_region.clear();
     if let Some(s) = v.get("readMode").and_then(|x| x.as_str()) { if !s.trim().is_empty() { t.read_mode = s.trim().into(); } }
@@ -2030,7 +2038,7 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
     if path == "/api/tts" {
         if method == Method::Get {
             let c = ctx.cfg();
-            let _ = request.respond(json_resp(200, json!({ "tts": { "mode": c.tts.mode, "voice": c.tts.default_voice(), "readMode": c.tts.read_mode, "speed": c.tts.speed, "dir": c.tts.dir, "allowed": c.tts.allowed_in(&c.tts.dir), "picks": c.tts.donor_picks(), "hasAzure": c.tts.has_azure(), "azureRegion": c.tts.azure_region }, "voices": [{"id": "google:uk", "label": "Google (українська)", "lang": "uk"}] })));
+            let _ = request.respond(json_resp(200, json!({ "tts": { "mode": c.tts.mode, "voice": c.tts.default_voice(), "readMode": c.tts.read_mode, "speed": c.tts.speed, "dir": c.tts.dir, "allowed": c.tts.allowed_in(&c.tts.dir), "picks": c.tts.donor_picks(), "hasAzure": c.tts.has_azure(), "azureRegion": c.tts.azure_region }, "voices": crate::tts::voices(&c.tts.dir, c.tts.has_azure()) })));
         }
         else if method == Method::Post { tts_post(&ctx, request); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }

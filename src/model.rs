@@ -721,11 +721,21 @@ impl TtsCfg {
     }
     /// This build intentionally uses one voice only: Google Ukrainian.
     pub fn allowed_in(&self, _dir: &str) -> Vec<String> {
-        if self.mode == "off" { vec![] } else { vec!["google:uk".into()] }
+        if self.mode == "off" { vec![] } else {
+            vec![
+                "google:uk".into(), "google:us".into(),
+                "edge:uk-UA-PolinaNeural".into(), "edge:uk-UA-OstapNeural".into(),
+                "edge:en-US-JennyNeural".into(), "edge:en-US-GuyNeural".into(),
+            ]
+        }
     }
     pub fn donor_picks(&self) -> bool { false }
     pub fn default_voice(&self) -> String {
-        if self.mode == "off" { String::new() } else { "google:uk".into() }
+        if self.mode == "off" { return String::new(); }
+        if !self.voice.trim().is_empty() { self.voice.clone() }
+        else if self.mode == "edge" { "edge:uk-UA-PolinaNeural".into() }
+        else if self.mode.starts_with("google:") || self.mode.starts_with("edge:") { self.mode.clone() }
+        else { "google:uk".into() }
     }
 }
 impl Default for TtsCfg {

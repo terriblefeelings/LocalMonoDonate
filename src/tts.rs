@@ -140,6 +140,10 @@ pub fn voices(dir: &str, azure_ok: bool) -> Vec<serde_json::Value> {
     let mut v = vec![
         serde_json::json!({ "id": "google:uk", "label": "Google (українська)", "lang": "uk" }),
         serde_json::json!({ "id": "google:us", "label": "Google (English US)", "lang": "en" }),
+        serde_json::json!({ "id": "edge:uk-UA-PolinaNeural", "label": "Microsoft Polina (нейро)", "lang": "uk" }),
+        serde_json::json!({ "id": "edge:uk-UA-OstapNeural", "label": "Microsoft Ostap (нейро)", "lang": "uk" }),
+        serde_json::json!({ "id": "edge:en-US-JennyNeural", "label": "Microsoft Jenny (neural)", "lang": "en" }),
+        serde_json::json!({ "id": "edge:en-US-GuyNeural", "label": "Microsoft Guy (neural)", "lang": "en" }),
     ];
     if azure_ok {
         for name in AZURE_VOICES {
