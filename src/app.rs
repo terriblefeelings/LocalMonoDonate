@@ -5,14 +5,14 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
 /// Bits bought on the sound-alerts page carry their nickname in the payment comment
-/// ("... <code> | name: <nick>"). Every bit is counted as "<nick> SA", or "Anonymous SA"
+/// ("... <code> | name: <nick>"). Every bit is counted as "<nick> SA", or "Анонім SA"
 /// when no nickname was given.
 fn bit_display_name(comment: &str) -> String {
     if let Some(pos) = comment.find("name:") {
         let nick = comment[pos + 5..].split('|').next().unwrap_or("").trim();
         if !nick.is_empty() { return format!("{} SA", nick); }
     }
-    "Anonymous SA".to_string()
+    "Анонім SA".to_string()
 }
 
 #[cfg(test)]
@@ -22,8 +22,8 @@ mod bit_name_tests {
     #[test]
     fn bits_use_the_nickname_from_the_comment_with_sa_suffix() {
         assert_eq!(bit_display_name("донат сповіщення abc123 | name: goodfeelings"), "goodfeelings SA");
-        assert_eq!(bit_display_name("донат сповіщення abc123"), "Anonymous SA");
-        assert_eq!(bit_display_name("| name:   "), "Anonymous SA");
+        assert_eq!(bit_display_name("донат сповіщення abc123"), "Анонім SA");
+        assert_eq!(bit_display_name("| name:   "), "Анонім SA");
     }
 }
 
@@ -148,7 +148,7 @@ impl Ctx {
             let msg: String = comment.chars().take(cfg.limits.message_max).collect();
             jar.history.insert(0, HistoryItem {
                 id: tx.id.clone(), name: name.clone(), amount: uah, message: msg.clone(),
-                youtube_id: String::new(), media_url: String::new(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
+                youtube_id: String::new(), media_url: String::new(), bit_label: bit.label.clone(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
             });
             jar.stats.count += 1; jar.stats.total += uah;
             if uah > jar.stats.biggest { jar.stats.biggest = uah; }
@@ -183,13 +183,13 @@ impl Ctx {
             if !p.pair.is_empty() { jar.pending.retain(|x| x.code != p.pair); }
             if let Some(bit) = p.bit.clone() {
                 // bit picked on the donation form: play it on the bits overlay (then YouTube)
-                let n = if p.name.trim().is_empty() { "Anonymous SA".to_string() } else { format!("{} SA", p.name.trim()) };
+                let n = if p.name.trim().is_empty() { "Анонім SA".to_string() } else { format!("{} SA", p.name.trim()) };
                 let m = if p.message.trim().is_empty() { bit.label.clone() } else { p.message.clone() };
                 let yt_min = cfg.notify.rules.iter().find(|r| r.id == "default").map(|r| r.style.yt_min).unwrap_or(0.0);
                 let yt = if !p.youtube_id.is_empty() && uah >= yt_min { p.youtube_id.clone() } else { String::new() };
                 jar.history.insert(0, HistoryItem {
                     id: tx.id.clone(), name: n.clone(), amount: uah, message: m.clone(),
-                    youtube_id: yt.clone(), media_url: String::new(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
+                    youtube_id: yt.clone(), media_url: String::new(), bit_label: bit.label.clone(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
                 });
                 jar.stats.count += 1; jar.stats.total += uah;
                 if uah > jar.stats.biggest { jar.stats.biggest = uah; }
@@ -206,7 +206,7 @@ impl Ctx {
                 self.save();
                 return false;
             }
-            let pname = if p.name.trim().is_empty() { "Anonymous".to_string() } else { p.name.trim().to_string() };
+            let pname = if p.name.trim().is_empty() { "Анонім".to_string() } else { p.name.trim().to_string() };
             (pname, p.message, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice)
         } else {
             let name = "Анонім".to_string();
@@ -220,7 +220,7 @@ impl Ctx {
         // every positive transaction is kept in the local history + stats, whether or not it alerts
         jar.history.insert(0, HistoryItem {
             id: tx.id.clone(), name: name.clone(), amount: uah, message: message.clone(),
-            youtube_id: youtube_id.clone(), media_url: media_url.clone(), matched: kind.into(), code: code.clone(), at: now_ms(),
+            youtube_id: youtube_id.clone(), media_url: media_url.clone(), bit_label: String::new(), matched: kind.into(), code: code.clone(), at: now_ms(),
         });
         jar.stats.count += 1;
         jar.stats.total += uah;

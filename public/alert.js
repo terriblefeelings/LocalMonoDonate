@@ -39,6 +39,18 @@
     box.append(el);
     return box;
   }
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /// message plus the media link and/or the sound-alert name in brackets
+  function messageHtml(data) {
+    const msg = esc(data.message || '');
+    const parts = [];
+    const media = data.youtubeId ? ('https://youtu.be/' + data.youtubeId) : (data.mediaUrl || '');
+    if (media) parts.push('<a href="' + esc(media) + '" target="_blank" rel="noopener">' + esc(media) + '</a>');
+    if (data.bit && data.bit.label) parts.push(esc(data.bit.label));
+    return parts.length ? msg + ' (' + parts.join(' / ') + ')' : msg;
+  }
+
   function build(data, N, opts) {
     N = Object.assign({}, DEFAULTS, N || {});
     const name = data.name || '', money = fmt(data.amount, data.currency);
@@ -57,7 +69,7 @@
     if (moneyTxt.trim()) { const green = document.createElement('div'); green.className = 'nline'; green.style.width = '100%'; green.textContent = moneyTxt;
       lineStyle(green, N.green_font, N.green_size, N.green_weight, N.green_color, N.green_outline, N.green_outline_op, N.green_maxw, N.green_bg, N.green_bg_opacity, N.green_radius);
       green.style.letterSpacing = (N.green_tracking || 0) + 'px'; green.style.lineHeight = N.green_line || 1.2; win.append(green); }
-    const red = document.createElement('div'); red.className = 'nmsg'; red.style.width = '100%'; red.textContent = data.message || '';
+    const red = document.createElement('div'); red.className = 'nmsg'; red.style.width = '100%'; red.innerHTML = messageHtml(data);
     lineStyle(red, N.msg_font, N.msg_size, N.msg_weight, N.msg_color, N.msg_outline, N.msg_outline_op, N.msg_maxw, N.red_bg, N.red_bg_opacity, N.red_radius); win.append(red);
     stack.append(win);
     const mbox = mediaBox(N, opts);

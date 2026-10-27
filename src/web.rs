@@ -155,7 +155,7 @@ fn state_json(ctx: &Ctx) -> serde_json::Value {
             .collect();
         let history: Vec<serde_json::Value> = j.history.iter().take(200)
             .map(|h| json!({ "id": h.id, "name": h.name, "amount": h.amount, "message": h.message,
-                             "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "matched": h.matched, "at": h.at }))
+                             "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "bitLabel": h.bit_label, "matched": h.matched, "at": h.at }))
             .collect();
         json!({
             "code": j.code, "title": if !custom.trim().is_empty() { custom } else { j.title.clone() },
@@ -852,18 +852,46 @@ fn youtube_post(ctx: &Ctx, mut request: tiny_http::Request) {
 fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     let id = v.get("id").and_then(|x| x.as_str()).unwrap_or("");
-    let no_media = v.get("noMedia").and_then(|x| x.as_bool()).unwrap_or(false);
+    let mode = v.get("mode").and_then(|x| x.as_str()).unwrap_or("donation");
     let item = {
         let st = ctx.state.lock().unwrap();
         st.jars.iter().flat_map(|j| j.history.iter()).find(|h| h.id == id).cloned()
     };
     match item {
         Some(h) => {
-            let (yt, media) = if no_media { (String::new(), String::new()) } else { (h.youtube_id.clone(), h.media_url.clone()) };
-            ctx.broadcast(json!({ "type": "donation", "data": {
-                "id": format!("replay-{}", now_ms()), "name": h.name, "amount": h.amount,
-                "message": h.message, "youtubeId": yt, "mediaUrl": media, "matched": "replay", "jar": "", "currency": "" }}));
-            log(&format!("replay: {:.0} UAH from {}", h.amount, h.name));
+            let bit = h.code.as_ref()
+                .and_then(|c| ctx.cfg().bits.iter().find(|b| &b.code == c).cloned());
+            let replay_id = format!("replay-{}", now_ms());
+            match mode {
+                "sound" => {
+                    if let Some(b) = bit {
+                        ctx.broadcast(json!({ "type": "bit", "data": {
+                            "id": replay_id, "name": h.name, "amount": h.amount,
+                            "message": h.message, "currency": "", "bit": b } }));
+                        log(&format!("replay sound: {} for {}", h.bit_label, h.name));
+                    }
+                }
+                "full" => {
+                    if let Some(b) = bit {
+                        ctx.broadcast(json!({ "type": "bit", "data": {
+                            "id": replay_id, "name": h.name, "amount": h.amount,
+                            "message": h.message, "currency": "", "bit": b,
+                            "youtubeId": h.youtube_id, "mediaUrl": h.media_url } }));
+                    } else {
+                        ctx.broadcast(json!({ "type": "donation", "data": {
+                            "id": replay_id, "name": h.name, "amount": h.amount, "message": h.message,
+                            "youtubeId": h.youtube_id, "mediaUrl": h.media_url,
+                            "matched": "replay", "jar": "", "currency": "" } }));
+                    }
+                    log(&format!("replay full: {:.0} UAH from {}", h.amount, h.name));
+                }
+                _ => {
+                    ctx.broadcast(json!({ "type": "donation", "data": {
+                        "id": replay_id, "name": h.name, "amount": h.amount, "message": h.message,
+                        "youtubeId": "", "mediaUrl": "", "matched": "replay", "jar": "", "currency": "" } }));
+                    log(&format!("replay: {:.0} UAH from {}", h.amount, h.name));
+                }
+            }
             let _ = request.respond(json_resp(200, json!({ "ok": true })));
         }
         None => { let _ = request.respond(json_resp(404, json!({ "ok": false, "error": "not found" }))); }
@@ -883,7 +911,7 @@ fn history_json(ctx: &Ctx, jar: usize) -> serde_json::Value {
     let items: Vec<serde_json::Value> = match st.jars.get(jar) {
         Some(j) => j.history.iter().map(|h| json!({
             "id": h.id, "name": h.name, "amount": h.amount, "message": h.message,
-            "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "matched": h.matched, "at": h.at })).collect(),
+            "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "bitLabel": h.bit_label, "matched": h.matched, "at": h.at })).collect(),
         None => Vec::new(),
     };
     json!({ "jar": jar, "count": items.len(), "items": items })

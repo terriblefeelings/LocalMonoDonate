@@ -98,7 +98,7 @@ pub fn send_tip(port: u16, cfg: &Config, name: &str, amount: f64, currency: &str
     if sec.token.trim().is_empty() { return Err("no token".into()); }
     let whole = amount.round() as i64;
     if whole < 1 { return Ok(()); } // SE tips are whole units
-    let user = if name.trim().is_empty() { "Anonymous" } else { name.trim() };
+    let user = if name.trim().is_empty() { "Анонім" } else { name.trim() };
     let (uid, email) = donor_identity(user);
     let body = json!({
         "user": { "userId": uid, "username": user, "email": email },

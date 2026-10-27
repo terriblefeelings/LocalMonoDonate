@@ -22,10 +22,12 @@
   th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
   tr:last-child td{border-bottom:0}
   .scroll{max-height:420px;overflow:auto}
+  #histScroll{max-height:calc(20 * 34px + 38px);overflow:auto}
+  .mini:disabled{opacity:.35;cursor:default}
   .mini{padding:5px 11px;font-size:13px}
   #hist td{vertical-align:middle}
   #hist th:last-child{text-align:center;width:112px}
-  #hist td.act{white-space:nowrap;text-align:center;width:112px}
+  #hist td.act{white-space:nowrap;text-align:center;width:190px}
   #hist td.act .mini{display:inline-flex;align-items:center;justify-content:center;height:30px;min-height:30px;padding:0 10px;margin:0 3px;vertical-align:middle}
   .seg2{display:flex;gap:4px}
   .seg2 button{padding:4px 10px;font-size:12px;border-radius:8px}
@@ -86,9 +88,9 @@
   </div>
 
   <div class="panel"><div class="sec"><span class="h" data-i18n="hRecent">Останні донати</span></div>
-    <div class="body"><div class="scroll"><table id="hist">
-      <thead><tr><th data-i18n="thName">Ім'я</th><th data-i18n="thAmount">Сума</th><th data-i18n="thMessage">Повідомлення</th><th data-i18n="thYt">Media</th><th data-i18n="thActions">Actions</th></tr></thead>
-      <tbody><tr><td colspan="5" style="color:var(--muted)" data-i18n="empty">Порожньо</td></tr></tbody></table></div>
+    <div class="body"><div class="scroll" id="histScroll"><table id="hist">
+      <thead><tr><th data-i18n="thName">Ім'я</th><th data-i18n="thAmount">Сума</th><th data-i18n="thMessage">Повідомлення</th><th data-i18n="thSound">Звук</th><th data-i18n="thYt">Медіа</th><th data-i18n="thActions">Дії</th></tr></thead>
+      <tbody><tr><td colspan="6" style="color:var(--muted)" data-i18n="empty">Порожньо</td></tr></tbody></table></div>
       <div class="an-note" data-i18n="replayLegend">↻ repeats only the donation · ▶ plays only the media.</div></div></div>
 
   <div class="panel">
@@ -128,9 +130,9 @@
 <script>
 window.I18N_DEFAULT = 'ua';
 window.I18N = {
-  en: { statsTitle: 'LocalMonoDonate — statistics', stats: 'Stats', bTest: 'Test', bRefresh: 'Refresh jar', stBal: 'Jar balance', stTotal: 'Total raised', stCount: 'Donations', stBigToday: 'Biggest today', stBig: 'Biggest (all time)', hRecent: 'Recent donations', hTop: 'Top 20 users (all time)', thName: 'Name', thAmount: 'Amount', thMessage: 'Message', thDonations: 'Donations', thYt: 'Media', thActions: 'Actions', repeatDonation: 'Repeat donation only', playMedia: 'Play media only', replayLegend: '↻ repeats only the donation · ▶ plays only the media.', yes: 'Yes', no: 'No', empty: 'Empty', jar: 'Jar', goal: 'goal', noGoal: 'no goal', notFound: 'jar not found',
+  en: { statsTitle: 'LocalMonoDonate — statistics', stats: 'Stats', bTest: 'Test', bRefresh: 'Refresh jar', stBal: 'Jar balance', stTotal: 'Total raised', stCount: 'Donations', stBigToday: 'Biggest today', stBig: 'Biggest (all time)', hRecent: 'Recent donations', hTop: 'Top 20 users (all time)', thName: 'Name', thAmount: 'Amount', thMessage: 'Message', thDonations: 'Donations', thYt: 'Media', thActions: 'Actions', repeatDonation: 'Repeat donation only', playMedia: 'Play media only', replayFull: 'Full replay (message, sound, media)', replaySound: 'Play sound alert only', thSound: 'Sound', replayLegend: '✦ full replay · ↻ donation only · ♪ sound only · ▶ media only', yes: 'Yes', no: 'No', empty: 'Empty', jar: 'Jar', goal: 'goal', noGoal: 'no goal', notFound: 'jar not found',
     anTitle: 'Analytics', anD7: '7 days', anD30: '30 days', anD90: '90 days', anAll: 'All time', anBuckets: 'Amount distribution', anDow: 'Activity by weekday', anHour: 'Activity by hour', anTopP: 'Top users (period)', anReturn: 'New vs returning users', anFreq: 'Donation frequency', anHeat: 'Heatmap (weekday × hour)', anNote: 'Amounts in UAH. Data from the jar donation history.', anCount: 'Donations', anSum: 'Total', anAvg: 'Average donation', anUniq: 'Unique users', anMsg: 'With message', anBest: 'Best day', anOnce: 'Once', anFew: '2–4 times', anMany: '5+ times', anNew: 'New', anReturning: 'Returning', anNoData: 'No data for this period' },
-  ua: { statsTitle: 'LocalMonoDonate — статистика', stats: 'Статистика', bTest: 'Тест', bRefresh: 'Оновити банку', stBal: 'Баланс банки', stTotal: 'Всього зібрано', stCount: 'Кількість донатів', stBigToday: 'Найбільший сьогодні', stBig: 'Найбільший (весь час)', hRecent: 'Останні донати', hTop: 'Топ 20 користувачів (весь час)', thName: "Ім'я", thAmount: 'Сума', thMessage: 'Повідомлення', thDonations: 'Донатів', thYt: 'Медіа', thActions: 'Дії', repeatDonation: 'Повторити лише донат', playMedia: 'Відтворити лише медіа', replayLegend: '↻ повторює лише донат · ▶ відтворює лише медіа.', yes: 'Так', no: 'Ні', empty: 'Порожньо', jar: 'Банка', goal: 'ціль', noGoal: 'без цілі', notFound: 'банку не знайдено',
+  ua: { statsTitle: 'LocalMonoDonate — статистика', stats: 'Статистика', bTest: 'Тест', bRefresh: 'Оновити банку', stBal: 'Баланс банки', stTotal: 'Всього зібрано', stCount: 'Кількість донатів', stBigToday: 'Найбільший сьогодні', stBig: 'Найбільший (весь час)', hRecent: 'Останні донати', hTop: 'Топ 20 користувачів (весь час)', thName: "Ім'я", thAmount: 'Сума', thMessage: 'Повідомлення', thDonations: 'Донатів', thYt: 'Медіа', thActions: 'Дії', repeatDonation: 'Повторити лише донат', playMedia: 'Відтворити лише медіа', replayFull: 'Повний повтор (повідомлення, звук, медіа)', replaySound: 'Відтворити лише звук', thSound: 'Звук', replayLegend: '✦ повний повтор · ↻ лише донат · ♪ лише звук · ▶ лише медіа', yes: 'Так', no: 'Ні', empty: 'Порожньо', jar: 'Банка', goal: 'ціль', noGoal: 'без цілі', notFound: 'банку не знайдено',
     anTitle: 'Аналітика', anD7: '7 дн', anD30: '30 дн', anD90: '90 дн', anAll: 'Весь час', anBuckets: 'Розподіл сум', anDow: 'Активність по днях тижня', anHour: 'Активність по годинах', anTopP: 'Топ користувачів (період)', anReturn: 'Нові та повторні користувачі', anFreq: 'Частота донатів', anHeat: 'Теплова карта (день × година)', anNote: 'Суми вказано у гривнях. Дані — з історії донатів банки.', anCount: 'Донатів', anSum: 'Загальна сума', anAvg: 'Середній донат', anUniq: 'Унікальних користувачів', anMsg: 'З повідомленням', anBest: 'Найкращий день', anOnce: 'Один раз', anFew: '2–4 рази', anMany: '5+ разів', anNew: 'Нові', anReturning: 'Повторні', anNoData: 'Немає даних за цей період' }
 };
 const $ = id => document.getElementById(id);
@@ -138,7 +140,15 @@ Object.assign(window.I18N.ua, { thName: "Ім'я" });
 const uah = n => { n = Number(n) || 0; if (Math.abs(n) < 0.005) n = 0; return Math.round(n).toLocaleString('uk-UA') + ' \u20B4'; };
 async function repeatDonation(h) {
   if (!h.id) return;
-  await fetch('/api/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: h.id, noMedia: true }) });
+  await fetch('/api/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: h.id, mode: 'donation' }) });
+}
+async function replaySound(h) {
+  if (!h.id) return;
+  await fetch('/api/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: h.id, mode: 'sound' }) });
+}
+async function replayFull(h) {
+  if (!h.id) return;
+  await fetch('/api/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: h.id, mode: 'full' }) });
 }
 async function playMedia(h) {
   await fetch('/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -155,30 +165,79 @@ function render() {
   $('bar').style.width = (goal ? Math.min(100, (j.balance / j.goal) * 100) : 0).toFixed(1) + '%';
   $('total').textContent = uah(j.stats.total); $('count').textContent = j.stats.count;
   $('bigToday').textContent = uah(j.stats.biggestToday); $('big').textContent = uah(j.stats.biggest);
-  const demoUa = window.getLang && window.getLang() === 'ua';
-  const demos = [
-    { id: '', name: demoUa ? 'Тест YouTube' : 'Test YouTube', amount: 100, message: demoUa ? 'Тест YouTube' : 'Test YouTube', at: Date.now(), youtubeId: 'teUWsONJkk8', mediaUrl: '' },
-    { id: '', name: demoUa ? 'Тест X' : 'Test X', amount: 100, message: demoUa ? 'Тест X' : 'Test X', at: Date.now(), youtubeId: '', mediaUrl: 'https://x.com/kamoola_/status/2113883741739536856' }
-  ];
-  const rows = demos.concat(j.history || []);
-  const htb = $('hist').querySelector('tbody'); htb.innerHTML = rows.length ? '' : '<tr><td colspan="5" style="color:var(--muted)">Порожньо</td></tr>';
-  for (const h of rows) { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td><td></td><td></td><td></td>';
+
+  // 30 demo rows at the BOTTOM, after the real history
+  const demos = [];
+  for (let i = 0; i < 30; i++) {
+    const kind = i % 4;
+    demos.push({
+      id: 'demo-' + (i + 1),
+      name: 'Тест ' + (i + 1),
+      amount: 50 + i,
+      message: 'Тестове повідомлення ' + (i + 1),
+      at: Date.now() - i * 60000,
+      youtubeId: (kind === 0 || kind === 2) ? 'teUWsONJkk8' : '',
+      mediaUrl: '',
+      bitLabel: (kind === 1 || kind === 2) ? 'Тестовий звук' : ''
+    });
+  }
+  const rows = (j.history || []).concat(demos);
+  const htb = $('hist').querySelector('tbody');
+  htb.innerHTML = rows.length ? '' : '<tr><td colspan="6" style="color:var(--muted)">Порожньо</td></tr>';
+  for (const h of rows) {
+    const tr = document.createElement('tr');
+    for (let i = 0; i < 6; i++) tr.append(document.createElement('td'));
     const mc = tr.children[2];
-    mc.textContent = (h.message || '');
     mc.style.whiteSpace = 'normal'; mc.style.wordBreak = 'break-word'; mc.style.maxWidth = '360px';
-    tr.children[0].textContent = h.name; tr.children[1].textContent = uah(h.amount);
-    if (h.youtubeId || h.mediaUrl) { const a = document.createElement('a');
-      a.href = h.youtubeId ? 'https://youtu.be/' + h.youtubeId : h.mediaUrl;
-      a.target = '_blank'; a.rel = 'noopener';
-      a.textContent = window.t('thYt');
-      a.style.color = 'var(--accent)'; tr.children[3].append(a); }
-    else { tr.children[3].textContent = window.t('no'); }
-    const act = tr.children[4]; act.className = 'act';
-    const rep = document.createElement('button'); rep.className = 'mini'; rep.textContent = '↻'; rep.title = window.t('repeatDonation'); rep.disabled = !h.id;
-    rep.onclick = () => repeatDonation(h);
-    act.append(rep);
-    if (h.youtubeId || h.mediaUrl) { const play = document.createElement('button'); play.className = 'mini'; play.textContent = '▶'; play.title = window.t('playMedia'); play.onclick = () => playMedia(h); act.append(play); }
-    htb.append(tr); }
+    mc.textContent = h.message || '';
+    const media = h.youtubeId ? ('https://youtu.be/' + h.youtubeId) : (h.mediaUrl || '');
+    const parts = [];
+    if (media) {
+      const a = document.createElement('a');
+      a.href = media; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = media; a.style.color = 'var(--accent)';
+      parts.push(a);
+    }
+    if (h.bitLabel) parts.push(document.createTextNode(h.bitLabel));
+    if (parts.length) {
+      mc.append(' (');
+      parts.forEach((part, i) => { if (i) mc.append(' / '); mc.append(part); });
+      mc.append(')');
+    }
+    tr.children[0].textContent = h.name;
+    tr.children[1].textContent = uah(h.amount);
+    tr.children[3].textContent = h.bitLabel || window.t('no');
+    if (media) {
+      const a = document.createElement('a');
+      a.href = media; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = window.t('thYt'); a.style.color = 'var(--accent)';
+      tr.children[4].append(a);
+    } else {
+      tr.children[4].textContent = window.t('no');
+    }
+    const act = tr.children[5]; act.className = 'act';
+    const mk = (label, title, disabled, fn) => {
+      const b = document.createElement('button');
+      b.className = 'mini'; b.textContent = label; b.title = title; b.disabled = disabled; b.onclick = fn;
+      return b;
+    };
+    act.append(
+      mk('✦', window.t('replayFull'), !h.id, () => replayFull(h)),
+      mk('↻', window.t('repeatDonation'), !h.id, () => repeatDonation(h)),
+      mk('♪', window.t('replaySound'), !h.id || !h.bitLabel, () => replaySound(h)),
+      mk('▶', window.t('playMedia'), !h.id || !media, () => playMedia(h))
+    );
+    htb.append(tr);
+  }
+  // exactly 20 visible rows, the rest scroll
+  const box = $('histScroll');
+  if (rows.length > 20) {
+    let hgt = 0;
+    for (let i = 0; i < 20; i++) hgt += htb.children[i].getBoundingClientRect().height;
+    box.style.maxHeight = Math.ceil(hgt + 4) + 'px';
+  } else {
+    box.style.maxHeight = '';
+  }
   const ttb = $('top').querySelector('tbody'); ttb.innerHTML = j.top.length ? '' : '<tr><td colspan="4" style="color:var(--muted)">Порожньо</td></tr>';
   j.top.forEach((x, i) => { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td><td></td><td></td>';
     tr.children[0].textContent = (i + 1); tr.children[1].textContent = x.name; tr.children[2].textContent = uah(x.total); tr.children[3].textContent = x.count; ttb.append(tr); });
