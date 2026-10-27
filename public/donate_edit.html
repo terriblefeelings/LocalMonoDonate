@@ -12,6 +12,10 @@
   .mediaGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px}
   .mediaGrid .cell{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-width:0}
   .mediaGrid .cell label{white-space:nowrap;min-width:0}
+  .bitsModeGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px}
+  .bitsModeGrid .cell{display:flex;min-width:0}
+  .bitsModeGrid .togglewrap{display:flex;width:100%}
+  .bitsModeGrid .togglebtn{flex:1;min-width:0}
   @media(max-width:600px){.mediaGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
@@ -53,10 +57,10 @@
       </div>
       <div class="note" id="otherMediaNote" data-i18n="otherMediaNote">Instagram, TikTok, Twitch clips, Reddit and X links only need the minimum amount; views and duration are not checked.</div>
       <div class="lbl" data-i18n="bitsMode" style="margin-top:14px">Sound alerts selector</div>
-      <div class="mini" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:8px">
-        <div class="cell"><button type="button" class="togglebtn bits-mode" data-mode="single" data-i18n="bitsSingle" data-i18n-title="bitsSingleNote">Single</button></div>
-        <div class="cell"><button type="button" class="togglebtn bits-mode" data-mode="order" data-i18n="bitsOrder" data-i18n-title="bitsOrderNote">In order</button></div>
-        <div class="cell"><button type="button" class="togglebtn bits-mode" data-mode="adhd" data-i18n-title="bitsAdhdNote">ADHD</button></div>
+      <div class="mini bitsModeGrid">
+        <div class="cell"><span class="togglewrap"><button type="button" class="togglebtn bits-mode" data-mode="single" data-i18n="bitsSingle" data-i18n-title="bitsSingleNote">Single</button></span></div>
+        <div class="cell"><span class="togglewrap"><button type="button" class="togglebtn bits-mode" data-mode="order" data-i18n="bitsOrder" data-i18n-title="bitsOrderNote">In order</button></span></div>
+        <div class="cell"><span class="togglewrap"><button type="button" class="togglebtn bits-mode" data-mode="adhd" data-i18n-title="bitsAdhdNote">ADHD</button></span></div>
       </div>
       <div class="note" data-i18n="bitsModeNote">How donors pick sound alerts on the donation page. Single: one alert from a list. In order: pick several, they play one after another before the donation. ADHD: the same picker, all chosen alerts play at once.</div>
     </div>
