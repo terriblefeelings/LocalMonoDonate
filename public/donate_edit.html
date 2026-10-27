@@ -92,16 +92,16 @@ Object.assign(window.I18N.ua, { mediaTypes: '\u0423\u0432\u0456\u043c\u043a\u043
 Object.assign(window.I18N.en, {
   bitsMode: 'Sound Alerts Selector',
   bitsSingle: 'Single',
-  bitsSingleNote: 'Donors pick one sound alert from the grid.',
+  bitsSingleNote: 'Donors pick one Sound Alert from the grid.',
   bitsOrder: 'In Order',
-  bitsOrderNote: 'Donors pick several Sound Alerts; they play in the chosen order before the donation.',
-  bitsAdhdNote: 'Donors pick several Sound Alerts; they all play at once before the donation.',
-  bitsModeNote: 'Enable any number of selectors. Every enabled selector appears in the donation page list after Regular Donation. Single: one alert. In Order: several alerts in the order picked. ADHD: several alerts, all at once.',
+  bitsOrderNote: 'Donors can pick several Sound Alerts; they play in the selected order before the donation.',
+  bitsAdhdNote: 'Donors can pick several Sound Alerts; they all play at once before the donation.',
+  bitsModeNote: 'Enable one or more modes. Each enabled mode appears in the donation page list after Regular Donation. Single: one alert. In Order: several alerts in the selected order. ADHD: several alerts, all at once.',
   bitsTest: 'Test Alerts',
   bitsTestSingle: 'Test Single',
   bitsTestOrder: 'Test Order',
   bitsTestAdhd: 'Test ADHD',
-  bitsTestNote: 'Plays on the Sound Alerts overlay using the first alert (Single) or the first three (In Order / ADHD). No donation is recorded.',
+  bitsTestNote: 'The test plays on the Sound Alerts overlay using the first alert (Single) or the first three (In Order / ADHD). No donation is recorded.',
   bitsTestSent: 'Test sent',
   bitsTestNoBits: 'Add Sound Alerts first',
   bitsTestMessage: 'Sound Alerts test',
@@ -112,21 +112,21 @@ Object.assign(window.I18N.ua, {
   bitsSingle: 'Одне',
   bitsSingleNote: 'Донатор обирає одне звукове сповіщення з сітки.',
   bitsOrder: 'По черзі',
-  bitsOrderNote: 'Донатор обирає кілька звукових сповіщень; вони відтворюються в обраному порядку перед донатом.',
-  bitsAdhdNote: 'Донатор обирає кілька звукових сповіщень; усі вони відтворюються одразу перед донатом.',
-  bitsModeNote: 'Увімкни один або кілька селекторів. Кожен увімкнений селектор з’явиться у списку на сторінці донатів після Звичайного донату. Одне: одне сповіщення. По черзі: кілька сповіщень в обраному порядку. ADHD: кілька сповіщень, усі одразу.',
+  bitsOrderNote: 'Донатор може обрати кілька звукових сповіщень; вони відтворюються в обраному порядку перед донатом.',
+  bitsAdhdNote: 'Донатор може обрати кілька звукових сповіщень; усі вони відтворюються одразу перед донатом.',
+  bitsModeNote: 'Увімкни один або кілька режимів. Кожен увімкнений режим з’явиться у списку на сторінці донатів після Звичайного донату. «Одне»: одне сповіщення. «По черзі»: кілька сповіщень в обраному порядку. ADHD: кілька сповіщень, усі одразу.',
   bitsTest: 'Тест сповіщень',
   bitsTestSingle: 'Тест: одне',
   bitsTestOrder: 'Тест: по черзі',
   bitsTestAdhd: 'Тест: ADHD',
-  bitsTestNote: 'Тест відтворюється на оверлеї звукових сповіщень: перше сповіщення (Одне) або перші три (По черзі / ADHD). Донат не створюється.',
+  bitsTestNote: 'Тест відтворюється на оверлеї звукових сповіщень: перше звукове сповіщення (Одне) або перші три (По черзі / ADHD). Донат не створюється.',
   bitsTestSent: 'Тест надіслано',
   bitsTestNoBits: 'Спочатку додай звукові сповіщення',
   bitsTestMessage: 'Тест звукових сповіщень',
   bitsTestError: 'Помилка тесту'
 });
-Object.assign(window.I18N.en, { ttsNote: 'The donation alert is read aloud (captured by OBS). The voice is chosen in Alerts → Voice set and can be Google or Microsoft Neural. Needs the local TTS service.' });
-Object.assign(window.I18N.ua, { ttsNote: 'Донат озвучується вголос (OBS це захоплює). Голос обирається в «Сповіщення» → «Набір голосів» і може бути Google або Microsoft Neural. Потрібен локальний TTS-сервіс.' });
+Object.assign(window.I18N.en, { ttsNote: 'The donation alert is read aloud (captured by OBS). The voice is selected in Alerts → Voice set; choose Google or Microsoft Neural. Requires the local TTS service.' });
+Object.assign(window.I18N.ua, { ttsNote: 'Донат озвучується вголос (OBS це захоплює). Голос обирається в «Сповіщення» → «Набір голосів»: Google або Microsoft Neural. Потрібен локальний TTS-сервіс.' });
 const $ = id => document.getElementById(id);
 function fitDonatePreview() {
   const box = document.querySelector('.donatePreview'), frame = $('donatePreviewFrame');
