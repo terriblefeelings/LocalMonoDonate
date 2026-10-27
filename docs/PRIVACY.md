@@ -46,6 +46,7 @@ Monobank віддає виписки лише за банками, які ви �
 | **StreamElements** (`api.streamelements.com`) | лише з увімкненим перемикачем StreamElements | JWT, дані тіпа й події активності про донат чи звукове сповіщення |
 | **Сервіс курсів** (`open.er-api.com`) | лише з увімкненим StreamElements | звичайний запит курсу (без персональних даних) для конвертації валюти банки → USD |
 | **Google Translate TTS** (через `gtts`) | лише для голосу Google | текст, який треба озвучити (нік/сума/повідомлення згідно з read mode) |
+| **Microsoft Edge TTS** (`speech.platform.bing.com`) | лише для голосів Microsoft Neural | текст, який треба озвучити; ключ не потрібен |
 | **Azure Speech** (`*.tts.speech.microsoft.com`) | лише якщо налаштовано Azure | текст + ваш ключ/регіон Azure |
 | **Інсталятор WebView2 від Microsoft** | лише якщо WebView2 відсутній під час першого запуску | запит на завантаження інсталятора WebView2 |
 | **GitHub API** (`api.github.com`) | один раз на старті | запит останнього релізу LocalMonoDonate; жодних ваших даних |
