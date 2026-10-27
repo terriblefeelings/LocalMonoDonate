@@ -22,6 +22,8 @@
 .pick{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card2);color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:center;line-height:1.25}
 .pick:hover{border-color:var(--faint);color:var(--fg)}
 .pick.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* the page-wide button rule outranks .pick.on, so the selected alert uses the id */
+#bitsGrid .pick.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 #bitsGrid{display:grid;gap:8px}
 body .panel .body>#row_bits_pick{display:flex;flex-direction:column;align-items:stretch;gap:8px}
 body .panel .body>#row_bits_pick .ctl{max-width:none}
