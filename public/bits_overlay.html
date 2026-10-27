@@ -7,10 +7,12 @@
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
   body { font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif; }
   #stage { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); }
+  #stage.video { left: 0; right: 0; top: 0; bottom: 0; transform: none; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
   .notif { display: flex; flex-direction: column; align-items: center; }
   .bitmedia { overflow: hidden; display: flex; align-items: center; justify-content: center; }
   .bitmedia img { height: 100%; width: auto; max-width: none; max-height: none; display: block; }
-  .bitmedia video { width: 100%; height: 100%; max-width: none; max-height: none; display: block; object-fit: contain; background: #000; }
+  .bitmedia video { width: 100%; height: 100%; max-width: none; max-height: none; display: block; object-fit: contain; }
+  .bitmedia.vfull { width: 100vw !important; height: 100vh !important; }
 </style>
 </head>
 <body>
@@ -80,14 +82,17 @@ async function playPre(d) {
 
 function mediaBox(url, w, h) {
   const isVid = Alert.isVidUrl(url);
-  // videos always use the Media overlay's 640x360 frame, whatever style sized them
-  const bw = isVid ? MEDIA_W : (w || MEDIA_W), bh = isVid ? MEDIA_H : (h || MEDIA_H);
   const box = document.createElement('div'); box.className = 'bitmedia';
-  box.style.width = bw + 'px'; box.style.height = bh + 'px';
+  box.style.width = (w || MEDIA_W) + 'px'; box.style.height = (h || MEDIA_H) + 'px';
   const el = document.createElement(isVid ? 'video' : 'img'); el.src = url;
   if (isVid) { el.playsInline = true; el.autoplay = true; el.loop = false; el.muted = false; el.preload = 'auto'; }
   box.append(el);
   return { box, el, isVid };
+}
+function videoStage(on) {
+  const stage = document.getElementById('stage');
+  if (on) stage.classList.add('video');
+  else if (!stage.querySelector('.vfull')) stage.classList.remove('video');
 }
 function videoDone(el) { return new Promise(r => { el.onended = r; el.onerror = r; setTimeout(r, CFG.videoMaxMs); }); }
 function startVideo(el) { const pp = el.play(); if (pp && pp.catch) pp.catch(() => { el.muted = true; el.play().catch(() => {}); }); }
@@ -127,6 +132,7 @@ async function play(d, gain) {
   const url = bit.url || '';
   if (!url) return;
   const { box, el, isVid } = mediaBox(url, MEDIA_W, MEDIA_H);
+  if (isVid) { box.classList.add('vfull'); videoStage(true); }
   if (isVid && gain && gain < 1) el.volume = gain;
   const wrap = document.createElement('div'); wrap.className = 'notif'; wrap.append(box);
   wrap.style.transition = 'none'; wrap.style.opacity = '0';
@@ -139,6 +145,7 @@ async function play(d, gain) {
   else await sleep(3000);
   wrap.style.transition = 'opacity 300ms ease'; wrap.style.opacity = '0';
   await sleep(360); wrap.remove();
+  if (isVid) videoStage(false);
   await afterBit(d);
 }
 
