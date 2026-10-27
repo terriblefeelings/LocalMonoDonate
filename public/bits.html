@@ -35,7 +35,7 @@
   .deck.dense .cell .lbl,.deck.dense .cell .price{position:absolute;left:3px;right:3px;z-index:1;padding:1px 3px;background:rgba(0,0,0,.62);border-radius:2px;font-size:9px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .deck.dense .cell .lbl{bottom:17px}
   .deck.dense .cell .price{bottom:3px}
-  .pvbtn{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:rgba(0,0,0,.6);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:.12s;padding:0}
+  .pvbtn{position:absolute;top:6px;right:6px;width:26px!important;min-width:26px!important;height:26px!important;min-height:26px!important;border-radius:50%;border:1px solid var(--line);background:rgba(0,0,0,.6);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:.12s;padding:0!important}
   .cell:hover .pvbtn{opacity:1}
   #pv{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
   #pv.show{display:flex}
@@ -182,16 +182,16 @@ function openPv(bit) {
   const m = $('pvMedia'); m.innerHTML = ''; pvEl = null;
   const vol = Number($('pvVol').value) || 0.7;
   const url = bit.url || bit.img || '';
-  const isAudio = bit.kind === 'sound' || /\.(mp3|wav|ogg|m4a|aac)(\?|$)/i.test(url);
   const isVid = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+  const isAudio = !isVid && (bit.kind === 'sound' || /\.(mp3|wav|ogg|m4a|aac)(\?|$)/i.test(url));
   const setBtn = () => { $('pvPlay').textContent = (pvEl && !pvEl.paused) ? '⏸' : '▶'; };
-  if (isAudio && url) {
+  if (isVid) {
+    const v = document.createElement('video'); v.src = url; v.loop = false; v.controls = false; v.playsInline = true; v.volume = vol;
+    v.onended = setBtn; m.append(v); pvEl = v; v.play().catch(() => {});
+  } else if (isAudio && url) {
     const a = new Audio(url); a.loop = false; a.volume = vol; a.onended = setBtn; a.play().catch(() => {});
     pvEl = a;
     const ph = document.createElement('div'); ph.className = 'ph'; ph.textContent = '🔊 ' + (bit.label || ''); m.append(ph);
-  } else if (isVid) {
-    const v = document.createElement('video'); v.src = url; v.loop = false; v.controls = false; v.playsInline = true; v.volume = vol;
-    v.onended = setBtn; m.append(v); pvEl = v; v.play().catch(() => {});
   } else if (url) {
     const img = document.createElement('img'); img.src = url; m.append(img);
     if (bit.sound) { const a = new Audio(bit.sound); a.loop = false; a.volume = vol; a.onended = setBtn; pvEl = a; a.play().catch(() => {}); }

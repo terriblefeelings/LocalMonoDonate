@@ -18,8 +18,8 @@
   .bcell .p{font-size:10px;color:var(--fg);text-align:center}
   .bcell.empty .sq{border-style:dashed;opacity:.4}
   .bcell{position:relative}
-  .btest{margin-top:2px;padding:2px 8px;font-size:9.5px;line-height:1.2;border:1px solid var(--line);border-radius:5px;background:var(--card2);color:var(--muted);cursor:pointer;font:inherit;letter-spacing:.08em}
-  .btest:hover{color:var(--fg);border-color:var(--faint)}
+  .pvbtn{position:absolute;top:6px;right:6px;width:26px!important;min-width:26px!important;height:26px!important;min-height:26px!important;border-radius:50%;border:1px solid var(--line);background:rgba(0,0,0,.6);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:.12s;padding:0!important;z-index:2}
+  .bcell:hover .pvbtn{opacity:1}
   .bitpv{width:100%;max-width:360px;height:150px;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--card2)}
   .bitpv img{height:100%;width:auto;max-width:none;display:block}
   .bitpv video{height:100%;max-width:100%;width:auto;object-fit:contain;display:block}
@@ -139,7 +139,7 @@ function render() {
     c.append(sq);
     if (bit) { const l = document.createElement('span'); l.className = 'l'; l.textContent = bit.label || bit.kind;
       const p = document.createElement('span'); p.className = 'p'; p.textContent = Math.round(bit.price || 0) + ' ₴'; c.append(l, p);
-      const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'btest'; tb.title = 'Test'; tb.textContent = 'TEST';
+      const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'pvbtn'; tb.title = 'Test'; tb.textContent = '▶';
       tb.onclick = e => { e.stopPropagation(); testBit(bit); }; c.append(tb); }
     g.append(c);
   }
