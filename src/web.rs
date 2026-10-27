@@ -804,6 +804,15 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
     let sound_mode = v.get("mode").and_then(|x| x.as_str()).unwrap_or("order").to_string();
     let amount = if amount > 0.0 || test_bits.is_empty() { amount } else { test_bits.iter().map(|b| b.price).sum() };
     let missing_sound = !test_bits.is_empty() && sound_urls.is_empty();
+    if v.get("direct").and_then(|x| x.as_bool()).unwrap_or(false) {
+        let count = sound_urls.len();
+        ctx.broadcast(json!({ "type": "bits_play", "data": {
+            "id": format!("bittest-{}", now_ms()), "name": name, "amount": amount,
+            "sounds": sound_urls, "mode": sound_mode } }));
+        log(&format!("test bits: {:.0} from {} sounds={} mode={}", amount, name, count, sound_mode));
+        let _ = request.respond(json_resp(200, json!({ "ok": true })));
+        return;
+    }
     let mut tts_url = String::new();
     if cfg.tts.enabled() {
         let allowed = cfg.tts.allowed_in(&cfg.tts.dir);
@@ -971,7 +980,12 @@ fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
 
             let direct_bit = h.matched == "bit";
             if mode == "sound" || (mode == "full" && direct_bit) {
-                if let Some(b) = bit.clone() {
+                if bits.len() > 1 {
+                    ctx.broadcast(json!({ "type": "bits_play", "data": {
+                        "id": replay_id, "name": h.name, "amount": h.amount,
+                        "sounds": sound_urls, "mode": "order" } }));
+                    log(&format!("replay sound: {} for {}", h.bit_label, h.name));
+                } else if let Some(b) = bit.clone() {
                     ctx.broadcast(json!({ "type": "bit", "data": {
                         "id": replay_id, "name": h.name, "amount": h.amount,
                         "message": h.message, "currency": "", "bit": b } }));
@@ -1552,10 +1566,19 @@ fn bits_post(ctx: &Ctx, mut request: tiny_http::Request) {
         cfg.bits = bits;
     }
     if let Some(g) = v.get("grid").and_then(|x| x.as_u64()) { cfg.bits_grid = (g as u32).clamp(2, 7); }
+    if let Some(arr) = v.get("modes").and_then(|x| x.as_array()) {
+        let mut modes: Vec<String> = Vec::new();
+        for m in arr {
+            let s = m.as_str().unwrap_or("");
+            if ["single", "order", "adhd"].contains(&s) && !modes.iter().any(|x| x == s) { modes.push(s.to_string()); }
+        }
+        cfg.bits_modes = Some(modes.clone());
+        if let Some(first) = modes.first() { cfg.bits_mode = first.clone(); }
+    }
     save_config(&ctx.paths, &cfg);
     *ctx.cfg.lock().unwrap() = cfg.clone();
     log(&format!("bits saved: {} configured, grid {}", cfg.bits.len(), cfg.bits_grid));
-    let _ = request.respond(json_resp(200, json!({ "ok": true, "bits": cfg.bits, "grid": cfg.bits_grid })));
+    let _ = request.respond(json_resp(200, json!({ "ok": true, "bits": cfg.bits, "grid": cfg.bits_grid, "modes": cfg.enabled_bits_modes() })));
 }
 
 /* ---------------------------------------------------------------- media */

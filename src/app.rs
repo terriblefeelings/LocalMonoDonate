@@ -36,6 +36,29 @@ fn bit_display_name(comment: &str) -> String {
     "Анонім SA".to_string()
 }
 
+/// Public-deck order: `s:0,2,1 | mode:adhd | name: Nick`.
+/// Returns the picked bits in the listed order and the playback mode.
+fn parse_slot_order(comment: &str, bits: &[Bit]) -> Option<(Vec<Bit>, String)> {
+    let pos = comment.find("bits:")?;
+    let rest = &comment[pos + 5..];
+    let list = rest.split(|c: char| c.is_whitespace() || c == '|').next().unwrap_or("");
+    let mut picked: Vec<Bit> = Vec::new();
+    for n in list.split(',') {
+        if let Ok(slot) = n.trim().parse::<u32>() {
+            if let Some(b) = bits.iter().find(|b| b.slot == slot) {
+                if !picked.iter().any(|x| x.code == b.code) { picked.push(b.clone()); }
+            }
+        }
+    }
+    if picked.is_empty() { return None; }
+    let lc = comment.to_ascii_lowercase();
+    let mode = if lc.contains("mode:adhd") { "adhd" }
+        else if lc.contains("mode:order") { "order" }
+        else if picked.len() > 1 { "order" }
+        else { "single" };
+    Some((picked, mode.to_string()))
+}
+
 #[cfg(test)]
 mod bit_name_tests {
     use super::*;
@@ -53,6 +76,22 @@ mod bit_name_tests {
         assert_eq!(se_message("hi", "https://www.tiktok.com/@x/video/1", "", "Airhorn"),
                    "hi | SoundAlert: Airhorn | TikTok: https://www.tiktok.com/@x/video/1");
         assert_eq!(se_message("hi", "", "", ""), "hi");
+    }
+
+    #[test]
+    fn slot_orders_keep_click_order_and_mode() {
+        let bits = vec![
+            Bit { slot: 0, label: "A".into(), code: "a".into(), price: 10.0, ..Default::default() },
+            Bit { slot: 1, label: "B".into(), code: "b".into(), price: 20.0, ..Default::default() },
+            Bit { slot: 2, label: "C".into(), code: "c".into(), price: 30.0, ..Default::default() },
+        ];
+        let (picked, mode) = parse_slot_order("донат сповіщення bits:2,0 | mode:adhd | name: Nick", &bits).unwrap();
+        assert_eq!(picked.iter().map(|b| b.code.as_str()).collect::<Vec<_>>(), vec!["c", "a"]);
+        assert_eq!(mode, "adhd");
+        let (picked, mode) = parse_slot_order("донат сповіщення bits:1 | name: Nick", &bits).unwrap();
+        assert_eq!(picked[0].code, "b");
+        assert_eq!(mode, "single");
+        assert!(parse_slot_order("донат сповіщення bits:9", &bits).is_none());
     }
 }
 
@@ -223,6 +262,46 @@ impl Ctx {
         let jar_code = jar.code.clone();
         let cur = crate::model::currency_symbol(jar.currency);
         let iso = crate::model::currency_iso(jar.currency);
+
+        // public deck order: slots + mode, e.g. "bits:0,1,2 | mode:adhd | name: Nick"
+        let slot_order = parse_slot_order(&comment, &cfg.bits);
+        if let Some((picked, mode)) = slot_order {
+            let name = bit_display_name(&comment);
+            let msg = "Нічого не написав".to_string();
+            let labels = picked.iter().map(|b| b.label.clone()).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(", ");
+            let codes = picked.iter().map(|b| b.code.clone()).collect::<Vec<_>>().join(",");
+            jar.history.insert(0, HistoryItem {
+                id: tx.id.clone(), name: name.clone(), amount: uah, message: msg.clone(),
+                youtube_id: String::new(), media_url: String::new(), bit_label: labels.clone(), bit_code: codes,
+                matched: "bit".into(), code: None, at: now_ms(),
+            });
+            jar.stats.count += 1; jar.stats.total += uah;
+            if uah > jar.stats.biggest { jar.stats.biggest = uah; }
+            drop(st);
+            if picked.len() == 1 {
+                if !quiet {
+                    self.broadcast(json!({ "type": "bit", "data": {
+                        "id": tx.id, "name": name, "amount": uah, "message": msg, "currency": cur, "bit": picked[0].clone() } }));
+                }
+            } else {
+                let sounds: Vec<String> = picked.iter().filter_map(|b| {
+                    let s = if b.kind == "sound" { b.url.clone() } else { b.sound.clone() };
+                    if s.is_empty() { None } else { Some(s) }
+                }).collect();
+                if !quiet && !sounds.is_empty() {
+                    self.broadcast(json!({ "type": "bits_play", "data": {
+                        "id": tx.id, "name": name, "amount": uah, "sounds": sounds, "mode": mode.clone() } }));
+                }
+            }
+            if !quiet {
+                log(&format!("[{}] bit order {} ({}) {:.0} from {}", jar_code, labels, mode, uah, name));
+                crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&msg, "", "", &labels));
+            }
+            self.timer_add_donation(uah, &name, quiet);
+            if !quiet { self.auction_bid(&name, uah, "monobank"); }
+            self.save();
+            return false;
+        }
 
         // bits have their own codes: a donation whose comment contains a bit code plays on the bits overlay
         if let Some(bit) = cfg.bits.iter().find(|b| !b.code.is_empty() && low.contains(&b.code.to_lowercase())).cloned() {

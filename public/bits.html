@@ -21,6 +21,17 @@
   .cell .lbl{font-size:12px;font-weight:600;line-height:1.15;color:var(--fg);text-align:center;word-break:break-word}
   .cell .price{font-size:12px;color:var(--fg);font-variant-numeric:tabular-nums}
   .cell{position:relative}
+  .cell.sel .sq{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+  .cell.sel .lbl{color:var(--accent)}
+  .modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 12px}
+  .modebtn{width:100%;min-height:34px;padding:0 10px}
+  #modes .modebtn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .modebtn:disabled{opacity:.35;cursor:not-allowed}
+  .selbar{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);display:flex;flex-direction:column;gap:8px;background:var(--card2)}
+  .selbar[hidden]{display:none}
+  .seltext{font-size:12px;line-height:1.4;color:var(--muted);text-align:left}
+  .selrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:600}
+  #selpay{min-width:110px}
   .deck.dense .cell .lbl,.deck.dense .cell .price{position:absolute;left:3px;right:3px;z-index:1;padding:1px 3px;background:rgba(0,0,0,.62);border-radius:2px;font-size:9px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .deck.dense .cell .lbl{bottom:17px}
   .deck.dense .cell .price{bottom:3px}
@@ -49,7 +60,16 @@
         <label for="nick" data-i18n="nick" style="font-size:12px;opacity:.75;white-space:nowrap">Your nickname</label>
         <input id="nick" maxlength="40" autocomplete="nickname" data-i18n-ph="nickPh" placeholder="nickname (optional)" style="flex:1;min-width:0">
       </div>
+      <div class="modes" id="modes">
+        <button type="button" class="modebtn" data-mode="single" data-i18n="modeSingle">Single</button>
+        <button type="button" class="modebtn" data-mode="order" data-i18n="modeOrder">In order</button>
+        <button type="button" class="modebtn" data-mode="adhd" data-i18n="modeAdhd">ADHD</button>
+      </div>
       <div class="deck" id="deck"></div>
+      <div class="selbar" id="selbar" hidden>
+        <div class="seltext" id="seltext"></div>
+        <div class="selrow"><span id="seltotal"></span><button type="button" id="selpay" data-i18n="paySelected">Pay</button></div>
+      </div>
     </div>
   </div>
   <div class="credits" id="credits"></div>
@@ -75,8 +95,10 @@ window.I18N = {
 const $ = id => document.getElementById(id);
 Object.assign(window.I18N.en, { nick: 'Your nickname', nickPh: 'nickname (optional)', payDirect: 'Pay directly in the streamer\'s Monobank', payGo: 'Open', payClose: 'Close', payNote: 'Note: If you do not want the Monobank app to open automatically, long press the Open button and choose either Open in new browser tab or, if you want to do it manually, Copy link.' });
 Object.assign(window.I18N.ua, { nick: 'Твій нік', nickPh: 'нік (необовʼязково)', payDirect: 'Перейти до оплати напряму до Монобанки пана стрімера', payGo: 'Перейти', payClose: 'Закрити', payNote: 'Примітка: якщо не хочете, щоб застосунок Monobank відкривався автоматично, натисніть і утримуйте кнопку «Перейти» і виберіть «Відкрити в новій вкладці браузера» або, за потреби, «Копіювати посилання».' });
+Object.assign(window.I18N.en, { modeSingle: 'Single', modeOrder: 'In order', modeAdhd: 'ADHD', paySelected: 'Pay', orderText: 'Order', selectedText: 'Selected' });
+Object.assign(window.I18N.ua, { modeSingle: '\u041e\u0434\u043d\u0435', modeOrder: '\u041f\u043e \u0447\u0435\u0440\u0437\u0456', modeAdhd: 'ADHD', paySelected: '\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u0438', orderText: '\u041f\u043e\u0440\u044f\u0434\u043e\u043a', selectedText: '\u041e\u0431\u0440\u0430\u043d\u0456' });
 try { $('nick').value = localStorage.getItem('lmd:nick') || ''; } catch (e) {}
-let BITS = [], JAR = '', GRID = 5;
+let BITS = [], JAR = '', GRID = 5, MODES = [], MODE = '', SELECTED = [], payOrder = null;
 const fmt = n => Math.round(Number(n) || 0).toLocaleString('uk-UA') + ' \u20B4';
 const icon = k => k === 'video' ? '🎬' : k === 'sound' ? '🔊' : '✨';
 function fitDeck() {
@@ -99,7 +121,9 @@ function render() {
   g.classList.toggle('dense', cols >= 6);
   g.style.gridTemplateColumns = 'repeat(' + cols + ',1fr)';
   for (const bit of bits) {
-    const cell = document.createElement('div'); cell.className = 'cell';
+    const cell = document.createElement('div');
+    const multi = (MODE === 'order' || MODE === 'adhd');
+    cell.className = 'cell' + (multi && SELECTED.includes(bit.code) ? ' sel' : '');
     const sq = document.createElement('div'); sq.className = 'sq';
     if (bit.img) { sq.style.backgroundImage = 'url("' + bit.img + '")'; sq.style.backgroundSize = 'cover'; sq.style.backgroundPosition = 'center'; }
     else sq.textContent = icon(bit.kind);
@@ -109,11 +133,48 @@ function render() {
     const pb = document.createElement('button'); pb.className = 'pvbtn'; pb.type = 'button'; pb.textContent = '▶'; pb.title = 'Preview';
     pb.onclick = e => { e.stopPropagation(); openPv(bit); };
     cell.append(pb);
-    cell.onclick = () => { if (JAR) openPay(bit); };
+    cell.onclick = () => {
+      if (!JAR) return;
+      if (MODE === 'single') { openPay(bit); return; }
+      if (!MODE) return;
+      const i = SELECTED.indexOf(bit.code);
+      if (i >= 0) SELECTED.splice(i, 1); else SELECTED.push(bit.code);
+      render();
+    };
     g.append(cell);
   }
+  syncSelection();
   fitDeck();
 }
+function selectedBits() {
+  return SELECTED.map(c => BITS.find(b => b.code === c)).filter(Boolean);
+}
+function syncModes() {
+  document.querySelectorAll('.modebtn').forEach(b => {
+    const enabled = MODES.includes(b.dataset.mode);
+    b.disabled = !enabled;
+    b.classList.toggle('off', !enabled);
+    b.classList.toggle('on', MODE === b.dataset.mode);
+    b.setAttribute('aria-pressed', String(MODE === b.dataset.mode));
+  });
+}
+function syncSelection() {
+  const bar = $('selbar'), text = $('seltext'), total = $('seltotal');
+  const multi = MODE === 'order' || MODE === 'adhd';
+  const bits = selectedBits();
+  if (!multi || !bits.length) { bar.hidden = true; return; }
+  bar.hidden = false;
+  const names = bits.map(b => b.label || b.kind);
+  text.textContent = window.t(MODE === 'adhd' ? 'selectedText' : 'orderText') + ': ' + names.join(MODE === 'adhd' ? ', ' : ' → ');
+  total.textContent = fmt(bits.reduce((s, b) => s + (Number(b.price) || 0), 0));
+}
+document.querySelectorAll('.modebtn').forEach(b => b.addEventListener('click', () => {
+  const m = b.dataset.mode;
+  if (!MODES.includes(m)) return;
+  if (MODE !== m) SELECTED = [];
+  MODE = m; syncModes(); render();
+}));
+$('selpay').onclick = () => openPayMulti();
 let pvEl = null;
 function openPv(bit) {
   const m = $('pvMedia'); m.innerHTML = ''; pvEl = null;
@@ -144,7 +205,10 @@ $('pv').onclick = e => { if (e.target.id === 'pv') closePv(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePv(); });
 async function load() {
   let bitsPageBg = '', bitsBg = '', pageBg = '';
-  try { const b = await (await fetch('/api/bits')).json(); BITS = b.bits || []; JAR = (b.jars && b.jars[0]) || ''; GRID = b.grid || 5; } catch {}
+  try { const b = await (await fetch('/api/bits')).json(); BITS = b.bits || []; JAR = (b.jars && b.jars[0]) || ''; GRID = b.grid || 5;
+    MODES = Array.isArray(b.modes) ? b.modes.filter(m => ['single', 'order', 'adhd'].includes(m)) : (['single', 'order', 'adhd'].includes(b.mode) ? [b.mode] : ['single']);
+    MODE = MODES.includes('single') ? 'single' : (MODES[0] || '');
+  } catch {}
   try { const c = await (await fetch('/api/config')).json(); bitsPageBg = c.bitsPageBg || ''; bitsBg = c.bitsBg || ''; pageBg = bitsPageBg || c.bg || ''; } catch {}
   document.body.classList.toggle('hasbg', !!pageBg);
   if (pageBg) document.body.style.backgroundImage = 'url("' + pageBg + '")';
@@ -153,24 +217,41 @@ async function load() {
   if (bitsBg) win.style.backgroundImage = 'url("' + bitsBg + '")';
   win.style.backgroundColor = 'color-mix(in srgb,var(--card) ' + (alpha * 100) + '%,transparent)';
   const cellAlpha = bitsBg ? 1 : (pageBg ? 0.95 : 1);
+  syncModes();
   render();
   document.querySelectorAll('.cell .sq').forEach(sq => { if (!sq.style.backgroundImage) sq.style.backgroundColor = 'color-mix(in srgb,var(--card2) ' + (cellAlpha * 100) + '%,transparent)'; });
   window.mountLangSeg($('langseg')); window.applyI18n();
 }
-let payBit = null;
-function payLink(bit, nick) {
-  const comment = 'донат сповіщення ' + bit.code + (nick ? ' | name: ' + nick : '');
-  return 'https://send.monobank.ua/jar/' + encodeURIComponent(JAR) + '?a=' + encodeURIComponent(bit.price) + '&t=' + encodeURIComponent(comment);
+function payLink(order, nick) {
+  const bits = order.bits || [];
+  let comment;
+  if (order.mode === 'single' && bits.length === 1) {
+    comment = 'донат сповіщення ' + bits[0].code + (nick ? ' | name: ' + nick : '');
+  } else {
+    const slots = bits.map(b => b.slot).join(',');
+    comment = 'донат сповіщення bits:' + slots + ' | mode:' + order.mode + (nick ? ' | name: ' + nick : '');
+  }
+  return 'https://send.monobank.ua/jar/' + encodeURIComponent(JAR) + '?a=' + encodeURIComponent(order.total) + '&t=' + encodeURIComponent(comment);
 }
 function payNickValue() {
   return (($('payNick') && $('payNick').value) || '').trim().slice(0, 40);
 }
 function syncPayLink() {
-  if (payBit) $('payGo').href = payLink(payBit, payNickValue());
+  if (payOrder) $('payGo').href = payLink(payOrder, payNickValue());
 }
 function openPay(bit) {
-  payBit = bit;
+  payOrder = { mode: 'single', bits: [bit], total: Number(bit.price) || 0 };
   $('payTitle').textContent = (bit.label || bit.kind) + ' — ' + fmt(bit.price);
+  $('payNick').value = (($('nick') && $('nick').value) || '').trim();
+  syncPayLink();
+  $('paydlg').style.display = 'flex';
+}
+function openPayMulti() {
+  const bits = selectedBits();
+  if (!bits.length || !(MODE === 'order' || MODE === 'adhd')) return;
+  const total = bits.reduce((s, b) => s + (Number(b.price) || 0), 0);
+  payOrder = { mode: MODE, bits, total };
+  $('payTitle').textContent = bits.map(b => b.label || b.kind).join(', ') + ' — ' + fmt(total);
   $('payNick').value = (($('nick') && $('nick').value) || '').trim();
   syncPayLink();
   $('paydlg').style.display = 'flex';
@@ -181,7 +262,7 @@ $('payGo').onclick = () => {
   try { localStorage.setItem('lmd:nick', nick); } catch (e) {}
   if ($('nick')) $('nick').value = nick;
 };
-$('payClose').onclick = () => { $('paydlg').style.display = 'none'; payBit = null; };
+$('payClose').onclick = () => { $('paydlg').style.display = 'none'; payOrder = null; };
 $('paydlg').onclick = e => { if (e.target.id === 'paydlg') $('payClose').onclick(); };
 load();
 setTimeout(fitDeck, 300);
@@ -194,7 +275,7 @@ function renderCredits() {
     : 'Nothing here was made by <b>terriblefeelings</b> — the code was written by opencode models. The marathon timer\'s original code is by <a href="https://github.com/stalexteam" target="_blank" rel="noopener">stalexteam</a>, remade by opencode models.';
 }
 renderCredits();
-window.applyLang = function () { renderCredits(); fitDeck(); };
+window.applyLang = function () { renderCredits(); syncSelection(); fitDeck(); };
 window.addEventListener('load', fitDeck);
 </script>
 </body>
