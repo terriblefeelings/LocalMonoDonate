@@ -89,58 +89,69 @@ fn warn_obs_start_order() {
 #[cfg(not(windows))]
 fn warn_obs_start_order() {}
 
+/// A restart starts the new process before the old one releases the port, so
+/// give it a few seconds instead of treating the overlap as a real conflict.
+fn wait_port_free(port: u16, secs: u64) -> bool {
+    for _ in 0..secs * 5 {
+        if port_free(port) { return true; }
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    }
+    false
+}
+
+/// Map the retired defaults to the current fixed ports; custom ports stay as set.
+fn fixed_ports(port: u16, auction: u16, public: u16) -> (u16, u16, u16, bool) {
+    const APP_PORT: u16 = 41783;
+    const AUC_PORT: u16 = 41784;
+    const PUB_PORT: u16 = 41785;
+    const LEGACY_APP: [u16; 7] = [8080, 8787, 8789, 27183, 27184, 27185, 27186];
+    const LEGACY_AUC: [u16; 5] = [8788, 8790, 27184, 27185, 27186];
+    const LEGACY_PUB: [u16; 3] = [8080, 27185, 27186];
+    let oauth = crate::twitch::OAUTH_PORT;
+    let app = if LEGACY_APP.contains(&port) || port == oauth { APP_PORT } else { port };
+    let auc = if auction != 0 && (LEGACY_AUC.contains(&auction) || auction == oauth) { AUC_PORT } else { auction };
+    let pubp = if public != 0 && LEGACY_PUB.contains(&public) { PUB_PORT } else { public };
+    (app, auc, pubp, app != port || auc != auction || pubp != public)
+}
+
+#[cfg(test)]
+mod port_tests {
+    use super::fixed_ports;
+
+    #[test]
+    fn legacy_ports_migrate_once_and_custom_ports_stay() {
+        assert_eq!(fixed_ports(27185, 27186, 8083), (41783, 41784, 8083, true));
+        assert_eq!(fixed_ports(8080, 0, 8080), (41783, 0, 41785, true));
+        assert_eq!(fixed_ports(40000, 40001, 40002), (40000, 40001, 40002, false));
+    }
+}
+
 fn main() {
     let base = Paths::new();
     init_logging(&base);
     let mut cfg = load_config(&base);
     let headless = std::env::args().any(|a| a == "--headless");
 
-    // Dedicated, uncommon ports per listener. 8787 stays reserved for the Twitch
-    // callback; legacy defaults are migrated once so links stop shifting.
-    let oauth = crate::twitch::OAUTH_PORT;
-    const LEGACY_APP: [u16; 3] = [8787, 8789, 8080];
-    const LEGACY_AUC: [u16; 2] = [8788, 8790];
-    const LEGACY_PUB: [u16; 1] = [8080];
-    let mut moved = false;
-
-    let app_target = if LEGACY_APP.contains(&cfg.port) || cfg.port == oauth { 27183 } else { cfg.port };
-    if app_target != cfg.port || !port_free(app_target) {
-        let old = cfg.port;
-        cfg.port = pick_free_port(app_target, &[cfg.auction_port, oauth]);
-        log(&format!("port {} is reserved or busy, using {}", old, cfg.port));
-        moved = true;
-    }
-
-    if cfg.auction_port != 0 {
-        let target = if LEGACY_AUC.contains(&cfg.auction_port) || cfg.auction_port == oauth {
-            27184
-        } else {
-            cfg.auction_port
-        };
-        if target != cfg.auction_port || target == cfg.port || !port_free(target) {
-            let old = cfg.auction_port;
-            cfg.auction_port = pick_free_port(target, &[cfg.port, oauth]);
-            log(&format!("auction port {} is reserved or busy, using {}", old, cfg.auction_port));
-            moved = true;
-        }
-    }
-
-    if cfg.public_port != 0 {
-        let target = if LEGACY_PUB.contains(&cfg.public_port) { 27185 } else { cfg.public_port };
-        let busy = target != cfg.public_port
-            || target == cfg.port
-            || target == cfg.auction_port
-            || target == oauth
-            || !port_free(target);
-        if busy {
-            let old = cfg.public_port;
-            let skip = [cfg.port, cfg.auction_port, oauth];
-            cfg.public_port = pick_free_port(target, &skip);
-            log(&format!("public port {} is busy, using {}", old, cfg.public_port));
-            moved = true;
-        }
-    }
+    // Fixed, uncommon ports per listener. 8787 stays reserved for the Twitch
+    // callback. Legacy defaults migrate once; a busy port is never replaced,
+    // because a shifting port silently breaks every OBS browser source.
+    let old_port = cfg.port;
+    let (port, auction, public, moved) = fixed_ports(cfg.port, cfg.auction_port, cfg.public_port);
+    if port != old_port { log(&format!("link port {} moved to the fixed port {}", old_port, port)); }
+    cfg.port = port;
+    cfg.auction_port = auction;
+    cfg.public_port = public;
     if moved { save_config(&base, &cfg); }
+
+    // The port is fixed on purpose: wait briefly for a restarting instance, then
+    // stop with a clear log instead of moving the links behind the user's back.
+    for (port, what) in [(cfg.port, "app"), (cfg.auction_port, "auction"), (cfg.public_port, "public")] {
+        if port == 0 { continue; }
+        if !wait_port_free(port, 8) {
+            log(&format!("{} port {} is still busy; close the other LocalMonoDonate instance. The port stays fixed so OBS links never change.", what, port));
+            std::process::exit(1);
+        }
+    }
 
     log("LocalMonoDonate starting");
     if !headless && obs_running() {

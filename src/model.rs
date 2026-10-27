@@ -75,9 +75,9 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) {
 
 fn d_host() -> String { "127.0.0.1".into() }
 fn d_bits_mode() -> String { "single".into() }
-fn d_port() -> u16 { 27183 }
-fn d_aport() -> u16 { 27184 }
-fn d_public_port() -> u16 { 27185 }   // public (tunnel-facing) server; 0 = off
+fn d_port() -> u16 { 41783 }
+fn d_aport() -> u16 { 41784 }
+fn d_public_port() -> u16 { 41785 }   // public (tunnel-facing) server; 0 = off
 fn d_min() -> f64 { 10.0 }
 fn d_max() -> f64 { 29999.0 }
 fn d_prefix() -> String { "tf".into() }

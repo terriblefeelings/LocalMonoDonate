@@ -36,8 +36,9 @@ let audioReady = false; const audioRetries = [];
 function markAudioReady() { if (audioReady) return; audioReady = true; audioRetries.splice(0).forEach(fn => { try { fn(); } catch {} }); }
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, markAudioReady, { passive: true }));
 
-function playAudio(src, maxMs) { if (!src) return Promise.resolve();
+function playAudio(src, maxMs, gain) { if (!src) return Promise.resolve();
   return new Promise(res => { const a = new Audio(src); let done = false; const fin = () => { if (done) return; done = true; res(); };
+    a.preload = 'auto'; if (gain && gain < 1) a.volume = gain;
     a.onended = fin; a.onerror = fin;
     const p = a.play();
     if (p && p.catch) p.catch(() => { if (!audioReady) audioRetries.push(() => { a.play().catch(() => {}); }); setTimeout(fin, 1000); });
@@ -53,8 +54,16 @@ async function pump() { if (!queue.length) { busy = false; return; } busy = true
   pump(); }
 
 async function playMany(d) {
+  // full bit media: sound, video, image and alert bits keep their own URL/type.
+  const bits = Array.isArray(d.bits) ? d.bits.filter(b => b && (b.url || b.sound || b.kind === 'alert')) : [];
+  if (bits.length) {
+    // concurrent playback halves the gain per clip so the mix does not clip
+    if (d.mode === 'adhd') await Promise.all(bits.map(b => play({ bit: b }, 1 / bits.length)));
+    else for (const b of bits) await play({ bit: b });
+    return;
+  }
   const urls = Array.isArray(d.sounds) ? d.sounds.filter(Boolean) : [];
-  if (d.mode === 'adhd') await Promise.all(urls.map(u => playAudio(u, CFG.videoMaxMs)));
+  if (d.mode === 'adhd') await Promise.all(urls.map(u => playAudio(u, CFG.videoMaxMs, 1 / urls.length)));
   else for (const u of urls) await playAudio(u, CFG.videoMaxMs);
 }
 
@@ -72,19 +81,19 @@ function mediaBox(url, w, h) {
   box.style.width = (w || MEDIA_W) + 'px'; box.style.height = (h || MEDIA_H) + 'px';
   const isVid = Alert.isVidUrl(url);
   const el = document.createElement(isVid ? 'video' : 'img'); el.src = url;
-  if (isVid) { el.playsInline = true; el.autoplay = true; el.loop = false; el.muted = false; }
+  if (isVid) { el.playsInline = true; el.autoplay = true; el.loop = false; el.muted = false; el.preload = 'auto'; }
   box.append(el);
   return { box, el, isVid };
 }
 function videoDone(el) { return new Promise(r => { el.onended = r; el.onerror = r; setTimeout(r, CFG.videoMaxMs); }); }
 function startVideo(el) { const pp = el.play(); if (pp && pp.catch) pp.catch(() => { el.muted = true; el.play().catch(() => {}); }); }
 
-async function play(d) {
+async function play(d, gain) {
   const bit = d.bit || {};
   const stage = document.getElementById('stage');
 
-  /* sound -> audio only, no visuals */
-  if (bit.kind === 'sound') { await playAudio(bit.url, CFG.videoMaxMs); return; }
+  /* sound -> audio only, no visuals (a video file still renders its picture) */
+  if (bit.kind === 'sound' && !Alert.isVidUrl(bit.url)) { await playAudio(bit.url, CFG.videoMaxMs, gain); return; }
 
   /* alert -> its own media at its own size, no text */
   if (bit.kind === 'alert') {
@@ -93,13 +102,14 @@ async function play(d) {
     const anim = s.anim_ms || 400;
     if (!url) { await sleep(s.duration_ms || 3000); return; }
     const { box, el, isVid } = mediaBox(url, s.media_w, s.media_h);
+    if (isVid && gain && gain < 1) el.volume = gain;
     const wrap = document.createElement('div'); wrap.className = 'notif'; wrap.append(box);
     wrap.style.transition = 'none'; wrap.style.opacity = '0'; wrap.style.transform = Alert.animFrom(s.anim_in || 'fade');
     stage.append(wrap); void wrap.offsetWidth;
     wrap.style.transition = `opacity ${anim}ms ease, transform ${anim}ms cubic-bezier(.2,.9,.3,1.2)`;
     wrap.style.opacity = '1'; wrap.style.transform = 'none';
     if (isVid) startVideo(el);
-    const snd = s.sound_url ? playAudio(s.sound_url, CFG.videoMaxMs) : Promise.resolve();
+    const snd = s.sound_url ? playAudio(s.sound_url, CFG.videoMaxMs, gain) : Promise.resolve();
     if (isVid || s.sound_url) await Promise.race([Promise.all([isVid ? videoDone(el) : Promise.resolve(), snd]), sleep(CFG.videoMaxMs)]);
     else await sleep(s.duration_ms || 3000);
     wrap.style.transition = `opacity ${anim}ms ease, transform ${anim}ms ease`;
@@ -113,12 +123,13 @@ async function play(d) {
   const url = bit.url || '';
   if (!url) return;
   const { box, el, isVid } = mediaBox(url, MEDIA_W, MEDIA_H);
+  if (isVid && gain && gain < 1) el.volume = gain;
   const wrap = document.createElement('div'); wrap.className = 'notif'; wrap.append(box);
   wrap.style.transition = 'none'; wrap.style.opacity = '0';
   stage.append(wrap); void wrap.offsetWidth;
   wrap.style.transition = 'opacity 300ms ease'; wrap.style.opacity = '1';
   if (isVid) startVideo(el);
-  const snd = (bit.kind === 'image' && bit.sound) ? playAudio(bit.sound, CFG.videoMaxMs) : Promise.resolve();
+  const snd = (bit.kind === 'image' && bit.sound) ? playAudio(bit.sound, CFG.videoMaxMs, gain) : Promise.resolve();
   if (isVid) await Promise.race([videoDone(el), sleep(CFG.videoMaxMs)]);
   else if (bit.kind === 'image' && bit.sound) await snd;
   else await sleep(3000);

@@ -9,7 +9,8 @@
   .masked{filter:blur(5px);user-select:none}
   .link .feat{flex:0 0 auto;margin-right:6px}
   .link.off .k,.link.off .u{opacity:.4}
-  .linknote{margin:6px 0 12px;font-size:11.5px;line-height:1.45;color:var(--muted)}
+  .linknote{margin:0;padding:0 0 9px;font-size:11.5px;line-height:1.45;color:var(--muted);border-bottom:1px solid var(--line)}
+  .link.hasnote{border-bottom:0;padding-bottom:2px}
   ol.guide{margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.9;color:var(--fg)}
   ol.guide code{background:var(--field2);padding:1px 6px;border-radius:5px;font-family:var(--mono);font-size:12px}
   .tsguide{font-size:12px;line-height:1.65;margin-top:8px}
@@ -17,6 +18,9 @@
   .wrap{max-width:760px}
   .update-btn{display:none;align-items:center;padding:8px 14px;border-radius:10px;background:#A9DC76;color:#0C0B0A;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.03em}
   .update-btn.show{display:inline-flex}
+  .updateStack{display:none}
+  .updateStack.show{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .port-note{background:#F3C969;border:0;cursor:pointer;font-family:inherit;max-width:420px;text-align:center;line-height:1.35}
 </style>
 </head>
 <body>
@@ -103,13 +107,13 @@
       <p class="note links-note" data-i18n="linksNote">Each checkbox enables or disables the entire feature, not just its link. Disabled features stay configured but are not published.</p>
       <p class="note" data-i18n="obsAudioNote">OBS audio for the Media and Donation overlays: turn on “Control audio via OBS”, then set Audio Monitoring to Monitor and Output under Advanced Audio Properties.</p>
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="donate"><span class="track"></span></label><div class="k" data-i18n="kDonate">Donation Page</div><div class="u masked" id="l_donate"></div><button class="tg" data-t="donate" data-i18n="show">Show</button><button class="cp" data-t="donate" data-i18n="copy">Copy</button></div>
-      <div class="link"><label class="sw feat"><input type="checkbox" data-feat="overlay"><span class="track"></span></label><div class="k" data-i18n="kOverlay">Overlay</div><div class="u masked" id="l_overlay"></div><button class="tg" data-t="overlay" data-i18n="show">Show</button><button class="cp" data-t="overlay" data-i18n="copy">Copy</button></div>
+      <div class="link hasnote"><label class="sw feat"><input type="checkbox" data-feat="overlay"><span class="track"></span></label><div class="k" data-i18n="kOverlay">Overlay</div><div class="u masked" id="l_overlay"></div><button class="tg" data-t="overlay" data-i18n="show">Show</button><button class="cp" data-t="overlay" data-i18n="copy">Copy</button></div>
       <p class="note linknote" data-i18n="overlayNote">OBS Browser Source size: 750×500. Donation alert overlay.</p>
-      <div class="link"><label class="sw feat"><input type="checkbox" data-feat="youtube"><span class="track"></span></label><div class="k" data-i18n="kYouTube">Media</div><div class="u masked" id="l_youtube"></div><button class="tg" data-t="youtube" data-i18n="show">Show</button><button class="cp" data-t="youtube" data-i18n="copy">Copy</button></div>
+      <div class="link hasnote"><label class="sw feat"><input type="checkbox" data-feat="youtube"><span class="track"></span></label><div class="k" data-i18n="kYouTube">Media</div><div class="u masked" id="l_youtube"></div><button class="tg" data-t="youtube" data-i18n="show">Show</button><button class="cp" data-t="youtube" data-i18n="copy">Copy</button></div>
       <p class="note linknote" data-i18n="mediaNote">OBS Browser Source size: 640×360. Media links: YouTube, Instagram, TikTok, Twitch, Reddit and X.</p>
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="stats"><span class="track"></span></label><div class="k" data-i18n="kStats">Stats</div><div class="u masked" id="l_stats"></div><button class="rf" id="rfstats" title="Generate a new code">↻</button><button class="tg" data-t="stats" data-i18n="show">Show</button><button class="cp" data-t="stats" data-i18n="copy">Copy</button></div>
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="bits"><span class="track"></span></label><div class="k" data-i18n="kBitsPage">Sound Alerts</div><div class="u masked" id="l_bitsPage"></div><button class="tg" data-t="bitsPage" data-i18n="show">Show</button><button class="cp" data-t="bitsPage" data-i18n="copy">Copy</button></div>
-      <div class="link"><label class="sw feat"><input type="checkbox" data-feat="bitsOverlay"><span class="track"></span></label><div class="k" data-i18n="kBitsOvl">Sound Alerts Overlay</div><div class="u masked" id="l_bitsOverlay"></div><button class="tg" data-t="bitsOverlay" data-i18n="show">Show</button><button class="cp" data-t="bitsOverlay" data-i18n="copy">Copy</button></div>
+      <div class="link hasnote"><label class="sw feat"><input type="checkbox" data-feat="bitsOverlay"><span class="track"></span></label><div class="k" data-i18n="kBitsOvl">Sound Alerts Overlay</div><div class="u masked" id="l_bitsOverlay"></div><button class="tg" data-t="bitsOverlay" data-i18n="show">Show</button><button class="cp" data-t="bitsOverlay" data-i18n="copy">Copy</button></div>
       <p class="note linknote" data-i18n="bitsOverlayNote">OBS Browser Source size: 750×500. Sound Alerts playback overlay.</p>
       <div class="link qrlink"><label class="sw feat"><input type="checkbox" data-feat="qr"><span class="track"></span></label><div class="k" data-i18n="kQr">QR Widget</div><div class="u masked" id="l_qr"></div><button class="tg" data-t="qr" data-i18n="show">Show</button><button class="cp" data-t="qr" data-i18n="copy">Copy</button></div>
       <div class="link qrlink" id="qrLink2" style="display:none"><span class="feat" style="width:22px"></span><div class="k">QR 2</div><div class="u masked" id="l_qr2"></div><button class="tg" data-t="qr2" data-i18n="show">Show</button><button class="cp" data-t="qr2" data-i18n="copy">Copy</button></div>
@@ -159,7 +163,8 @@ Object.assign(window.I18N.en, {
   obsAudioNote: 'OBS audio for the Media and Donation overlays: turn on “Control audio via OBS”, then set Audio Monitoring to Monitor and Output under Advanced Audio Properties.',
   overlayNote: 'OBS Browser Source size: 750×500. Donation alert overlay.',
   mediaNote: 'OBS Browser Source size: 640×360. Media links: YouTube, Instagram, TikTok, Twitch, Reddit and X.',
-  bitsOverlayNote: 'OBS Browser Source size: 750×500. Sound Alerts playback overlay.'
+  bitsOverlayNote: 'OBS Browser Source size: 750×500. Sound Alerts playback overlay.',
+  portNote: 'OVERLAY PORTS HAVE BEEN UPDATED — CHANGE YOUR LINKS IN OBS'
 });
 Object.assign(window.I18N.ua, {
   kDonate: 'Сторінка донатів', kOverlay: 'Оверлей', kYouTube: 'Медіа', kStats: 'Статистика',
@@ -167,10 +172,11 @@ Object.assign(window.I18N.ua, {
   obsAudioNote: 'OBS-аудіо для оверлеїв медіа та донатів: увімкніть «Control audio via OBS», а потім у Advanced Audio Properties виберіть Audio Monitoring → Monitor and Output.',
   overlayNote: 'Розмір OBS Browser Source: 750×500. Оверлей донатних сповіщень.',
   mediaNote: 'Розмір OBS Browser Source: 640×360. Медіапосилання: YouTube, Instagram, TikTok, Twitch, Reddit і X.',
-  bitsOverlayNote: 'Розмір OBS Browser Source: 750×500. Оверлей відтворення звукових сповіщень.'
+  bitsOverlayNote: 'Розмір OBS Browser Source: 750×500. Оверлей відтворення звукових сповіщень.',
+  portNote: 'ПОРТИ ОВЕРЛЕЇВ ОНОВЛЕНО — ЗМІНІТЬ ПОСИЛАННЯ В OBS'
 });
 const $ = id => document.getElementById(id);
-let SERVER = {}, PORT = 8789, TOK = '', MAXJ = 5, TS = {}, QR_COUNT = 1;
+let SERVER = {}, PORT = 41783, TOK = '', MAXJ = 5, TS = {}, QR_COUNT = 1;
 function addJarRow(v, nm, mine, isDefault) {
   if ($('jars').children.length >= MAXJ) return;
   const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
@@ -271,7 +277,7 @@ async function loadPorts() {
 loadPorts();
 setInterval(loadPorts, 5000);
 async function load() { let c; try { c = await (await fetch('/api/config')).json(); } catch { return; }
-  PORT = c.port || 8789; TOK = c.statsToken || ''; MAXJ = c.maxJars || 5;
+  PORT = c.port || 41783; TOK = c.statsToken || ''; MAXJ = c.maxJars || 5;
   $('nickname').value = c.nickname || ''; $('token').value = c.token || '';
   TS = c.tailscale || {};
   $('jars').innerHTML = ''; { const js = (c.jars && c.jars.length ? c.jars : ['']); const jn = c.jarNames || []; const jm = c.jarMine || []; js.forEach((j, i) => addJarRow(j, jn[i], jm[i], i === 0)); }
@@ -308,9 +314,13 @@ async function loadUpdate() {
       const b = document.getElementById('updateBtn');
       if (!b || !b.isConnected) { setTimeout(loadUpdate, 300); return; }
       b.textContent = 'UPDATE ' + (u.latest || ''); b.href = u.url; b.classList.add('show');
+      const n = document.getElementById('portNote');
+      if (n) { n.textContent = window.t('portNote'); n.parentElement.classList.add('show'); }
     }
   } catch {}
 }
+document.addEventListener('DOMContentLoaded', () => { const n = document.getElementById('portNote');
+  if (n) n.onclick = () => { const l = document.getElementById('links'); if (l) l.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
 window.savePage = async () => { const sb = $('save'); if (sb) sb.disabled = true; $('status').className = 'status'; $('status').textContent = 'saving…';
   const jarRows = [...$('jars').children];
   const jars = jarRows.map(r => r.querySelectorAll('input')[0].value);

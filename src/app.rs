@@ -101,17 +101,17 @@ fn bits_overlay_alive() -> bool {
 /// A donation with sound alerts plays its clips on the bits overlay first; the
 /// donation alert is broadcast only after that overlay reports the clips finished.
 /// With no bits overlay open the alert goes out immediately (and silently).
-pub fn send_donation(ctx: &Ctx, data: serde_json::Value, sound_urls: Vec<String>, sound_mode: &str) {
-    if sound_urls.is_empty() || !bits_overlay_alive() {
-        if !sound_urls.is_empty() { log("bits overlay is not open, sending the alert without sounds"); }
+pub fn send_donation(ctx: &Ctx, data: serde_json::Value, bits: Vec<crate::model::Bit>, sound_mode: &str) {
+    if bits.is_empty() || !bits_overlay_alive() {
+        if !bits.is_empty() { log("bits overlay is not open, sending the alert without sound alerts"); }
         ctx.broadcast(json!({ "type": "donation", "data": data }));
         return;
     }
     let token = format!("snd-{}-{}", now_ms(), PRE_SEQ.fetch_add(1, Ordering::Relaxed));
     pre_map().lock().unwrap().insert(token.clone(), PreAlert { data, at: now_ms() });
-    log(&format!("sounds pre-roll: {} clip(s) mode={}", sound_urls.len(), sound_mode));
+    log(&format!("sound alerts pre-roll: {} clip(s) mode={}", bits.len(), sound_mode));
     ctx.broadcast(json!({ "type": "bits_pre", "data": {
-        "token": token, "sounds": sound_urls, "mode": sound_mode } }));
+        "token": token, "bits": bits, "mode": sound_mode } }));
 }
 
 pub fn pre_alert_done(ctx: &Ctx, token: &str) -> bool {
@@ -269,13 +269,10 @@ impl Ctx {
                         "id": tx.id, "name": name, "amount": uah, "message": msg, "currency": cur, "bit": order.bits[0].clone() } }));
                 }
             } else {
-                let sounds: Vec<String> = order.bits.iter().filter_map(|b| {
-                    let s = if b.kind == "sound" { b.url.clone() } else { b.sound.clone() };
-                    if s.is_empty() { None } else { Some(s) }
-                }).collect();
-                if !quiet && !sounds.is_empty() {
+                let bits = order.bits.clone();
+                if !quiet && !bits.is_empty() {
                     self.broadcast(json!({ "type": "bits_play", "data": {
-                        "id": tx.id, "name": name, "amount": uah, "sounds": sounds, "mode": order.mode.clone() } }));
+                        "id": tx.id, "name": name, "amount": uah, "bits": bits, "mode": order.mode.clone() } }));
                 }
             }
             if !quiet {
@@ -299,15 +296,12 @@ impl Ctx {
         }
 
         // resolve the alert payload (if any) plus the local history record
-        let (name, message, youtube_id, media_url, kind, code, alert, voice, sound_urls, bit_label, bit_code, sound_mode) = if let Some(k) = idx {
+        let (name, message, youtube_id, media_url, kind, code, alert, voice, sound_bits, bit_label, bit_code, sound_mode) = if let Some(k) = idx {
             let p = jar.pending.remove(k);
             // the fallback-link twin is the same intent, never a second alert
             if !p.pair.is_empty() { jar.pending.retain(|x| x.code != p.pair); }
             let bits_all: Vec<crate::model::Bit> = if !p.bits.is_empty() { p.bits.clone() } else { p.bit.clone().into_iter().collect() };
-            let sound_urls: Vec<String> = bits_all.iter().filter_map(|b| {
-                let s = if b.kind == "sound" { b.url.clone() } else { b.sound.clone() };
-                if s.is_empty() { None } else { Some(s) }
-            }).collect();
+            let sound_bits = bits_all.clone();
             let sound_mode = if p.bits_mode.is_empty() { cfg.bits_mode.clone() } else { p.bits_mode.clone() };
             let bit_label = bits_all.iter().map(|b| b.label.clone()).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(", ");
             let bit_code = bits_all.iter().map(|b| b.code.clone()).collect::<Vec<_>>().join(",");
@@ -315,7 +309,7 @@ impl Ctx {
                 if p.bit.is_some() || !p.bits.is_empty() { "Анонім SA".to_string() } else { "Анонім".to_string() }
             } else { p.name.trim().to_string() };
             let pmsg = if p.message.trim().is_empty() { "Нічого не написав".to_string() } else { p.message.clone() };
-            (pname, pmsg, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice, sound_urls, bit_label, bit_code, sound_mode)
+            (pname, pmsg, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice, sound_bits, bit_label, bit_code, sound_mode)
         } else {
             let name = "Анонім".to_string();
             let raw: String = comment.chars().take(cfg.limits.message_max).collect();
@@ -366,7 +360,7 @@ impl Ctx {
             crate::app::send_donation(self, json!({
                 "id": tx.id, "name": name, "amount": uah, "message": message,
                 "youtubeId": youtube_id, "mediaUrl": media_url, "matched": kind, "jar": jar_code, "currency": cur,
-                "ttsUrl": tts_url }), sound_urls, &sound_mode);
+                "ttsUrl": tts_url }), sound_bits, &sound_mode);
             log(&format!("[{}] notification ({}) {:.0} UAH from {}", jar_code, kind, uah, name));
             // StreamElements: mirror the live donation as a tip so the SE alert box plays
             crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&message, &media_url, &youtube_id, &bit_label));

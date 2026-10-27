@@ -742,7 +742,7 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
         let mut errors: Vec<String> = Vec::new();
         for (name, msg, media, ytid, sound) in variants {
             let text = crate::app::se_message(msg, media, ytid, sound);
-            if let Err(e) = crate::streamelements::send_tip(cfg.port, &cfg, name, 5.0, "UAH", &text) {
+            if let Err(e) = crate::streamelements::send_tip(cfg.port, &cfg, name, 0.0, "UAH", &text) {
                 errors.push(format!("{}: {}", name, e));
             }
         }
@@ -803,13 +803,14 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
     }
     let sound_mode = v.get("mode").and_then(|x| x.as_str()).unwrap_or("order").to_string();
     let amount = if amount > 0.0 || test_bits.is_empty() { amount } else { test_bits.iter().map(|b| b.price).sum() };
-    let missing_sound = !test_bits.is_empty() && sound_urls.is_empty();
+    let missing_media = !test_bits.is_empty() && test_bits.iter()
+        .all(|b| b.kind != "alert" && b.url.is_empty() && b.sound.is_empty());
     if v.get("direct").and_then(|x| x.as_bool()).unwrap_or(false) {
-        let count = sound_urls.len();
+        let count = test_bits.len();
         ctx.broadcast(json!({ "type": "bits_play", "data": {
             "id": format!("bittest-{}", now_ms()), "name": name, "amount": amount,
-            "sounds": sound_urls, "mode": sound_mode } }));
-        log(&format!("test bits: {:.0} from {} sounds={} mode={}", amount, name, count, sound_mode));
+            "bits": test_bits, "sounds": sound_urls, "mode": sound_mode } }));
+        log(&format!("test bits: {:.0} from {} bits={} mode={}", amount, name, count, sound_mode));
         let _ = request.respond(json_resp(200, json!({ "ok": true })));
         return;
     }
@@ -831,13 +832,13 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
             }
         }
     }
-    let sound_count = sound_urls.len();
+    let sound_count = test_bits.len();
     crate::app::send_donation(ctx, json!({
         "id": format!("test-{}", now_ms()), "name": name, "amount": amount,
         "message": message, "youtubeId": test_ytid, "mediaUrl": test_media, "ruleId": test_rule, "style": test_style, "matched": "test", "jar": "", "currency": "",
-        "ttsUrl": tts_url }), sound_urls, &sound_mode);
-    let warn = if missing_sound { vec!["selected alerts have no sound file".to_string()] } else { Vec::new() };
-    log(&format!("test donation: {:.0} from {} sounds={} mode={}", amount, name, sound_count, sound_mode));
+        "ttsUrl": tts_url }), test_bits, &sound_mode);
+    let warn = if missing_media { vec!["selected alerts have no media file".to_string()] } else { Vec::new() };
+    log(&format!("test donation: {:.0} from {} bits={} mode={}", amount, name, sound_count, sound_mode));
     let _ = request.respond(json_resp(200, json!({ "ok": true, "warnings": warn })));
 }
 
@@ -983,7 +984,7 @@ fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
                 if bits.len() > 1 {
                     ctx.broadcast(json!({ "type": "bits_play", "data": {
                         "id": replay_id, "name": h.name, "amount": h.amount,
-                        "sounds": sound_urls, "mode": "order" } }));
+                        "bits": bits, "sounds": sound_urls, "mode": "order" } }));
                     log(&format!("replay sound: {} for {}", h.bit_label, h.name));
                 } else if let Some(b) = bit.clone() {
                     ctx.broadcast(json!({ "type": "bit", "data": {
@@ -1017,15 +1018,15 @@ fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
                 }
             }
 
-            let (yt, media, sounds) = if mode == "full" {
-                (h.youtube_id.clone(), h.media_url.clone(), sound_urls.clone())
+            let (yt, media, pre_bits) = if mode == "full" {
+                (h.youtube_id.clone(), h.media_url.clone(), bits.clone())
             } else {
                 (String::new(), String::new(), Vec::new())
             };
             crate::app::send_donation(ctx, json!({
                 "id": replay_id, "name": h.name, "amount": h.amount, "message": h.message,
                 "youtubeId": yt, "mediaUrl": media, "soundUrl": "", "ttsUrl": tts_url,
-                "matched": "replay", "jar": "", "currency": "" }), sounds, "order");
+                "matched": "replay", "jar": "", "currency": "" }), pre_bits, "order");
             log(&format!("replay {}: {:.0} from {}", mode, h.amount, h.name));
             let _ = request.respond(json_resp(200, json!({ "ok": true })));
         }
@@ -1826,9 +1827,9 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
             let mut cfg = ctx.cfg();
             let skip = [cfg.port, cfg.auction_port, cfg.public_port, crate::twitch::OAUTH_PORT];
             let default = match which {
-                "app" => 27183u16,
-                "auction" => 27184u16,
-                "public" => 27185u16,
+                "app" => 41783u16,
+                "auction" => 41784u16,
+                "public" => 41785u16,
                 _ => { let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "unknown listener" }))); return; }
             };
             let port = crate::model::pick_free_port(default, &skip);
