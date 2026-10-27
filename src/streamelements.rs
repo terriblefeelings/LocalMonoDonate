@@ -121,18 +121,18 @@ mod tests {
 
     #[test]
     fn donor_identity_is_unique_per_name_and_stable() {
-        let a = donor_identity("pendra");
+        let a = donor_identity("goodfeelings");
         let b = donor_identity("test555");
         assert_ne!(a.0, b.0);
         assert_ne!(a.1, b.1);
-        assert_eq!(a, donor_identity(" Pendra "));  // trim + case only
+        assert_eq!(a, donor_identity(" Goodfeelings "));  // trim + case only
         assert_ne!(a, donor_identity("pen dra"));   // different nickname = different donor
-        assert_ne!(a, donor_identity("pependra"));
+        assert_ne!(a, donor_identity("goodfeelings2"));
     }
 
     #[test]
     fn activity_keeps_the_channel_currency_amount() {
-        let body = activity_body("pendra", 10.0, "hi");
+        let body = activity_body("goodfeelings", 10.0, "hi");
         assert_eq!(body["data"]["amount"].as_f64(), Some(10.0));
     }
 }

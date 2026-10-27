@@ -404,7 +404,7 @@ docs/screenshots/      зображення для README
 | «No jar configured»? | Додайте банку й натисніть Зберегти; інакше кнопка оплати неактивна. |
 | Немає звуку/голосу? | `tts-engine` поруч із exe; Google потребує інтернету, Azure — ключа й регіону. |
 | Нічого в StreamElements? | Увімкніть перемикач у *Links*, натисніть *Test connection*, перевірте журнал. |
-| Один донатер рахується двічі? | SE групує лише за ніком: `pendra` і `pependra` — різні донатери. |
+| Один донатер рахується двічі? | SE групує лише за ніком: `goodfeelings` і `goodfeelings2` — різні донатери. |
 | Звукові сповіщення окремо? | Так — вони записуються як `<нік> SA` / `Anonymous SA`. |
 | Де налаштування й секрети? | `%APPDATA%\LocalMonoDonate\config.json` та `<port>\token`, `twitch.json`, `streamelements.json`. |
 | Як оновити? | Замініть exe (і `tts-engine`, якщо змінився); налаштування лишаються в `%APPDATA%`. |

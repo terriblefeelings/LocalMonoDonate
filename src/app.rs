@@ -21,7 +21,7 @@ mod bit_name_tests {
 
     #[test]
     fn bits_use_the_nickname_from_the_comment_with_sa_suffix() {
-        assert_eq!(bit_display_name("донат сповіщення abc123 | name: pendra"), "pendra SA");
+        assert_eq!(bit_display_name("донат сповіщення abc123 | name: goodfeelings"), "goodfeelings SA");
         assert_eq!(bit_display_name("донат сповіщення abc123"), "Anonymous SA");
         assert_eq!(bit_display_name("| name:   "), "Anonymous SA");
     }

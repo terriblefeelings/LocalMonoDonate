@@ -1134,7 +1134,7 @@ mod qr_path_tests {
 pub fn sanitize_name(s: &str) -> String { s.trim().to_ascii_lowercase() }
 
 /// Grouping key: the nickname itself, trimmed and case-insensitive - nothing else.
-/// "pendra" and "pependra" are two donors even with the same card/email; every donation
+/// "goodfeelings" and "goodfeelings2" are two donors even with the same card/email; every donation
 /// under "grafdralkuma" is one total no matter who or what paid it.
 pub fn donor_key(name: &str) -> String {
     name.trim().to_lowercase()
