@@ -18,9 +18,11 @@
   .bcell .p{font-size:10px;color:var(--fg);text-align:center}
   .bcell.empty .sq{border-style:dashed;opacity:.4}
   .bcell{position:relative}
-  .btest{position:absolute;right:2px;bottom:2px;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+  .btest{margin-top:2px;padding:2px 8px;font-size:9.5px;line-height:1.2;border:1px solid var(--line);border-radius:5px;background:var(--card2);color:var(--muted);cursor:pointer;font:inherit;letter-spacing:.08em}
+  .btest:hover{color:var(--fg);border-color:var(--faint)}
   .bitpv{width:100%;max-width:360px;height:150px;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--card2)}
-  .bitpv img,.bitpv video{height:100%;width:auto;max-width:none;display:block}
+  .bitpv img{height:100%;width:auto;max-width:none;display:block}
+  .bitpv video{height:100%;max-width:100%;width:auto;object-fit:contain;display:block}
   .bitpv .ph{font-size:12px;color:var(--faint);padding:0 8px;text-align:center}
   #deck{background-size:100% 100%;background-position:center;background-repeat:no-repeat;border-radius:var(--r-sm)}
   #win{max-width:660px;margin:0 auto;background-color:color-mix(in srgb,var(--card) calc(var(--win-alpha,1) * 100%),transparent);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
@@ -129,7 +131,7 @@ function render() {
   const g = $('deck'); g.innerHTML = ''; g.style.gridTemplateColumns = 'repeat(' + GRID + ',1fr)';
   for (let i = 0; i < GRID * GRID; i++) {
     const bit = BITS.find(x => Number(x.slot) === i);
-    const c = document.createElement('button'); c.className = 'bcell' + (bit ? '' : ' empty') + (i === selSlot ? ' sel' : '');
+    const c = document.createElement('div'); c.className = 'bcell' + (bit ? '' : ' empty') + (i === selSlot ? ' sel' : '');
     c.onclick = () => openEditor(i);
     const sq = document.createElement('div'); sq.className = 'sq';
     if (bit && bit.img) { sq.style.backgroundImage = 'url("' + bit.img + '")'; sq.style.backgroundSize = 'cover'; sq.style.backgroundPosition = 'center'; }
@@ -137,7 +139,7 @@ function render() {
     c.append(sq);
     if (bit) { const l = document.createElement('span'); l.className = 'l'; l.textContent = bit.label || bit.kind;
       const p = document.createElement('span'); p.className = 'p'; p.textContent = Math.round(bit.price || 0) + ' ₴'; c.append(l, p);
-      const tb = document.createElement('span'); tb.className = 'btest testbtn'; tb.title = 'Test'; tb.textContent = 'TEST';
+      const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'btest'; tb.title = 'Test'; tb.textContent = 'TEST';
       tb.onclick = e => { e.stopPropagation(); testBit(bit); }; c.append(tb); }
     g.append(c);
   }
@@ -191,8 +193,8 @@ function pvTrack(el) {
   el.addEventListener('ended', () => { pvBtn('paused'); pvTime(el.duration, el.duration); });
 }
 function pvStop() { try { if (pvEl) pvEl.pause(); } catch {} try { if (pvAud) pvAud.pause(); } catch {} pvEl = null; pvAud = null; pvBtn('paused'); pvTime(0, 0); }
-function pvPlayVid(el, vol) { el.muted = false; el.volume = vol; el.loop = false; el.autoplay = true; el.playsInline = true; pvTrack(el); el.play().catch(() => {}); pvEl = el; pvBtn('playing'); }
-function pvPlayAud(src, vol) { if (!src) return; const a = new Audio(src); a.loop = false; a.volume = vol; pvTrack(a); a.play().catch(() => {}); pvAud = a; pvBtn('playing'); }
+function pvMountVid(el, src, vol) { el.src = src; el.muted = false; el.volume = vol; el.loop = false; el.playsInline = true; el.preload = 'auto'; pvTrack(el); pvEl = el; pvBtn('paused'); }
+function pvMountAud(src, vol) { if (!src) return; const a = new Audio(src); a.preload = 'auto'; a.loop = false; a.volume = vol; pvTrack(a); pvAud = a; pvBtn('paused'); }
 function pvToggle() { const m = pvEl || pvAud; if (!m) return;
   if (m.paused) { m.play().catch(() => {}); pvBtn('playing'); } else { m.pause(); pvBtn('paused'); } }
 if ($('pvBtn')) $('pvBtn').onclick = pvToggle;
@@ -203,17 +205,23 @@ function renderPreview() {
   const ph = t => { const p = document.createElement('div'); p.className = 'ph'; p.textContent = t; return p; };
   if (k === 'alert') {
     const r = RULES.find(x => x.id === $('b_rule').value); const u = r && r.style && (r.style.video_url || r.style.image_url);
-    if (u) { const el = document.createElement(isVidUrl(u) ? 'video' : 'img'); el.src = u; if (isVidUrl(u)) pvPlayVid(el, vol); box.append(el); }
+    if (u) {
+      if (isVidUrl(u)) { const el = document.createElement('video'); pvMountVid(el, u, vol); box.append(el); }
+      else { const el = document.createElement('img'); el.src = u; box.append(el); }
+    }
     else box.append(ph(window.t('alert') + ': ' + ($('b_rule').value || '—')));
     return;
   }
-  if (k === 'sound') { const u = $('b_url').value.trim(); box.append(ph('🔊 ' + (u || '—'))); pvPlayAud(u, vol); return; }
+  if (k === 'sound') {
+    const u = $('b_url').value.trim();
+    if (isVidUrl(u)) { const el = document.createElement('video'); pvMountVid(el, u, vol); box.append(el); return; }
+    box.append(ph('🔊 ' + (u || '—'))); pvMountAud(u, vol); return;
+  }
   const url = $('b_url').value.trim();
   if (!url) { box.append(ph('—')); return; }
-  const el = document.createElement(isVidUrl(url) ? 'video' : 'img'); el.src = url;
-  if (isVidUrl(url)) pvPlayVid(el, vol);
-  box.append(el);
-  if (k === 'image') pvPlayAud($('b_sound').value.trim(), vol);
+  if (isVidUrl(url)) { const el = document.createElement('video'); pvMountVid(el, url, vol); box.append(el); }
+  else { const img = document.createElement('img'); img.src = url; box.append(img); }
+  if (k === 'image') pvMountAud($('b_sound').value.trim(), vol);
 }
 ['b_url', 'b_sound', 'b_rule', 'b_kind'].forEach(id => { const el = $(id); if (el) { el.addEventListener('input', renderPreview); el.addEventListener('change', renderPreview); } });
 if ($('b_vol')) { $('b_vol').title = window.t('vol'); $('b_vol').addEventListener('input', () => { const v = Number($('b_vol').value); if (pvEl) pvEl.volume = v; if (pvAud) pvAud.volume = v; }); }
