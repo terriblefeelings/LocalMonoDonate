@@ -406,7 +406,7 @@ $('seTest5').onclick = async () => {
   try {
     const d = await (await fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seVariants: true }) })).json();
     m.style.color = d.ok ? '#7dffb0' : '#ff6b6b';
-    m.textContent = d.ok ? window.t('seTest5Done') : (d.error || 'error');
+    m.textContent = d.ok ? window.t('seTest5Done') : ((d.errors && d.errors[0]) || d.error || 'error');
   } catch { m.style.color = '#ff6b6b'; m.textContent = 'error'; }
 };
 $('seAccount').onchange = saveSE;

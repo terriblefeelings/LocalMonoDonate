@@ -758,6 +758,24 @@ pub fn migrate_secrets(port: u16) {
     if ot.exists() { let _ = fs::rename(&ot, new.join("token")); }
     if ow.exists() { let _ = fs::rename(&ow, new.join("twitch.json")); }
 }
+/// copy the per-port secret files forward after the listening port changed
+pub fn migrate_port_secrets(from: u16, to: u16) {
+    if from == to { return; }
+    let base = secrets_dir_at(0).parent().map(|p| p.to_path_buf()).unwrap_or_else(|| PathBuf::from("."));
+    let src = base.join(from.to_string());
+    let dst = base.join(to.to_string());
+    if !src.exists() { return; }
+    for name in ["token", "twitch.json", "streamelements.json"] {
+        let s = src.join(name);
+        let d = dst.join(name);
+        if s.exists() && !d.exists() {
+            let _ = fs::create_dir_all(&dst);
+            let _ = fs::copy(&s, &d);
+            log(&format!("secrets: {} copied from port {}", name, from));
+        }
+    }
+}
+
 pub fn save_token_at(port: u16, t: &str) {
     let p = token_file_at(port);
     if let Some(d) = p.parent() { let _ = fs::create_dir_all(d); }

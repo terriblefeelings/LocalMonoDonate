@@ -701,12 +701,15 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
             ("SE Test 4", "Медіа та звук разом", "https://www.tiktok.com/@demo/video/1", "", "Bruh"),
             ("SE Test 5", "Дуже довге повідомлення, яке перевіряє, як StreamElements переносить текст у сповіщенні та стрічці активності", "", "", ""),
         ];
+        let mut errors: Vec<String> = Vec::new();
         for (name, msg, media, ytid, sound) in variants {
             let text = crate::app::se_message(msg, media, ytid, sound);
-            crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.to_string(), 5.0, "UAH".to_string(), text);
+            if let Err(e) = crate::streamelements::send_tip(cfg.port, &cfg, name, 5.0, "UAH", &text) {
+                errors.push(format!("{}: {}", name, e));
+            }
         }
-        log("streamelements: sent 5 test tips");
-        let _ = request.respond(json_resp(200, json!({ "ok": true })));
+        log(&format!("streamelements: 5 test tips, {} failed", errors.len()));
+        let _ = request.respond(json_resp(200, json!({ "ok": errors.is_empty(), "errors": errors })));
         return;
     }
     let amount = v.get("amount").and_then(|x| x.as_f64()).unwrap_or(100.0);

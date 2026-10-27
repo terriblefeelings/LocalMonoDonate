@@ -151,6 +151,7 @@ fn main() {
 
     let main_port = cfg.port;
     *model::BOUND_PORTS.lock().unwrap() = vec![cfg.port, cfg.auction_port, cfg.public_port, crate::twitch::OAUTH_PORT];
+    for legacy in [8787u16, 8789u16] { model::migrate_port_secrets(legacy, cfg.port); }
     let auc_port = cfg.auction_port;
     let public_port = cfg.public_port;
     let ctx = app::Ctx::new(cfg, base.clone());
