@@ -7,14 +7,26 @@ use std::time::Duration;
 /// Bits bought on the sound-alerts page carry their nickname in the payment comment
 /// ("... <code> | name: <nick>"). Every bit is counted as "<nick> SA", or "Анонім SA"
 /// when no nickname was given.
-/// StreamElements message: plain text plus the real media link and/or the sound
-/// name in brackets. SE renders URLs as links, so the viewer can open them.
+/// Provider name for the media part of a StreamElements message.
+fn media_label(url: &str, ytid: &str) -> &'static str {
+    if !ytid.is_empty() { return "YouTube"; }
+    let u = url.to_ascii_lowercase();
+    if u.contains("tiktok") { "TikTok" }
+    else if u.contains("instagram") { "Instagram" }
+    else if u.contains("twitch") { "Twitch" }
+    else if u.contains("reddit") { "Reddit" }
+    else if u.contains("x.com") || u.contains("twitter") { "X" }
+    else if u.contains("youtu") { "YouTube" }
+    else { "Media" }
+}
+
+/// StreamElements message: "Message | SoundAlert: NAME | YouTube: LINK".
 pub fn se_message(message: &str, media: &str, ytid: &str, sound: &str) -> String {
     let mut parts: Vec<String> = Vec::new();
+    if !sound.is_empty() { parts.push(format!("SoundAlert: {}", sound)); }
     let link = if !ytid.is_empty() { format!("https://youtu.be/{}", ytid) } else { media.to_string() };
-    if !link.is_empty() { parts.push(link); }
-    if !sound.is_empty() { parts.push(sound.to_string()); }
-    if parts.is_empty() { message.to_string() } else { format!("{} ({})", message, parts.join(" / ")) }
+    if !link.is_empty() { parts.push(format!("{}: {}", media_label(&link, ytid), link)); }
+    if parts.is_empty() { message.to_string() } else { format!("{} | {}", message, parts.join(" | ")) }
 }
 fn bit_display_name(comment: &str) -> String {
     if let Some(pos) = comment.find("name:") {
@@ -37,9 +49,9 @@ mod bit_name_tests {
 
     #[test]
     fn se_message_carries_the_real_link_and_sound_name() {
-        assert_eq!(se_message("hi", "", "abc", ""), "hi (https://youtu.be/abc)");
+        assert_eq!(se_message("hi", "", "abc", ""), "hi | YouTube: https://youtu.be/abc");
         assert_eq!(se_message("hi", "https://www.tiktok.com/@x/video/1", "", "Airhorn"),
-                   "hi (https://www.tiktok.com/@x/video/1 / Airhorn)");
+                   "hi | SoundAlert: Airhorn | TikTok: https://www.tiktok.com/@x/video/1");
         assert_eq!(se_message("hi", "", "", ""), "hi");
     }
 }
