@@ -919,6 +919,7 @@ pub struct HistoryItem {
     #[serde(default)] pub media_url: String,
     pub matched: String,
     #[serde(default)] pub bit_label: String,
+    #[serde(default)] pub bit_code: String,
     #[serde(default)] pub code: Option<String>,
     pub at: i64,
 }

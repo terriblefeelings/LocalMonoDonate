@@ -155,7 +155,7 @@ fn state_json(ctx: &Ctx) -> serde_json::Value {
             .collect();
         let history: Vec<serde_json::Value> = j.history.iter().take(200)
             .map(|h| json!({ "id": h.id, "name": h.name, "amount": h.amount, "message": h.message,
-                             "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "bitLabel": h.bit_label, "matched": h.matched, "at": h.at }))
+                             "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "bitLabel": h.bit_label, "bitCode": h.bit_code, "matched": h.matched, "at": h.at }))
             .collect();
         json!({
             "code": j.code, "title": if !custom.trim().is_empty() { custom } else { j.title.clone() },
@@ -878,45 +878,72 @@ fn replay(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
     let id = v.get("id").and_then(|x| x.as_str()).unwrap_or("");
     let mode = v.get("mode").and_then(|x| x.as_str()).unwrap_or("donation");
-    let item = {
+    let found = {
         let st = ctx.state.lock().unwrap();
-        st.jars.iter().flat_map(|j| j.history.iter()).find(|h| h.id == id).cloned()
+        let mut hit = None;
+        for j in st.jars.iter() {
+            if let Some(h) = j.history.iter().find(|h| h.id == id) {
+                hit = Some((h.clone(), j.currency));
+                break;
+            }
+        }
+        hit
     };
-    match item {
-        Some(h) => {
-            let bit = h.code.as_ref()
-                .and_then(|c| ctx.cfg().bits.iter().find(|b| &b.code == c).cloned());
+    match found {
+        Some((h, currency)) => {
+            let cfg = ctx.cfg();
+            let bit = if !h.bit_code.is_empty() {
+                cfg.bits.iter().find(|b| b.code == h.bit_code).cloned()
+            } else {
+                cfg.bits.iter().find(|b| !b.label.is_empty() && b.label == h.bit_label).cloned()
+            };
+            let sound_url = bit.as_ref().map(|b| if b.kind == "sound" { b.url.clone() } else { b.sound.clone() }).unwrap_or_default();
             let replay_id = format!("replay-{}", now_ms());
-            match mode {
-                "sound" => {
-                    if let Some(b) = bit {
-                        ctx.broadcast(json!({ "type": "bit", "data": {
-                            "id": replay_id, "name": h.name, "amount": h.amount,
-                            "message": h.message, "currency": "", "bit": b } }));
-                        log(&format!("replay sound: {} for {}", h.bit_label, h.name));
-                    }
+
+            let direct_bit = h.matched == "bit";
+            if mode == "sound" || (mode == "full" && direct_bit) {
+                if let Some(b) = bit.clone() {
+                    ctx.broadcast(json!({ "type": "bit", "data": {
+                        "id": replay_id, "name": h.name, "amount": h.amount,
+                        "message": h.message, "currency": "", "bit": b } }));
+                    log(&format!("replay sound: {} for {}", h.bit_label, h.name));
                 }
-                "full" => {
-                    if let Some(b) = bit {
-                        ctx.broadcast(json!({ "type": "bit", "data": {
-                            "id": replay_id, "name": h.name, "amount": h.amount,
-                            "message": h.message, "currency": "", "bit": b,
-                            "youtubeId": h.youtube_id, "mediaUrl": h.media_url } }));
-                    } else {
-                        ctx.broadcast(json!({ "type": "donation", "data": {
-                            "id": replay_id, "name": h.name, "amount": h.amount, "message": h.message,
-                            "youtubeId": h.youtube_id, "mediaUrl": h.media_url,
-                            "matched": "replay", "jar": "", "currency": "" } }));
+                let _ = request.respond(json_resp(200, json!({ "ok": true })));
+                return;
+            }
+
+            // voice for the replay, same rules as a live donation
+            let mut tts_url = String::new();
+            if cfg.tts.enabled() {
+                let cur = crate::model::currency_symbol(currency);
+                let money = format!("{:.0} {}", h.amount, cur);
+                let spoken = crate::tts::spoken_text(&cfg.tts.read_mode, &h.name, &money, &h.message, "");
+                let allowed = cfg.tts.allowed_in(&cfg.tts.dir);
+                let voice = {
+                    let d = cfg.tts.default_voice();
+                    if d.is_empty() { allowed.first().cloned().unwrap_or_default() } else { d }
+                };
+                if !spoken.trim().is_empty() && !voice.is_empty() {
+                    let dir = ctx.paths.base.join("tts");
+                    let _ = std::fs::create_dir_all(&dir);
+                    let fname = format!("replay-{}.wav", now_ms());
+                    if crate::tts::synth(&cfg.tts.dir, &voice, &spoken, &dir.join(&fname),
+                        &cfg.tts.azure_key, &cfg.tts.azure_region, cfg.tts.speed).is_ok() {
+                        tts_url = crate::model::tts_url(&cfg, &fname);
                     }
-                    log(&format!("replay full: {:.0} UAH from {}", h.amount, h.name));
-                }
-                _ => {
-                    ctx.broadcast(json!({ "type": "donation", "data": {
-                        "id": replay_id, "name": h.name, "amount": h.amount, "message": h.message,
-                        "youtubeId": "", "mediaUrl": "", "matched": "replay", "jar": "", "currency": "" } }));
-                    log(&format!("replay: {:.0} UAH from {}", h.amount, h.name));
                 }
             }
+
+            let (yt, media, sound) = if mode == "full" {
+                (h.youtube_id.clone(), h.media_url.clone(), sound_url.clone())
+            } else {
+                (String::new(), String::new(), String::new())
+            };
+            ctx.broadcast(json!({ "type": "donation", "data": {
+                "id": replay_id, "name": h.name, "amount": h.amount, "message": h.message,
+                "youtubeId": yt, "mediaUrl": media, "soundUrl": sound, "ttsUrl": tts_url,
+                "matched": "replay", "jar": "", "currency": "" } }));
+            log(&format!("replay {}: {:.0} from {}", mode, h.amount, h.name));
             let _ = request.respond(json_resp(200, json!({ "ok": true })));
         }
         None => { let _ = request.respond(json_resp(404, json!({ "ok": false, "error": "not found" }))); }
@@ -936,7 +963,7 @@ fn history_json(ctx: &Ctx, jar: usize) -> serde_json::Value {
     let items: Vec<serde_json::Value> = match st.jars.get(jar) {
         Some(j) => j.history.iter().map(|h| json!({
             "id": h.id, "name": h.name, "amount": h.amount, "message": h.message,
-            "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "bitLabel": h.bit_label, "matched": h.matched, "at": h.at })).collect(),
+            "youtubeId": h.youtube_id, "mediaUrl": h.media_url, "bitLabel": h.bit_label, "bitCode": h.bit_code, "matched": h.matched, "at": h.at })).collect(),
         None => Vec::new(),
     };
     json!({ "jar": jar, "count": items.len(), "items": items })

@@ -177,7 +177,7 @@ impl Ctx {
             let msg = "Нічого не написав".to_string();
             jar.history.insert(0, HistoryItem {
                 id: tx.id.clone(), name: name.clone(), amount: uah, message: msg.clone(),
-                youtube_id: String::new(), media_url: String::new(), bit_label: bit.label.clone(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
+                youtube_id: String::new(), media_url: String::new(), bit_label: bit.label.clone(), bit_code: bit.code.clone(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
             });
             jar.stats.count += 1; jar.stats.total += uah;
             if uah > jar.stats.biggest { jar.stats.biggest = uah; }
@@ -206,7 +206,7 @@ impl Ctx {
         }
 
         // resolve the alert payload (if any) plus the local history record
-        let (name, message, youtube_id, media_url, kind, code, alert, voice, sound_url, bit_label) = if let Some(k) = idx {
+        let (name, message, youtube_id, media_url, kind, code, alert, voice, sound_url, bit_label, bit_code) = if let Some(k) = idx {
             let p = jar.pending.remove(k);
             // the fallback-link twin is the same intent, never a second alert
             if !p.pair.is_empty() { jar.pending.retain(|x| x.code != p.pair); }
@@ -214,24 +214,25 @@ impl Ctx {
                 if b.kind == "sound" { b.url.clone() } else { b.sound.clone() }
             }).unwrap_or_default();
             let bit_label = p.bit.as_ref().map(|b| b.label.clone()).unwrap_or_default();
+            let bit_code = p.bit.as_ref().map(|b| b.code.clone()).unwrap_or_default();
             let pname = if p.name.trim().is_empty() {
                 if p.bit.is_some() { "Анонім SA".to_string() } else { "Анонім".to_string() }
             } else { p.name.trim().to_string() };
             let pmsg = if p.message.trim().is_empty() { "Нічого не написав".to_string() } else { p.message.clone() };
-            (pname, pmsg, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice, sound_url, bit_label)
+            (pname, pmsg, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice, sound_url, bit_label, bit_code)
         } else {
             let name = "Анонім".to_string();
             let raw: String = comment.chars().take(cfg.limits.message_max).collect();
             let msg = if raw.trim().is_empty() { format!("{} нічого не написав", name) } else { raw };
             let v = String::new();
-            if cfg.notify_unmatched { (name, msg, String::new(), String::new(), "unmatched", None, true, v, String::new(), String::new()) }
-            else { (name, msg, String::new(), String::new(), "none", None, false, v, String::new(), String::new()) }
+            if cfg.notify_unmatched { (name, msg, String::new(), String::new(), "unmatched", None, true, v, String::new(), String::new(), String::new()) }
+            else { (name, msg, String::new(), String::new(), "none", None, false, v, String::new(), String::new(), String::new()) }
         };
 
         // every positive transaction is kept in the local history + stats, whether or not it alerts
         jar.history.insert(0, HistoryItem {
             id: tx.id.clone(), name: name.clone(), amount: uah, message: message.clone(),
-            youtube_id: youtube_id.clone(), media_url: media_url.clone(), bit_label: bit_label.clone(), matched: kind.into(), code: code.clone(), at: now_ms(),
+            youtube_id: youtube_id.clone(), media_url: media_url.clone(), bit_label: bit_label.clone(), bit_code: bit_code.clone(), matched: kind.into(), code: code.clone(), at: now_ms(),
         });
         jar.stats.count += 1;
         jar.stats.total += uah;
