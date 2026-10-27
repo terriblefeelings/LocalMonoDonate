@@ -13,7 +13,8 @@
   #win{background-size:100% 100%;background-position:center;background-repeat:no-repeat}
   .cell{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit}
   .cell .sq{width:100%;aspect-ratio:1/1;border:1px solid var(--line);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
-    font-size:22px;background-color:var(--card2);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;transition:.12s}
+    font-size:22px;background-color:var(--card2);overflow:hidden;transition:.12s}
+  .cell .sq img{width:100%;height:100%;object-fit:cover;display:block}
   .cell:hover .sq{border-color:var(--accent);transform:translateY(-2px)}
   .cell.empty{cursor:default}
   .cell.empty .sq{border-style:dashed;opacity:.35}
@@ -127,7 +128,7 @@ function render() {
     const multi = (MODE === 'order' || MODE === 'adhd');
     cell.className = 'cell' + (multi && SELECTED.includes(bit.code) ? ' sel' : '');
     const sq = document.createElement('div'); sq.className = 'sq';
-    if (bit.img) { sq.style.backgroundImage = 'url("' + bit.img + '")'; sq.style.backgroundSize = 'cover'; sq.style.backgroundPosition = 'center'; }
+    if (bit.img) { const im = document.createElement('img'); im.src = bit.img; im.alt = ''; sq.append(im); }
     else sq.textContent = icon(bit.kind);
     const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = bit.label || bit.kind;
     const pr = document.createElement('span'); pr.className = 'price'; pr.textContent = fmt(bit.price);

@@ -258,7 +258,7 @@ body[data-page="setup"] .link .u{font-family:var(--mono);font-size:10px;color:va
 /* sound alerts deck */
 body[data-page="bitsedit"] #win{max-width:none!important;width:100%}
 body[data-page="bitsedit"] .bgrid{max-width:none;gap:10px}
-body[data-page="bitsedit"] .bcell .sq{border-radius:var(--r-sm);border-color:var(--line);background:var(--card2)}
+body[data-page="bitsedit"] .bcell .sq{border:0;border-radius:var(--r-sm);background:var(--card2)}
 body[data-page="bitsedit"] .bcell:hover .sq{border-color:var(--faint)}
 body[data-page="bitsedit"] .bcell.sel .sq{border-color:var(--accent)}
 body[data-page="bitsedit"] .bcell .l{font-size:12px}
@@ -430,7 +430,7 @@ body[data-page="bitsedit"] .bgrid{max-width:min(680px,max(280px,calc(100vh - 500
 /* hero matches the Alerts masthead */
 body:not(.notify-page) .wrap{padding-top:32px}
 body[data-page="auctionsettings"] .wrap{padding:32px 32px 64px}
-body[data-page="bitsedit"] .wrap{margin:0 auto;padding-bottom:44px}
+body[data-page="bitsedit"] .wrap{margin:0 auto;padding-bottom:12px}
 .admin-hero__row{display:block;position:relative}
 .admin-hero h1{max-width:none;font-size:clamp(32px,5vw,68px);font-weight:760;letter-spacing:-.05em;line-height:.94}
 .admin-hero__status{position:absolute;right:0;bottom:0}
