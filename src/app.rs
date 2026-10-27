@@ -7,27 +7,15 @@ use std::time::Duration;
 /// Bits bought on the sound-alerts page carry their nickname in the payment comment
 /// ("... <code> | name: <nick>"). Every bit is counted as "<nick> SA", or "Анонім SA"
 /// when no nickname was given.
-/// Friendly provider name for StreamElements messages ("YouTube", "TikTok", …).
-fn media_label(url: &str, ytid: &str) -> &'static str {
-    if !ytid.is_empty() { return "YouTube"; }
-    let u = url.to_ascii_lowercase();
-    if u.contains("tiktok") { "TikTok" }
-    else if u.contains("instagram") { "Instagram" }
-    else if u.contains("twitch") { "Twitch" }
-    else if u.contains("reddit") { "Reddit" }
-    else if u.contains("x.com") || u.contains("twitter") { "X" }
-    else if u.contains("youtu") { "YouTube" }
-    else { "Media" }
-}
-
-/// StreamElements message: plain text plus " (YouTube / Sound name)" when present.
+/// StreamElements message: plain text plus the real media link and/or the sound
+/// name in brackets. SE renders URLs as links, so the viewer can open them.
 pub fn se_message(message: &str, media: &str, ytid: &str, sound: &str) -> String {
     let mut parts: Vec<String> = Vec::new();
-    if !ytid.is_empty() || !media.is_empty() { parts.push(media_label(media, ytid).to_string()); }
+    let link = if !ytid.is_empty() { format!("https://youtu.be/{}", ytid) } else { media.to_string() };
+    if !link.is_empty() { parts.push(link); }
     if !sound.is_empty() { parts.push(sound.to_string()); }
     if parts.is_empty() { message.to_string() } else { format!("{} ({})", message, parts.join(" / ")) }
 }
-
 fn bit_display_name(comment: &str) -> String {
     if let Some(pos) = comment.find("name:") {
         let nick = comment[pos + 5..].split('|').next().unwrap_or("").trim();
@@ -45,6 +33,14 @@ mod bit_name_tests {
         assert_eq!(bit_display_name("донат сповіщення abc123 | name: goodfeelings"), "goodfeelings SA");
         assert_eq!(bit_display_name("донат сповіщення abc123"), "Анонім SA");
         assert_eq!(bit_display_name("| name:   "), "Анонім SA");
+    }
+
+    #[test]
+    fn se_message_carries_the_real_link_and_sound_name() {
+        assert_eq!(se_message("hi", "", "abc", ""), "hi (https://youtu.be/abc)");
+        assert_eq!(se_message("hi", "https://www.tiktok.com/@x/video/1", "", "Airhorn"),
+                   "hi (https://www.tiktok.com/@x/video/1 / Airhorn)");
+        assert_eq!(se_message("hi", "", "", ""), "hi");
     }
 }
 
