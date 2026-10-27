@@ -1192,7 +1192,7 @@ mod top_donators_tests {
     fn h(name: &str, amount: f64, at: i64) -> HistoryItem {
         HistoryItem {
             id: String::new(), name: name.into(), amount, message: String::new(),
-            youtube_id: String::new(), media_url: String::new(), bit_label: String::new(), matched: "code".into(), code: None, at,
+            youtube_id: String::new(), media_url: String::new(), bit_label: String::new(), bit_code: String::new(), matched: "code".into(), code: None, at,
         }
     }
 
