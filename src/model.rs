@@ -75,9 +75,9 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) {
 
 fn d_host() -> String { "127.0.0.1".into() }
 fn d_bits_mode() -> String { "single".into() }
-fn d_port() -> u16 { 41783 }
-fn d_aport() -> u16 { 41784 }
-fn d_public_port() -> u16 { 41785 }   // public (tunnel-facing) server; 0 = off
+fn d_port() -> u16 { 48973 }
+fn d_aport() -> u16 { 48974 }
+fn d_public_port() -> u16 { 48975 }   // public (tunnel-facing) server; 0 = off
 fn d_min() -> f64 { 10.0 }
 fn d_max() -> f64 { 29999.0 }
 fn d_prefix() -> String { "tf".into() }
@@ -128,19 +128,15 @@ pub fn port_free(port: u16) -> bool {
 }
 
 /// first free port at/after `preferred`, skipping the app's own ports.
-/// Falls back to an OS-assigned port if the whole range is taken.
+/// Stays inside the registered range (1024-49151).
 pub fn pick_free_port(preferred: u16, skip: &[u16]) -> u16 {
     let start = preferred.max(1024);
-    let end = start.saturating_add(200);
-    for p in start..end {
+    let end = start.saturating_add(200).min(49151);
+    for p in start..=end {
         if skip.contains(&p) { continue; }
         if port_free(p) { return p; }
     }
-    std::net::TcpListener::bind(("0.0.0.0", 0))
-        .ok()
-        .and_then(|l| l.local_addr().ok())
-        .map(|a| a.port())
-        .unwrap_or(preferred)
+    preferred
 }
 
 

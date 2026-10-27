@@ -101,12 +101,12 @@ fn wait_port_free(port: u16, secs: u64) -> bool {
 
 /// Map the retired defaults to the current fixed ports; custom ports stay as set.
 fn fixed_ports(port: u16, auction: u16, public: u16) -> (u16, u16, u16, bool) {
-    const APP_PORT: u16 = 41783;
-    const AUC_PORT: u16 = 41784;
-    const PUB_PORT: u16 = 41785;
-    const LEGACY_APP: [u16; 7] = [8080, 8787, 8789, 27183, 27184, 27185, 27186];
-    const LEGACY_AUC: [u16; 5] = [8788, 8790, 27184, 27185, 27186];
-    const LEGACY_PUB: [u16; 3] = [8080, 27185, 27186];
+    const APP_PORT: u16 = 48973;
+    const AUC_PORT: u16 = 48974;
+    const PUB_PORT: u16 = 48975;
+    const LEGACY_APP: [u16; 10] = [8080, 8787, 8789, 27183, 27184, 27185, 27186, 41783, 41784, 41785];
+    const LEGACY_AUC: [u16; 6] = [8788, 8790, 27184, 27185, 27186, 41784];
+    const LEGACY_PUB: [u16; 4] = [8080, 27185, 27186, 41785];
     let oauth = crate::twitch::OAUTH_PORT;
     let app = if LEGACY_APP.contains(&port) || port == oauth { APP_PORT } else { port };
     let auc = if auction != 0 && (LEGACY_AUC.contains(&auction) || auction == oauth) { AUC_PORT } else { auction };
@@ -120,8 +120,8 @@ mod port_tests {
 
     #[test]
     fn legacy_ports_migrate_once_and_custom_ports_stay() {
-        assert_eq!(fixed_ports(27185, 27186, 8083), (41783, 41784, 8083, true));
-        assert_eq!(fixed_ports(8080, 0, 8080), (41783, 0, 41785, true));
+        assert_eq!(fixed_ports(27185, 27186, 8083), (48973, 48974, 8083, true));
+        assert_eq!(fixed_ports(8080, 0, 8080), (48973, 0, 48975, true));
         assert_eq!(fixed_ports(40000, 40001, 40002), (40000, 40001, 40002, false));
     }
 }

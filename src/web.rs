@@ -1820,6 +1820,41 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
+    if path == "/api/ports/set" {
+        if method == Method::Post {
+            let v = read_body(&mut request);
+            let mut cfg = ctx.cfg();
+            let num = |k: &str, d: u16| v.get(k).and_then(|x| x.as_i64())
+                .map(|n| n.clamp(0, 65535) as u16).unwrap_or(d);
+            let app = num("app", cfg.port);
+            let auction = num("auction", cfg.auction_port);
+            let public = num("public", cfg.public_port);
+            let bound = crate::model::BOUND_PORTS.lock().unwrap().clone();
+            let valid = |p: u16| (1024..=49151).contains(&p) && p != crate::twitch::OAUTH_PORT;
+            let usable = |p: u16| p == 0 || bound.contains(&p) || crate::model::port_free(p);
+            let unique = (auction == 0 || auction != app)
+                && (public == 0 || (public != app && (auction == 0 || public != auction)));
+            let err = if !valid(app) { Some("app port must be 1024-49151 and not 8787".to_string()) }
+                else if auction != 0 && !valid(auction) { Some("auction port must be 1024-49151 and not 8787".to_string()) }
+                else if public != 0 && !valid(public) { Some("public port must be 1024-49151 and not 8787".to_string()) }
+                else if !unique { Some("ports must be different".to_string()) }
+                else if !usable(app) { Some(format!("port {} is busy", app)) }
+                else if !usable(auction) { Some(format!("port {} is busy", auction)) }
+                else if !usable(public) { Some(format!("port {} is busy", public)) }
+                else { None };
+            match err {
+                Some(e) => { let _ = request.respond(json_resp(200, json!({ "ok": false, "error": e }))); }
+                None => {
+                    cfg.port = app; cfg.auction_port = auction; cfg.public_port = public;
+                    save_config(&ctx.paths, &cfg);
+                    log(&format!("ports: app {} auction {} public {}", app, auction, public));
+                    let _ = request.respond(json_resp(200, json!({
+                        "ok": true, "app": app, "auction": auction, "public": public, "restart": true })));
+                }
+            }
+        } else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
     if path == "/api/ports/pick" {
         if method == Method::Post {
             let v = read_body(&mut request);
@@ -1827,9 +1862,9 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
             let mut cfg = ctx.cfg();
             let skip = [cfg.port, cfg.auction_port, cfg.public_port, crate::twitch::OAUTH_PORT];
             let default = match which {
-                "app" => 41783u16,
-                "auction" => 41784u16,
-                "public" => 41785u16,
+                "app" => 48973u16,
+                "auction" => 48974u16,
+                "public" => 48975u16,
                 _ => { let _ = request.respond(json_resp(400, json!({ "ok": false, "error": "unknown listener" }))); return; }
             };
             let port = crate::model::pick_free_port(default, &skip);

@@ -13,7 +13,7 @@
 2. Запустіть **`LocalMonoDonate.exe`** — відкриється сторінка налаштувань.
 3. Вставте **API-токен Monobank** (<https://api.monobank.ua>) і **код банки**
    (`send.monobank.ua/jar/<CODE>`), задайте **нік**, натисніть **Зберегти**.
-4. OBS → Browser source → `http://<нік>.overlay.localhost:41783/main` (алерти).
+4. OBS → Browser source → `http://<нік>.overlay.localhost:48973/main` (алерти).
 5. Для глядачів → Setup → **Підключити Tailscale** (інсталятор завантажиться автоматично) і поділіться
    `https://<machine>.<tailnet>.ts.net/<нік>/donation`.
 6. За бажанням: **Twitch** (Client ID/Secret → Authorize) і **StreamElements**
@@ -153,7 +153,7 @@ Tailscale в архів не входить: інсталятор заванта
    *Setup → Jar code(s)*. Позначте «My jar» (для сторонніх банок буде лише посилання на оплату, без трекінгу).
 3. **Нік** — використовується в усіх локальних посиланнях (`<нік>.localhost`). Працюють лише посилання
    з цим префіксом; після зміни ніка старі посилання дають 404.
-4. **Збережіть**. Сторінка донатів: `http://<нік>.donate.localhost:41783/banka`.
+4. **Збережіть**. Сторінка донатів: `http://<нік>.donate.localhost:48973/banka`.
 5. **Tailscale — рекомендований спосіб зробити сторінку доступною глядачам.**
    Сторінка на вашому ПК недоступна з телефона чи іншої мережі.
    Натисніть *Встановити й підключити*: застосунок завантажить і встановить актуальний Tailscale
@@ -191,14 +191,14 @@ Tailscale в архів не входить: інсталятор заванта
 
    ```powershell
    & "C:\Program Files\Tailscale\tailscale.exe" status
-   & "C:\Program Files\Tailscale\tailscale.exe" funnel --bg 41785
+   & "C:\Program Files\Tailscale\tailscale.exe" funnel --bg 48975
    & "C:\Program Files\Tailscale\tailscale.exe" funnel status
    ```
 
-   `41785` — це `publicPort` із `config.json` (публічний слухач). **Не 41783** — це локальна адміністративна сторінка.
+   `48975` — це `publicPort` із `config.json` (публічний слухач). **Не 48973** — це локальна адміністративна сторінка.
 5. Скопіюйте адресу `https://<machine>.<tailnet>.ts.net`; сторінка донатів —
    `https://<machine>.<tailnet>.ts.net/<нік>/donation`.
-6. Локальна перевірка перед публікацією: `http://127.0.0.1:41785/<нік>/donation`.
+6. Локальна перевірка перед публікацією: `http://127.0.0.1:48975/<нік>/donation`.
 7. Скинути всі правила: `tailscale funnel reset`.
 8. Хочете хост із ніком: `tailscale set --hostname <нік>`, потім перепідключіться — сертифікат
    перевипуститься, і посилання стане `<нік>.<tailnet>.ts.net`. Урахуйте: під час наступного запуску
@@ -221,8 +221,8 @@ Tailscale піднявся пізніше за застосунок — він �
 |---|---|
 | `Funnel is not enabled on your tailnet` | крок 3 (ACL / сторінка Funnel) |
 | `HTTPS is not enabled` / cert error | крок 2 (HTTPS Certificates) |
-| `funnel status` порожній | не виконано `funnel --bg 41785` або немає входу в Tailscale |
-| Публічна сторінка 502/порожня | застосунок не запущений або `publicPort` не 41785 |
+| `funnel status` порожній | не виконано `funnel --bg 48975` або немає входу в Tailscale |
+| Публічна сторінка 502/порожня | застосунок не запущений або `publicPort` не 48975 |
 | Публічна сторінка 404 | неправильний нік у шляху (`/<нік>/donation`) |
 
 Якщо Funnel заборонений політикою організації — `tailscale serve` (лише в межах tailnet), Cloudflare
@@ -242,22 +242,22 @@ Tailscale CLI: один клік на встановлення (інсталят
 
 | Сторінка | Локальне посилання | Публічно через Tailscale |
 |---|---|---|
-| Налаштування | `http://localhost:41783/setup` | – |
-| Сторінка донатів | `http://<нік>.donate.localhost:41783/banka` | `https://<machine>.<tailnet>.ts.net/<нік>/donation` |
-| Звукові сповіщення | `http://<нік>.donate.localhost:41783/bits` | `https://<machine>.<tailnet>.ts.net/<нік>/soundalerts` |
-| Оверлей алертів (OBS) | `http://<нік>.overlay.localhost:41783/main` | – |
-| Оверлей бітів | `http://<нік>.overlay.localhost:41783/bits` | – |
-| Оверлей таймера | `http://<нік>.overlay.localhost:41783/timer` | – |
-| Оверлей YouTube | `http://<нік>.overlay.localhost:41783/youtube` | – |
-| QR-віджети | `http://<нік>.overlay.localhost:41783/qr`, `/qr2` … `/qr5` | – |
-| Налаштування QR | `http://localhost:41783/qredit` | – |
-| Аукціон | `http://<нік>.auction.localhost:41783/` | – |
-| Статистика | `http://<нік>.<statsCode>.localhost:41783/stats` | – |
-| Правила алертів | `http://localhost:41783/notify` | – |
-| Налаштування аукціону | `http://localhost:41783/auctionsettings` | – |
-| Адмінка таймера | `http://localhost:41783/timeradmin` | – |
-| Редактор сторінки донатів | `http://localhost:41783/donateedit` | – |
-| Редактор бітів | `http://localhost:41783/bitsedit` | – |
+| Налаштування | `http://localhost:48973/setup` | – |
+| Сторінка донатів | `http://<нік>.donate.localhost:48973/banka` | `https://<machine>.<tailnet>.ts.net/<нік>/donation` |
+| Звукові сповіщення | `http://<нік>.donate.localhost:48973/bits` | `https://<machine>.<tailnet>.ts.net/<нік>/soundalerts` |
+| Оверлей алертів (OBS) | `http://<нік>.overlay.localhost:48973/main` | – |
+| Оверлей бітів | `http://<нік>.overlay.localhost:48973/bits` | – |
+| Оверлей таймера | `http://<нік>.overlay.localhost:48973/timer` | – |
+| Оверлей YouTube | `http://<нік>.overlay.localhost:48973/youtube` | – |
+| QR-віджети | `http://<нік>.overlay.localhost:48973/qr`, `/qr2` … `/qr5` | – |
+| Налаштування QR | `http://localhost:48973/qredit` | – |
+| Аукціон | `http://<нік>.auction.localhost:48973/` | – |
+| Статистика | `http://<нік>.<statsCode>.localhost:48973/stats` | – |
+| Правила алертів | `http://localhost:48973/notify` | – |
+| Налаштування аукціону | `http://localhost:48973/auctionsettings` | – |
+| Адмінка таймера | `http://localhost:48973/timeradmin` | – |
+| Редактор сторінки донатів | `http://localhost:48973/donateedit` | – |
+| Редактор бітів | `http://localhost:48973/bitsedit` | – |
 
 Публічний слухач віддає лише сторінку донатів і колоду звукових сповіщень — жодних адмін-сторінок.
 
@@ -290,7 +290,7 @@ Tailscale CLI: один клік на встановлення (інсталят
 %APPDATA%\LocalMonoDonate\LocalMonoDonate.log
 ```
 
-Порти: `41783` (застосунок), `41784` (аукціон), `41785` (публічний/Tailscale); `8787` зарезервований для колбека Twitch.
+Порти: `48973` (застосунок), `48974` (аукціон), `48975` (публічний/Tailscale); `8787` зарезервований для колбека Twitch. Змінити порти можна в Setup → Ports; застосунок перезапуститься.
 
 ---
 
@@ -362,7 +362,7 @@ docs/screenshots/      зображення для README
 | Порт зайнятий | застосунок сам бере наступний вільний для `port`, `auctionPort` і `publicPort` та зберігає його в `config.json` |
 | Алерти або YouTube не грають в OBS | спершу запустіть LocalMonoDonate, потім OBS; якщо OBS уже відкритий, застосунок покаже попередження, а джерело доведеться оновити |
 | Twitch не завершує авторизацію | у застосунку Twitch має бути вказано `http://localhost:8787/twitch/callback`; цей порт фіксований, навіть коли решта застосунку працює на іншому; автоматичний вибір портів ніколи не займає 8787 |
-| `Host header is specified and is not an IP address or localhost` | Funnel дивиться на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 41785` |
+| `Host header is specified and is not an IP address or localhost` | Funnel дивиться на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 48975` |
 
 Логи: `%APPDATA%\LocalMonoDonate\LocalMonoDonate.log`.
 

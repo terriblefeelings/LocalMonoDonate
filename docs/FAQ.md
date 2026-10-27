@@ -91,7 +91,7 @@ API-токен Monobank і хоча б одна банка. Решта — оп�
 ## 3. Оверлей алертів
 
 **Як додати оверлей в OBS?**
-Browser source → `http://<нік>.overlay.localhost:41783/main` (рекомендовано 750×500; розмір джерела можна масштабувати), після зміни стилів —
+Browser source → `http://<нік>.overlay.localhost:48973/main` (рекомендовано 750×500; розмір джерела можна масштабувати), після зміни стилів —
 «Refresh cache of current page».
 
 **Оверлей порожній.**
@@ -186,7 +186,7 @@ per_amount 10 і per_seconds 60.
 ## 7. Аукціон
 
 **Де аукціон?**
-Окрема сторінка на власному порту: `http://<нік>.auction.localhost:41784/` (налаштування —
+Окрема сторінка на власному порту: `http://<нік>.auction.localhost:48974/` (налаштування —
 `/auctionsettings`, вони на головному порту застосунку).
 
 ![Аукціон](screenshots/auction.png)
@@ -302,18 +302,18 @@ HTTPS-сертифікати та Funnel для цього пристрою, п�
 
 **Застосунок сам створює тунель?**
 Він ставить актуальний Tailscale (якщо його ще немає), запускає `tailscale up` для входу й тримає
-`tailscale funnel` на публічному порту (за замовчуванням — `41785`), з іменем вузла, яке виставляє застосунок.
+`tailscale funnel` на публічному порту (за замовчуванням — `48975`), з іменем вузла, яке виставляє застосунок.
 
 **Funnel не створився автоматично — як зробити вручну?**
 Увімкніть HTTPS-сертифікати (<https://login.tailscale.com/admin/dns>) і Funnel у політиці tailnet
 (<https://login.tailscale.com/admin/acls>, `"attr": ["funnel"]`), потім:
 
 ```powershell
-& "C:\Program Files\Tailscale\tailscale.exe" funnel --bg 41785
+& "C:\Program Files\Tailscale\tailscale.exe" funnel --bg 48975
 & "C:\Program Files\Tailscale\tailscale.exe" funnel status
 ```
 
-41785 — це `publicPort` із `config.json`, не 41783. Кнопка **Connect** на сторінці Setup робить це сама; команди вище — запасний варіант. Далі відкрийте
+48975 — це `publicPort` із `config.json`, не 48973. Кнопка **Connect** на сторінці Setup робить це сама; команди вище — запасний варіант. Далі відкрийте
 `https://<machine>.<tailnet>.ts.net/<нік>/donation`. Скинути — `tailscale funnel reset`; змінити хост —
 `tailscale set --hostname <нік>`. Деталі — в README, розділ «Як увімкнути Funnel вручну».
 
@@ -356,7 +356,7 @@ ID відео, тому відхиляються. Правило також мо
 ## 13. Сторінка статистики
 
 **Де вона?**
-`http://<нік>.<statsCode>.localhost:41783/stats` — код генерується кнопкою ↻ у Setup. Перегенерація
+`http://<нік>.<statsCode>.localhost:48973/stats` — код генерується кнопкою ↻ у Setup. Перегенерація
 робить старе посилання недійсним.
 
 **Що показує?**
@@ -411,7 +411,7 @@ streamelements.json   StreamElements JWT
 | `streamelements: HTTP 401` | JWT SE прострочений — вставте новий |
 | `tts daemon unavailable` | немає `tts-engine` або його заблоковано |
 | Порожня сторінка донатів | немає банки / сторінку вимкнено в *Links* |
-| `Host header is specified and is not an IP address or localhost` | Funnel веде на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 41785` |
+| `Host header is specified and is not an IP address or localhost` | Funnel веде на порт Chrome DevTools (9222/9223), а не на `publicPort`: `tailscale funnel reset`, потім `tailscale funnel --bg 48975` |
 
 **Помилка WebView2 під час старту?**
 Встановіть WebView2 (застосунок запускає вбудований інсталятор тихо).

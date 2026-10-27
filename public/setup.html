@@ -47,7 +47,7 @@
       </div></div>
       <div class="row" style="align-items:flex-start"><label data-i18n="ports">Ports</label><div class="ctl">
         <div id="portsBox" style="display:flex;flex-direction:column;gap:6px"></div>
-        <div class="note" data-i18n="portsNote">Each listener has its own uncommon port. Restart the app after changing one.</div>
+        <div class="note" data-i18n="portsNote">Each listener has its own port. Defaults are the rare high ports 48973–48975. Use 1024–49151; the app restarts to apply changes.</div>
       </div></div>
     </div>
   </div>
@@ -148,8 +148,8 @@ Object.assign(window.I18N.ua, { obsAudioShort: 'OBS-аудіо: увімкніт
 Object.assign(window.I18N.en, { jarMineNote: 'My jar - click to toggle this jar as yours.' });
 Object.assign(window.I18N.ua, { jarMineNote: '\u041c\u043e\u044f \u0431\u0430\u043d\u043a\u0430 - \u043d\u0430\u0442\u0438\u0441\u043d\u0456\u0442\u044c, \u0449\u043e\u0431 \u043f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u0446\u044e \u0431\u0430\u043d\u043a\u0443 \u044f\u043a \u0441\u0432\u043e\u044e.' });
 Object.assign(window.I18N.en, { qrWidgets: 'QR Widgets', addQr: '+ Add QR widget', qrWidgetsNote: 'Up to 5 overlays: /qr, /qr2 … /qr5. Each has its own jar, background color and style.', qrStyleBoth: 'QR + goal', qrStyleQr: 'QR only', qrStyleGoal: 'Goal only', qrColor: 'Background color', qrJar: 'Jar', qrRemove: 'Remove widget', qrDemo: 'Test QR: 5 000 / 10 000', qrCustomize: 'QR Widget Customization', qrCustomizeNote: 'Up to 5 widgets: jar, color, style, alignment and QR size.' });
-Object.assign(window.I18N.en, { ports: 'Ports', portsNote: 'Each listener has its own uncommon port. Restart the app after changing one.', portFree: 'Port is free', portBusy: 'Port is busy', pickPort: 'Pick free port', restartNow: 'Restart app', portPicked: 'Saved. Restart to apply.' });
-Object.assign(window.I18N.ua, { ports: 'Порти', portsNote: 'Кожен слухач має власний рідкісний порт. Після зміни перезапустіть застосунок.', portFree: 'Порт вільний', portBusy: 'Порт зайнятий', pickPort: 'Обрати вільний порт', restartNow: 'Перезапустити застосунок', portPicked: 'Збережено. Перезапустіть, щоб застосувати.' });Object.assign(window.I18N.ua, { qrWidgets: 'QR-віджети', addQr: '+ Додати QR-віджет', qrWidgetsNote: 'До 5 оверлеїв: /qr, /qr2 … /qr5. У кожного своя банка, колір фону та стиль.', qrStyleBoth: 'QR + ціль', qrStyleQr: 'Лише QR', qrStyleGoal: 'Лише ціль', qrColor: 'Колір фону', qrJar: 'Банка', qrRemove: 'Видалити віджет', qrDemo: 'Тестовий QR: 5 000 / 10 000', qrCustomize: 'Налаштування QR-віджетів', qrCustomizeNote: 'До 5 віджетів: банка, колір, стиль, вирівнювання та розмір QR.' });
+Object.assign(window.I18N.en, { ports: 'Ports', portsNote: 'Each listener has its own port. Defaults are the rare high ports 48973–48975. Use 1024–49151; the app restarts to apply changes.', portFree: 'Free', portBusy: 'Busy', pickPort: 'Pick free port', restartNow: 'Restart app', portPicked: 'Saved. Restarting…', applyPorts: 'Apply ports', portInvalid: 'Use ports 1024–49151, except 8787.', portSame: 'Ports must be different.', portsSaved: 'Saved. Restarting…', portSaveError: 'Could not save the ports.' });
+Object.assign(window.I18N.ua, { ports: 'Порти', portsNote: 'Кожен слухач має власний порт. Типові значення — рідкісні високі порти 48973–48975. Використовуйте 1024–49151; застосунок перезапуститься, щоб застосувати зміни.', portFree: 'Вільний', portBusy: 'Зайнятий', pickPort: 'Обрати вільний порт', restartNow: 'Перезапустити застосунок', portPicked: 'Збережено. Перезапуск…', applyPorts: 'Застосувати порти', portInvalid: 'Використовуйте порти 1024–49151, крім 8787.', portSame: 'Порти мають відрізнятися.', portsSaved: 'Збережено. Перезапуск…', portSaveError: 'Не вдалося зберегти порти.' });Object.assign(window.I18N.ua, { qrWidgets: 'QR-віджети', addQr: '+ Додати QR-віджет', qrWidgetsNote: 'До 5 оверлеїв: /qr, /qr2 … /qr5. У кожного своя банка, колір фону та стиль.', qrStyleBoth: 'QR + ціль', qrStyleQr: 'Лише QR', qrStyleGoal: 'Лише ціль', qrColor: 'Колір фону', qrJar: 'Банка', qrRemove: 'Видалити віджет', qrDemo: 'Тестовий QR: 5 000 / 10 000', qrCustomize: 'Налаштування QR-віджетів', qrCustomizeNote: 'До 5 віджетів: банка, колір, стиль, вирівнювання та розмір QR.' });
 Object.assign(window.I18N.en, { twTitle: 'Twitch', twClientId: 'Client ID', twSecret: 'Client Secret', twAuth: 'Authorize Twitch', guide: 'Guide', twG1a: 'Open', twG1b: '\u2192 Register Your Application.', twG2: 'Name \u2014 any; OAuth Redirect URLs \u2014 add:', twG3: 'Category \u2014 any (e.g. Broadcaster Suite); Client Type \u2014 Confidential.', twG4: 'Copy the Client ID; click New Secret and copy the Client Secret.', twG5: 'Paste both above and press Save.', twG6: 'Press Authorize Twitch, log in and allow access.', twG7: 'Back here press Save again \u2014 the status turns green.', twNoId: 'no Client ID', twNoSecret: 'no Client Secret', twNotAuth: 'not authorized', twConnecting: 'connecting', twOk: 'ok' });
 Object.assign(window.I18N.ua, { twTitle: 'Twitch', twClientId: 'Client ID', twSecret: 'Client Secret', twAuth: '\u0410\u0432\u0442\u043e\u0440\u0438\u0437\u0443\u0432\u0430\u0442\u0438 Twitch', guide: '\u0406\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0456\u044f', twG1a: '\u0412\u0456\u0434\u043a\u0440\u0438\u0439', twG1b: '\u2192 Register Your Application.', twG2: 'Name \u2014 \u0431\u0443\u0434\u044c-\u044f\u043a\u0435; OAuth Redirect URLs \u2014 \u0434\u043e\u0434\u0430\u0439:', twG3: 'Category \u2014 \u0431\u0443\u0434\u044c-\u044f\u043a\u0430 (\u043d\u0430\u043f\u0440. Broadcaster Suite); Client Type \u2014 Confidential.', twG4: '\u0421\u043a\u043e\u043f\u0456\u044e\u0439 Client ID; \u043d\u0430\u0442\u0438\u0441\u043d\u0438 New Secret \u0456 \u0441\u043a\u043e\u043f\u0456\u044e\u0439 Client Secret.', twG5: '\u0412\u0441\u0442\u0430\u0432 \u043e\u0431\u0438\u0434\u0432\u0430 \u0432\u0438\u0449\u0435 \u0442\u0430 \u043d\u0430\u0442\u0438\u0441\u043d\u0438 Save.', twG6: '\u041d\u0430\u0442\u0438\u0441\u043d\u0438 Authorize Twitch, \u0443\u0432\u0456\u0439\u0434\u0438 \u0442\u0430 \u0434\u043e\u0437\u0432\u043e\u043b\u044c \u0434\u043e\u0441\u0442\u0443\u043f.', twG7: '\u041f\u043e\u0432\u0435\u0440\u043d\u0438\u0441\u044c \u0441\u044e\u0434\u0438 \u0442\u0430 \u043d\u0430\u0442\u0438\u0441\u043d\u0438 Save \u0449\u0435 \u0440\u0430\u0437 \u2014 \u0441\u0442\u0430\u0442\u0443\u0441 \u0441\u0442\u0430\u043d\u0435 \u0437\u0435\u043b\u0435\u043d\u0438\u043c.' });
 Object.assign(window.I18N.ua, { twNoId: '\u043d\u0435\u043c\u0430\u0454 Client ID', twNoSecret: '\u043d\u0435\u043c\u0430\u0454 Client Secret', twNotAuth: '\u043d\u0435 \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u043e\u0432\u0430\u043d\u043e', twConnecting: '\u043f\u0456\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u043d\u044f', twOk: '\u043e\u043a' });
@@ -176,7 +176,8 @@ Object.assign(window.I18N.ua, {
   portNote: 'ПОРТИ ОВЕРЛЕЇВ ОНОВЛЕНО — ЗМІНІТЬ ПОСИЛАННЯ В OBS'
 });
 const $ = id => document.getElementById(id);
-let SERVER = {}, PORT = 41783, TOK = '', MAXJ = 5, TS = {}, QR_COUNT = 1;
+function setStatus(m, err) { const s = $('status'); if (!s) return; s.className = 'status' + (err ? ' err' : ' ok'); s.textContent = m; }
+let SERVER = {}, PORT = 48973, TOK = '', MAXJ = 5, TS = {}, QR_COUNT = 1;
 function addJarRow(v, nm, mine, isDefault) {
   if ($('jars').children.length >= MAXJ) return;
   const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
@@ -234,50 +235,86 @@ function renderLinks() { $('l_donate').textContent = SERVER.donate || ''; $('l_s
   $('links').style.display = (SERVER.donate || SERVER.overlay) ? 'block' : 'none'; }
 function refreshLive() { SERVER = liveLinks(); renderLinks(); }
 ['nickname'].forEach(id => $(id).addEventListener('input', refreshLive));
-let restartPending = false;
 const PORT_LABELS = { app: 'App', auction: 'Auction', public: 'Public' };
+let portsBuilt = false;
 async function loadPorts() {
   const box = document.getElementById('portsBox');
   if (!box) return;
   let d = null;
   try { d = await (await fetch('/api/ports')).json(); } catch { return; }
-  box.innerHTML = '';
-  ['app', 'auction', 'public'].forEach(key => {
-    const info = d[key] || {};
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap';
-    const dot = document.createElement('span');
-    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;flex:0 0 8px;background:' + (info.free ? 'var(--ok)' : 'var(--err)');
-    const txt = document.createElement('span');
-    txt.style.fontSize = '12.5px';
-    txt.textContent = PORT_LABELS[key] + ' · ' + (info.port || '—') + ' · ' + window.t(info.free ? 'portFree' : 'portBusy');
-    row.append(dot, txt);
-    if (!info.free) {
-      const b = document.createElement('button');
-      b.className = 'mini';
-      b.textContent = window.t('pickPort');
-      b.onclick = async () => {
+  if (!portsBuilt) {
+    box.innerHTML = '';
+    ['app', 'auction', 'public'].forEach(key => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+      const dot = document.createElement('span'); dot.id = 'portdot_' + key;
+      dot.style.cssText = 'width:8px;height:8px;border-radius:50%;flex:0 0 8px';
+      const label = document.createElement('span'); label.textContent = PORT_LABELS[key];
+      label.style.cssText = 'font-size:12.5px;width:72px;flex:0 0 72px';
+      const inp = document.createElement('input'); inp.type = 'number'; inp.min = '1024'; inp.max = '49151'; inp.step = '1';
+      inp.id = 'port_' + key; inp.style.width = '90px'; inp.setAttribute('aria-label', PORT_LABELS[key] + ' port');
+      inp.addEventListener('input', () => { inp.dataset.dirty = '1'; });
+      const st = document.createElement('span'); st.id = 'portst_' + key; st.style.fontSize = '12px';
+      const pick = document.createElement('button'); pick.type = 'button'; pick.className = 'mini';
+      pick.id = 'portpick_' + key; pick.textContent = window.t('pickPort');
+      pick.onclick = async () => {
         try {
           const r = await (await fetch('/api/ports/pick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ which: key }) })).json();
-          if (r && r.ok) { restartPending = true; status(window.t('portPicked')); loadPorts(); }
+          if (r && r.ok) {
+            const appPort = key === 'app' ? r.port : PORT;
+            PORT = appPort; refreshLive(); setStatus(window.t('portPicked'));
+            await restartAt(appPort);
+          }
         } catch {}
       };
-      row.append(b);
-    }
-    box.append(row);
-  });
-  if (restartPending) {
-    const r = document.createElement('button');
-    r.className = 'primary';
-    r.textContent = window.t('restartNow');
-    r.onclick = () => fetch('/api/app/restart', { method: 'POST' }).catch(() => {});
-    box.append(r);
+      row.append(dot, label, inp, st, pick);
+      box.append(row);
+    });
+    const apply = document.createElement('button'); apply.className = 'primary'; apply.id = 'portApply';
+    apply.textContent = window.t('applyPorts'); apply.onclick = applyPorts;
+    box.append(apply);
+    portsBuilt = true;
   }
+  ['app', 'auction', 'public'].forEach(key => {
+    const info = d[key] || {};
+    const inp = document.getElementById('port_' + key);
+    if (inp && document.activeElement !== inp && !inp.dataset.dirty) inp.value = info.port || '';
+    const st = document.getElementById('portst_' + key);
+    if (st) st.textContent = window.t(info.free ? 'portFree' : 'portBusy');
+    const dot = document.getElementById('portdot_' + key);
+    if (dot) dot.style.background = info.free ? 'var(--ok)' : 'var(--err)';
+    const pick = document.getElementById('portpick_' + key);
+    if (pick) pick.style.display = info.free ? 'none' : '';
+  });
+  const ap = document.getElementById('portApply');
+  if (ap) ap.textContent = window.t('applyPorts');
+}
+async function applyPorts() {
+  const app = parseInt($('port_app').value, 10);
+  const auction = parseInt($('port_auction').value, 10) || 0;
+  const publicPort = parseInt($('port_public').value, 10) || 0;
+  const ok = n => n >= 1024 && n <= 49151 && n !== 8787;
+  let err = '';
+  if (!ok(app) || (auction && !ok(auction)) || (publicPort && !ok(publicPort))) err = window.t('portInvalid');
+  else if (app === auction || app === publicPort || (auction && auction === publicPort)) err = window.t('portSame');
+  if (err) { setStatus(err, true); return; }
+  try {
+    const r = await (await fetch('/api/ports/set', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app, auction, public: publicPort }) })).json();
+    if (!r.ok) { setStatus(r.error || window.t('portSaveError'), true); return; }
+    PORT = r.app; refreshLive();
+    setStatus(window.t('portsSaved'));
+    await restartAt(r.app);
+  } catch { setStatus(window.t('portSaveError'), true); }
+}
+async function restartAt(appPort) {
+  await fetch('/api/app/restart', { method: 'POST' }).catch(() => {});
+  setTimeout(() => { location.href = location.protocol + '//' + location.hostname + ':' + appPort + '/setup'; }, 3500);
 }
 loadPorts();
 setInterval(loadPorts, 5000);
 async function load() { let c; try { c = await (await fetch('/api/config')).json(); } catch { return; }
-  PORT = c.port || 41783; TOK = c.statsToken || ''; MAXJ = c.maxJars || 5;
+  PORT = c.port || 48973; TOK = c.statsToken || ''; MAXJ = c.maxJars || 5;
   $('nickname').value = c.nickname || ''; $('token').value = c.token || '';
   TS = c.tailscale || {};
   $('jars').innerHTML = ''; { const js = (c.jars && c.jars.length ? c.jars : ['']); const jn = c.jarNames || []; const jm = c.jarMine || []; js.forEach((j, i) => addJarRow(j, jn[i], jm[i], i === 0)); }
