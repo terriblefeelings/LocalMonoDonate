@@ -7,6 +7,27 @@ use std::time::Duration;
 /// Bits bought on the sound-alerts page carry their nickname in the payment comment
 /// ("... <code> | name: <nick>"). Every bit is counted as "<nick> SA", or "Анонім SA"
 /// when no nickname was given.
+/// Friendly provider name for StreamElements messages ("YouTube", "TikTok", …).
+fn media_label(url: &str, ytid: &str) -> &'static str {
+    if !ytid.is_empty() { return "YouTube"; }
+    let u = url.to_ascii_lowercase();
+    if u.contains("tiktok") { "TikTok" }
+    else if u.contains("instagram") { "Instagram" }
+    else if u.contains("twitch") { "Twitch" }
+    else if u.contains("reddit") { "Reddit" }
+    else if u.contains("x.com") || u.contains("twitter") { "X" }
+    else if u.contains("youtu") { "YouTube" }
+    else { "Media" }
+}
+
+/// StreamElements message: plain text plus " (YouTube / Sound name)" when present.
+pub fn se_message(message: &str, media: &str, ytid: &str, sound: &str) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    if !ytid.is_empty() || !media.is_empty() { parts.push(media_label(media, ytid).to_string()); }
+    if !sound.is_empty() { parts.push(sound.to_string()); }
+    if parts.is_empty() { message.to_string() } else { format!("{} ({})", message, parts.join(" / ")) }
+}
+
 fn bit_display_name(comment: &str) -> String {
     if let Some(pos) = comment.find("name:") {
         let nick = comment[pos + 5..].split('|').next().unwrap_or("").trim();
@@ -157,7 +178,7 @@ impl Ctx {
                 self.broadcast(json!({ "type": "bit", "data": {
                     "id": tx.id, "name": name, "amount": uah, "message": msg, "currency": cur, "bit": bit.clone() } }));
                 log(&format!("[{}] bit '{}' ({}) {:.0} from {}", jar_code, bit.label, bit.kind, uah, name));
-                crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), msg.clone());
+                crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&msg, "", "", &bit.label));
             }
             self.timer_add_donation(uah, &name, quiet);
             if !quiet { self.auction_bid(&name, uah, "monobank"); }
@@ -199,7 +220,7 @@ impl Ctx {
                         "id": tx.id, "name": n.clone(), "amount": uah, "message": m.clone(),
                         "currency": cur, "bit": bit, "youtubeId": yt } }));
                     log(&format!("[{}] form bit {:.0} from {}", jar_code, uah, n));
-                    crate::streamelements::spawn_tip(cfg.port, cfg.clone(), n.clone(), uah, iso.clone(), m.clone());
+                    crate::streamelements::spawn_tip(cfg.port, cfg.clone(), n.clone(), uah, iso.clone(), se_message(&m, "", &yt, &bit.label));
                 }
                 self.timer_add_donation(uah, &n, quiet);
                 if !quiet { self.auction_bid(&n, uah, "monobank"); }
@@ -261,7 +282,7 @@ impl Ctx {
                 "ttsUrl": tts_url } }));
             log(&format!("[{}] notification ({}) {:.0} UAH from {}", jar_code, kind, uah, name));
             // StreamElements: mirror the live donation as a tip so the SE alert box plays
-            crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), message.clone());
+            crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&message, &media_url, &youtube_id, ""));
         }
         self.save();
         alert && !quiet && no_pending && (kind == "code" || kind == "amount")

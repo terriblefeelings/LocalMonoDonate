@@ -692,6 +692,23 @@ fn resolve_other_media(ctx: &Ctx, url: &str) -> String {
 
 fn test(ctx: &Ctx, mut request: tiny_http::Request) {
     let v = read_body(&mut request);
+    if v.get("seVariants").and_then(|x| x.as_bool()).unwrap_or(false) {
+        let cfg = ctx.cfg();
+        let variants: [(&str, &str, &str, &str, &str); 5] = [
+            ("SE Test 1", "Звичайне повідомлення", "", "", ""),
+            ("SE Test 2", "Повідомлення з YouTube", "", "dQw4w9WgXcQ", ""),
+            ("SE Test 3", "Повідомлення зі звуком", "", "", "Airhorn"),
+            ("SE Test 4", "Медіа та звук разом", "https://www.tiktok.com/@demo/video/1", "", "Bruh"),
+            ("SE Test 5", "Дуже довге повідомлення, яке перевіряє, як StreamElements переносить текст у сповіщенні та стрічці активності", "", "", ""),
+        ];
+        for (name, msg, media, ytid, sound) in variants {
+            let text = crate::app::se_message(msg, media, ytid, sound);
+            crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.to_string(), 5.0, "UAH".to_string(), text);
+        }
+        log("streamelements: sent 5 test tips");
+        let _ = request.respond(json_resp(200, json!({ "ok": true })));
+        return;
+    }
     let amount = v.get("amount").and_then(|x| x.as_f64()).unwrap_or(100.0);
     let name = v.get("name").and_then(|x| x.as_str()).unwrap_or("Test User").to_string();
     let test_yt = v.get("youtube").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
