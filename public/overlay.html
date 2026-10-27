@@ -77,6 +77,8 @@ function enqueue(d) { queue.push(d); if (!busy) pump(); }
 async function pump() { if (!queue.length) { busy = false; return; } busy = true; try { await play(queue.shift()); } catch (e) { console.warn(e); } pump(); }
 
 async function play(d) {
+  // a sound alert picked on the donation form plays first, then the donation in 2 s
+  if (d.soundUrl) { await soundEnd(d.soundUrl, CFG.videoMaxMs, 1500); await sleep(2000); }
   const N = Object.assign({}, Alert.DEFAULTS, d.style || pickStyle(d.amount || 0, d.ruleId));
   const stage = document.getElementById('stage');
   const { notif, red, msgBase, msgH } = Alert.build(d, N);

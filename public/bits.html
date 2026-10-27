@@ -55,6 +55,18 @@
   <div class="credits" id="credits"></div>
 </div>
 <div id="pv"><div class="box"><div class="media" id="pvMedia"></div><div class="ctl"><button id="pvPlay">▶</button><input type="range" id="pvVol" min="0" max="1" step="0.01" value="0.7" style="width:120px"><button id="pvClose">✕</button></div></div></div>
+<div id="paydlg" style="position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:60;padding:16px">
+  <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;width:min(94vw,420px);display:flex;flex-direction:column;gap:12px">
+    <div id="payTitle" style="font-weight:600;font-size:14px"></div>
+    <input id="payNick" maxlength="40" data-i18n-ph="nickPh" placeholder="nickname (optional)">
+    <div style="display:flex;gap:8px">
+      <button class="primary" id="payGo" type="button" style="flex:1">Перейти до Монобанки</button>
+      <button class="btn" id="payCopy" type="button" style="flex:1">Скопіювати</button>
+    </div>
+    <div id="payMsg" style="font-size:12px;color:var(--muted);min-height:16px"></div>
+    <button class="btn" id="payClose" type="button">Закрити</button>
+  </div>
+</div>
 <script src="/i18n.js"></script>
 <script>
 window.I18N_DEFAULT = 'ua';
@@ -99,13 +111,7 @@ function render() {
     const pb = document.createElement('button'); pb.className = 'pvbtn'; pb.type = 'button'; pb.textContent = '▶'; pb.title = 'Preview';
     pb.onclick = e => { e.stopPropagation(); openPv(bit); };
     cell.append(pb);
-    cell.onclick = () => {
-      if (!JAR) return;
-      const nick = (($('nick') && $('nick').value) || '').trim().slice(0, 40);
-      try { localStorage.setItem('lmd:nick', nick); } catch (e) {}
-      const comment = 'донат сповіщення ' + bit.code + (nick ? ' | name: ' + nick : '');
-      window.open('https://send.monobank.ua/jar/' + encodeURIComponent(JAR) + '?a=' + encodeURIComponent(bit.price) + '&t=' + encodeURIComponent(comment), '_blank', 'noopener');
-    };
+    cell.onclick = () => { if (JAR) openPay(bit); };
     g.append(cell);
   }
   fitDeck();
@@ -153,6 +159,46 @@ async function load() {
   document.querySelectorAll('.cell .sq').forEach(sq => { if (!sq.style.backgroundImage) sq.style.backgroundColor = 'color-mix(in srgb,var(--card2) ' + (cellAlpha * 100) + '%,transparent)'; });
   window.mountLangSeg($('langseg')); window.applyI18n();
 }
+let payBit = null;
+function payLink(bit, nick) {
+  const comment = 'донат сповіщення ' + bit.code + (nick ? ' | name: ' + nick : '');
+  return 'https://send.monobank.ua/jar/' + encodeURIComponent(JAR) + '?a=' + encodeURIComponent(bit.price) + '&t=' + encodeURIComponent(comment);
+}
+function payNickValue() {
+  return (($('payNick') && $('payNick').value) || '').trim().slice(0, 40);
+}
+function rememberNick(nick) {
+  try { localStorage.setItem('lmd:nick', nick); } catch (e) {}
+  if ($('nick')) $('nick').value = nick;
+}
+function openPay(bit) {
+  payBit = bit;
+  $('payTitle').textContent = (bit.label || bit.kind) + ' — ' + fmt(bit.price);
+  $('payNick').value = (($('nick') && $('nick').value) || '').trim() || (localStorage.getItem('lmd:nick') || '');
+  $('payMsg').textContent = '';
+  $('paydlg').style.display = 'flex';
+}
+$('payGo').onclick = () => {
+  if (!payBit) return;
+  const nick = payNickValue(); rememberNick(nick);
+  window.location.href = payLink(payBit, nick);
+};
+$('payCopy').onclick = async () => {
+  if (!payBit) return;
+  const nick = payNickValue(); rememberNick(nick);
+  const link = payLink(payBit, nick);
+  try { await navigator.clipboard.writeText(link); }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.append(ta); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  $('payMsg').textContent = '✓';
+};
+$('payClose').onclick = () => { $('paydlg').style.display = 'none'; payBit = null; };
+$('paydlg').onclick = e => { if (e.target.id === 'paydlg') $('payClose').onclick(); };
 load();
 setTimeout(fitDeck, 300);
 

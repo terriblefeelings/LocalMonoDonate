@@ -206,50 +206,32 @@ impl Ctx {
         }
 
         // resolve the alert payload (if any) plus the local history record
-        let (name, message, youtube_id, media_url, kind, code, alert, voice) = if let Some(k) = idx {
+        let (name, message, youtube_id, media_url, kind, code, alert, voice, sound_url, bit_label) = if let Some(k) = idx {
             let p = jar.pending.remove(k);
             // the fallback-link twin is the same intent, never a second alert
             if !p.pair.is_empty() { jar.pending.retain(|x| x.code != p.pair); }
-            if let Some(bit) = p.bit.clone() {
-                // bit picked on the donation form: play it on the bits overlay (then YouTube)
-                let n = if p.name.trim().is_empty() { "Анонім SA".to_string() } else { format!("{} SA", p.name.trim()) };
-                let m = if p.message.trim().is_empty() { bit.label.clone() } else { p.message.clone() };
-                let yt_min = cfg.notify.rules.iter().find(|r| r.id == "default").map(|r| r.style.yt_min).unwrap_or(0.0);
-                let yt = if !p.youtube_id.is_empty() && uah >= yt_min { p.youtube_id.clone() } else { String::new() };
-                jar.history.insert(0, HistoryItem {
-                    id: tx.id.clone(), name: n.clone(), amount: uah, message: m.clone(),
-                    youtube_id: yt.clone(), media_url: String::new(), bit_label: bit.label.clone(), matched: "bit".into(), code: Some(bit.code.clone()), at: now_ms(),
-                });
-                jar.stats.count += 1; jar.stats.total += uah;
-                if uah > jar.stats.biggest { jar.stats.biggest = uah; }
-                drop(st);
-                if !quiet {
-                    self.broadcast(json!({ "type": "bit", "data": {
-                        "id": tx.id, "name": n.clone(), "amount": uah, "message": m.clone(),
-                        "currency": cur, "bit": bit, "youtubeId": yt } }));
-                    log(&format!("[{}] form bit {:.0} from {}", jar_code, uah, n));
-                    crate::streamelements::spawn_tip(cfg.port, cfg.clone(), n.clone(), uah, iso.clone(), se_message(&m, "", &yt, &bit.label));
-                }
-                self.timer_add_donation(uah, &n, quiet);
-                if !quiet { self.auction_bid(&n, uah, "monobank"); }
-                self.save();
-                return false;
-            }
-            let pname = if p.name.trim().is_empty() { "Анонім".to_string() } else { p.name.trim().to_string() };
-            (pname, p.message, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice)
+            let sound_url = p.bit.as_ref().map(|b| {
+                if b.kind == "sound" { b.url.clone() } else { b.sound.clone() }
+            }).unwrap_or_default();
+            let bit_label = p.bit.as_ref().map(|b| b.label.clone()).unwrap_or_default();
+            let pname = if p.name.trim().is_empty() {
+                if p.bit.is_some() { "Анонім SA".to_string() } else { "Анонім".to_string() }
+            } else { p.name.trim().to_string() };
+            let pmsg = if p.message.trim().is_empty() { "Нічого не написав".to_string() } else { p.message.clone() };
+            (pname, pmsg, p.youtube_id, p.media_url, matched, Some(p.code), true, p.voice, sound_url, bit_label)
         } else {
             let name = "Анонім".to_string();
             let raw: String = comment.chars().take(cfg.limits.message_max).collect();
             let msg = if raw.trim().is_empty() { format!("{} нічого не написав", name) } else { raw };
             let v = String::new();
-            if cfg.notify_unmatched { (name, msg, String::new(), String::new(), "unmatched", None, true, v) }
-            else { (name, msg, String::new(), String::new(), "none", None, false, v) }
+            if cfg.notify_unmatched { (name, msg, String::new(), String::new(), "unmatched", None, true, v, String::new(), String::new()) }
+            else { (name, msg, String::new(), String::new(), "none", None, false, v, String::new(), String::new()) }
         };
 
         // every positive transaction is kept in the local history + stats, whether or not it alerts
         jar.history.insert(0, HistoryItem {
             id: tx.id.clone(), name: name.clone(), amount: uah, message: message.clone(),
-            youtube_id: youtube_id.clone(), media_url: media_url.clone(), bit_label: String::new(), matched: kind.into(), code: code.clone(), at: now_ms(),
+            youtube_id: youtube_id.clone(), media_url: media_url.clone(), bit_label: bit_label.clone(), matched: kind.into(), code: code.clone(), at: now_ms(),
         });
         jar.stats.count += 1;
         jar.stats.total += uah;
@@ -287,10 +269,10 @@ impl Ctx {
             self.broadcast(json!({ "type": "donation", "data": {
                 "id": tx.id, "name": name, "amount": uah, "message": message,
                 "youtubeId": youtube_id, "mediaUrl": media_url, "matched": kind, "jar": jar_code, "currency": cur,
-                "ttsUrl": tts_url } }));
+                "ttsUrl": tts_url, "soundUrl": sound_url } }));
             log(&format!("[{}] notification ({}) {:.0} UAH from {}", jar_code, kind, uah, name));
             // StreamElements: mirror the live donation as a tip so the SE alert box plays
-            crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&message, &media_url, &youtube_id, ""));
+            crate::streamelements::spawn_tip(cfg.port, cfg.clone(), name.clone(), uah, iso.clone(), se_message(&message, &media_url, &youtube_id, &bit_label));
         }
         self.save();
         alert && !quiet && no_pending && (kind == "code" || kind == "amount")

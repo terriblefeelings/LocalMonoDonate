@@ -1059,7 +1059,10 @@ pub fn gen_code(_prefix: &str, issued: &[String], pending: &[Pending]) -> String
 
 /// prefix that precedes the code in the Monobank payment comment
 pub const DONATE_PREFIX: &str = "донат сповіщення ";
-pub fn donate_comment(code: &str) -> String { format!("{}{}", DONATE_PREFIX, code) }
+pub fn donate_comment(flags: &str, code: &str) -> String {
+    if flags.is_empty() { format!("{}{}", DONATE_PREFIX, code) }
+    else { format!("{}{} {}", DONATE_PREFIX, flags, code) }
+}
 
 /* ---------------------------------------------------------------- misc */
 

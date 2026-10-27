@@ -38,9 +38,11 @@ body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12p
       <div class="row"><label data-i18n="voice">Голос</label><div class="ctl"><select id="voice"></select></div></div>
       <div class="note" id="hint"></div>
       <button class="primary" id="btn" data-i18n="pay" style="width:100%;justify-content:center;margin-top:16px;padding:13px">Перейти до оплати</button>
-      <div class="paynote" id="paynote" hidden>
-        <span data-i18n="payHintA">Якщо ви не хочете автоматично переходити в застосунок Monobank, натисніть і утримуйте</span>
-        <a id="paylink" target="_blank" rel="noopener" data-i18n="payHintLink">це ПОСИЛАННЯ</a><span data-i18n="payHintB">, а потім виберіть «Відкрити в новій вкладці браузера».</span>
+      <div class="payopts" id="payopts" hidden>
+        <div class="paynote"><span data-i18n="payDirect">Перейти до оплати напряму до Монобанки пана стрімера</span>
+          <a class="btn" id="paylink" target="_blank" rel="noopener" data-i18n="payGo">Перейти</a></div>
+        <div class="paynote"><span data-i18n="payCopyNote">Якщо не хочете відкривати застосунок Monobank автоматично, скопіюйте посилання</span>
+          <button class="btn" type="button" id="paycopy" data-i18n="payCopy">Скопіювати</button></div>
       </div>
       <div class="status err" id="err" style="min-height:18px"></div>
     </div>
@@ -51,8 +53,8 @@ body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12p
 <script>
 window.I18N_DEFAULT = 'ua';
 window.I18N = {
-  en: { amount: 'Amount, ₴', name: 'Name', message: 'Message', youtube: 'YouTube link (optional)', voice: 'Voice', pay: 'Go to payment', ytFrom: 'The YouTube video plays from %p% ₴.', namePh: 'e.g. Alien', msgPh: 'e.g. Hello everyone!', payWait: 'One moment…', payErr: 'Could not connect. Try again.', jar: 'Jar', bit: 'Sound alert', blankBit: 'Regular donation', thirdParty: 'No alerts from this jar \u2014 3rd-party jar' },
-  ua: { amount: 'Сума, ₴', name: "Ім'я", message: 'Повідомлення', youtube: "Посилання на YouTube (необов'язково)", voice: 'Голос', pay: 'Перейти до оплати', ytFrom: 'YouTube-відео зіграє від %p% ₴.', namePh: 'Напр. Alien', msgPh: 'Напр. Привіт усім!', payWait: 'Хвилинку…', payErr: 'Не вдалося з\'єднатися. Спробуй ще раз.', jar: 'Банка', bit: 'Звукове сповіщення', blankBit: 'Звичайний донат', thirdParty: 'Без сповіщень \u2014 стороння банка' }
+  en: { amount: 'Amount, ₴', name: 'Name', message: 'Message', youtube: 'YouTube link (optional)', voice: 'Voice', pay: 'Go to payment', payDirect: 'Pay directly in the streamer\'s Monobank', payGo: 'Open', payCopyNote: 'If you do not want the Monobank app to open automatically, copy the link', payCopy: 'Copy', ytFrom: 'The YouTube video plays from %p% ₴.', namePh: 'e.g. Alien', msgPh: 'e.g. Hello everyone!', payWait: 'One moment…', payErr: 'Could not connect. Try again.', jar: 'Jar', bit: 'Sound alert', blankBit: 'Regular donation', thirdParty: 'No alerts from this jar \u2014 3rd-party jar' },
+  ua: { amount: 'Сума, ₴', name: "Ім'я", message: 'Повідомлення', youtube: "Посилання на YouTube (необов'язково)", voice: 'Голос', pay: 'Перейти до оплати', payDirect: 'Перейти до оплати напряму до Монобанки пана стрімера', payGo: 'Перейти', payCopyNote: 'Якщо не хочете відкривати застосунок Monobank автоматично, скопіюйте посилання', payCopy: 'Скопіювати', ytFrom: 'YouTube-відео зіграє від %p% ₴.', namePh: 'Напр. Alien', msgPh: 'Напр. Привіт усім!', payWait: 'Хвилинку…', payErr: 'Не вдалося з\'єднатися. Спробуй ще раз.', jar: 'Банка', bit: 'Звукове сповіщення', blankBit: 'Звичайний донат', thirdParty: 'Без сповіщень \u2014 стороння банка' }
 };
 Object.assign(window.I18N.en, { noJar: 'No jar configured - add one in Settings' });
 Object.assign(window.I18N.ua, { noJar: 'Банку не додано - додай її в Налаштуваннях' });
@@ -63,8 +65,9 @@ Object.assign(window.I18N.ua, { mediaFrom: 'YouTube \u0432\u0456\u0434 %y% \u20b
 const $ = id => document.getElementById(id);
 const err = m => { $('err').textContent = m || ''; };
 const btn = $('btn');
-const paynote = $('paynote'), paylink = $('paylink');
+const payopts = $('payopts'), paylink = $('paylink');
 let YT_MIN = 0, OTHER_MIN = 0, BITS = [], JARS = [];
+try { $('name').value = localStorage.getItem('lmd:nick') || ''; } catch (e) {}
 let MEDIA = { youtube: true, instagram: true, tiktok: true, twitch: true, reddit: true, x: true };
 const MEDIA_NAMES = { instagram: 'Instagram', tiktok: 'TikTok', twitch: 'Twitch', reddit: 'Reddit', x: 'X' };
 const MEDIA_PLACEHOLDERS = { youtube: 'youtu.be', instagram: 'instagram.com', tiktok: 'tiktok.com', twitch: 'twitch.tv', reddit: 'v.redd.it', x: 'x.com' };
@@ -138,28 +141,41 @@ window.applyLang = function () { updateMediaHint();
 function applyBit() {
   const bit = BITS.find(x => x.code === $('bit').value);
   ['amount', 'name', 'message'].forEach(id => {
-    const el = $(id); el.disabled = !!bit; const r = el.closest('.row'); if (r) r.style.opacity = bit ? .45 : 1;
+    const el = $(id); el.disabled = false; const r = el.closest('.row'); if (r) r.style.opacity = 1;
   });
   const ytOk = mediaOn('youtube') && (!bit || Number(bit.price) >= YT_MIN);
   const mediaOk = ytOk || enabledOtherMedia().length > 0;
   const y = $('youtube'); y.disabled = !mediaOk; const yr = y.closest('.row'); if (yr) yr.style.opacity = mediaOk ? 1 : .45;
-  if (bit) $('amount').value = bit.price;
+  if (bit && !$('amount').value) $('amount').value = bit.price;
 }
 btn.addEventListener('click', async e => {
   e.preventDefault(); err(''); btn.disabled = true; btn.textContent = window.t('payWait');
-  paynote.hidden = true; paylink.removeAttribute('href');
+  payopts.hidden = true; paylink.removeAttribute('href');
   try { const bit = BITS.find(x => x.code === $('bit').value);
     const body = { jar: $('jar').value, youtube: $('youtube').value, voice: $('voice').value };
-    if (bit) body.bit = bit; else { body.amount = Number($('amount').value); body.name = $('name').value; body.message = $('message').value; }
+    body.amount = Number($('amount').value); body.name = $('name').value; body.message = $('message').value;
+    if (bit) body.bit = bit;
     const r = await fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json();
     if (!d.ok) { err(d.error || 'Error'); btn.disabled = false; btn.textContent = window.t('pay'); return; }
-    paylink.href = d.fallback || d.redirect; paynote.hidden = false;
-    window.open(d.redirect, '_blank', 'noopener');
-    $('amount').value = ''; $('name').value = ''; $('message').value = ''; $('youtube').value = '';
+    paylink.href = d.fallback || d.redirect; payopts.hidden = false;
+    try { localStorage.setItem('lmd:nick', $('name').value.trim()); } catch (e) {}
     btn.disabled = false; btn.textContent = window.t('pay');
   } catch { err(window.t('payErr')); btn.disabled = false; btn.textContent = window.t('pay'); }
 });
+$('paycopy').onclick = async () => {
+  const link = $('paylink').href;
+  if (!link) return;
+  try {
+    await navigator.clipboard.writeText(link);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.append(ta); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+};
 fetch('/api/config').then(r => r.json()).then(c => {
   if (c && c.bg) {
     document.body.classList.toggle('hasbg', !!c.bg);

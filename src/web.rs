@@ -211,7 +211,7 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     // optional bit picked on the donation form (must exist in the configured deck)
     let bit_sel: Option<Bit> = v.get("bit").and_then(|b| serde_json::from_value::<Bit>(b.clone()).ok())
         .filter(|b| cfg.bits.iter().any(|x| !x.code.is_empty() && x.code == b.code));
-    let amount = bit_sel.as_ref().map(|b| b.price).unwrap_or(amount_in);
+    let amount = if amount_in > 0.0 { amount_in } else { bit_sel.as_ref().map(|b| b.price).unwrap_or(0.0) };
 
     let fail = |req: tiny_http::Request, m: &str| { let _ = req.respond(json_resp(400, json!({"ok": false, "error": m}))); };
     if !cfg.features.donate { return fail(request, "Донати вимкнено"); }
@@ -299,8 +299,13 @@ fn submit(ctx: &Ctx, mut request: tiny_http::Request) {
     ctx.save();
     ctx.watch(10 * 60 * 1000);
 
-    let comment = donate_comment(&code).replace(' ', "%20");
-    let comment2 = donate_comment(&code2).replace(' ', "%20");
+    // variation flags in the bank comment: A - anonymous, M - media, SA - sound alert
+    let mut flags = String::new();
+    if name.trim().is_empty() || name == "Анонім" { flags.push('A'); }
+    if !ytid.is_empty() || !media_url.is_empty() { flags.push('M'); }
+    if bit_sel.is_some() { flags.push_str("SA"); }
+    let comment = donate_comment(&flags, &code).replace(' ', "%20");
+    let comment2 = donate_comment(&flags, &code2).replace(' ', "%20");
     let redirect = format!("https://send.monobank.ua/jar/{}?a={:.0}&t={}", jar_code, amount, comment);
     let fallback = format!("https://send.monobank.ua/jar/{}?a={:.0}&t={}", jar_code, amount, comment2);
     log(&format!("form: {:.0} UAH from {} -> {} / {} ({})", amount, name, code, code2, jar_code));
