@@ -105,7 +105,7 @@
     <div class="sec"><span class="n">05</span><span class="h" data-i18n="links">Links</span></div>
     <div class="body">
       <p class="note links-note" data-i18n="linksNote">Each checkbox enables or disables the entire feature, not just its link. Disabled features stay configured but are not published.</p>
-      <p class="note" data-i18n="obsAudioNote">OBS audio for the Media and Donation overlays: turn on “Control audio via OBS”, then set Audio Monitoring to Monitor and Output under Advanced Audio Properties.</p>
+      <p class="note" data-i18n="obsAudioNote">OBS audio for the browser sources (Donation, Media, Sound Alerts): turn on “Control audio via OBS”, keep Audio Monitoring on “Monitor Off”, and use 48 kHz in OBS and Windows. The stream still gets the sound; monitoring browser sources in OBS can crackle.</p>
       <div class="link"><label class="sw feat"><input type="checkbox" data-feat="donate"><span class="track"></span></label><div class="k" data-i18n="kDonate">Donation Page</div><div class="u masked" id="l_donate"></div><button class="tg" data-t="donate" data-i18n="show">Show</button><button class="cp" data-t="donate" data-i18n="copy">Copy</button></div>
       <div class="link hasnote"><label class="sw feat"><input type="checkbox" data-feat="overlay"><span class="track"></span></label><div class="k" data-i18n="kOverlay">Overlay</div><div class="u masked" id="l_overlay"></div><button class="tg" data-t="overlay" data-i18n="show">Show</button><button class="cp" data-t="overlay" data-i18n="copy">Copy</button></div>
       <p class="note linknote" data-i18n="overlayNote">OBS Browser Source size: 750×500. Donation alert overlay.</p>
@@ -143,8 +143,8 @@ Object.assign(window.I18N.en, { tsConnect: 'Install & Connect', tsFunnel: 'Enabl
 Object.assign(window.I18N.ua, { tsConnect: 'Встановити й підключити', tsFunnel: 'Увімкнути Funnel', tsInstalling: 'Встановлюємо Tailscale… підтвердьте запит Windows', tsSignIn: 'Увійдіть у Tailscale у браузері…', tsFunnelWait: 'Увімкнюємо Funnel…', tsInstallFail: 'Встановлення не завершилося. Підтвердьте запит адміністратора й натисніть «Підключити» ще раз.', tsLoginFail: 'Вхід не завершився. Відкрийте сторінку входу й натисніть «Підключити» ще раз.', tsFunnelOff: 'Funnel вимкнено', tsFunnelOn: 'Funnel увімкнено', tsG1: '«Підключити»: встановлює Tailscale з комплекту й відкриває вхід. Увійдіть або створіть безкоштовний акаунт.', tsG2: 'Якщо Funnel не увімкнено, натисніть «Увімкнути Funnel» і дозвольте HTTPS-сертифікати та Funnel для цього пристрою.', tsG3: 'Поверніться сюди: статус стане зеленим, і публічне посилання запрацює. Безкоштовного плану Tailscale достатньо.', tsNote: 'Один клік: за потреби встановлює Tailscale, відкриває вхід і вмикає Funnel. Публічне посилання: <nickname>.ts.net — безкоштовно, без домену.' });
 Object.assign(window.I18N.en, { linksNote: 'Each checkbox enables or disables the entire feature, not just its link. Disabled features stay configured but are not published.' });
 Object.assign(window.I18N.ua, { linksNote: 'Кожен прапорець вмикає або вимикає всю функцію, а не лише її посилання. Вимкнені функції залишаються налаштованими, але не публікуються.' });
-Object.assign(window.I18N.en, { obsAudioShort: 'OBS audio: tick “Control audio via OBS” on the Browser Source, then set Audio Monitoring → Monitor and Output in the Audio Mixer.' });
-Object.assign(window.I18N.ua, { obsAudioShort: 'OBS-аудіо: увімкніть «Control audio via OBS» у джерелі, потім Audio Monitoring → Monitor and Output у мікшері.' });
+Object.assign(window.I18N.en, { obsAudioShort: 'OBS audio: tick “Control audio via OBS”, set Audio Monitoring to “Monitor Off”, and use 48 kHz in OBS and Windows. The stream still gets the sound.' });
+Object.assign(window.I18N.ua, { obsAudioShort: 'OBS-аудіо: увімкніть «Control audio via OBS», встановіть Audio Monitoring у «Monitor Off» і використовуйте 48 кГц в OBS і Windows. Звук усе одно потрапляє в стрім.' });
 Object.assign(window.I18N.en, { jarMineNote: 'My jar - click to toggle this jar as yours.' });
 Object.assign(window.I18N.ua, { jarMineNote: '\u041c\u043e\u044f \u0431\u0430\u043d\u043a\u0430 - \u043d\u0430\u0442\u0438\u0441\u043d\u0456\u0442\u044c, \u0449\u043e\u0431 \u043f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u0446\u044e \u0431\u0430\u043d\u043a\u0443 \u044f\u043a \u0441\u0432\u043e\u044e.' });
 Object.assign(window.I18N.en, { qrWidgets: 'QR Widgets', addQr: '+ Add QR widget', qrWidgetsNote: 'Up to 5 overlays: /qr, /qr2 … /qr5. Each has its own jar, background color and style.', qrStyleBoth: 'QR + goal', qrStyleQr: 'QR only', qrStyleGoal: 'Goal only', qrColor: 'Background color', qrJar: 'Jar', qrRemove: 'Remove widget', qrDemo: 'Test QR: 5 000 / 10 000', qrCustomize: 'QR Widget Customization', qrCustomizeNote: 'Up to 5 widgets: jar, color, style, alignment and QR size.' });
@@ -160,7 +160,7 @@ Object.assign(window.I18N.ua, { kQr: 'QR-віджет', widgetJar: 'Банка �
 Object.assign(window.I18N.en, {
   kDonate: 'Donation Page', kOverlay: 'Overlay', kYouTube: 'Media', kStats: 'Stats',
   kBitsPage: 'Sound Alerts', kBitsOvl: 'Sound Alerts Overlay', kQr: 'QR Widget', kTimer: 'Timer', kAuction: 'Auction',
-  obsAudioNote: 'OBS audio for the Media and Donation overlays: turn on “Control audio via OBS”, then set Audio Monitoring to Monitor and Output under Advanced Audio Properties.',
+  obsAudioNote: 'OBS audio for the browser sources (Donation, Media, Sound Alerts): turn on “Control audio via OBS”, keep Audio Monitoring on “Monitor Off”, and use 48 kHz in OBS and Windows. The stream still gets the sound; monitoring browser sources in OBS can crackle.',
   overlayNote: 'OBS Browser Source size: 750×500. Donation alert overlay.',
   mediaNote: 'OBS Browser Source size: 640×360. Media links: YouTube, Instagram, TikTok, Twitch, Reddit and X.',
   bitsOverlayNote: 'OBS Browser Source size: 750×500. Sound Alerts playback overlay; videos use the full source height.',
@@ -169,7 +169,7 @@ Object.assign(window.I18N.en, {
 Object.assign(window.I18N.ua, {
   kDonate: 'Сторінка донатів', kOverlay: 'Оверлей', kYouTube: 'Медіа', kStats: 'Статистика',
   kBitsPage: 'Звукові сповіщення', kBitsOvl: 'Оверлей звукових сповіщень', kQr: 'QR-віджет', kTimer: 'Таймер', kAuction: 'Аукціон',
-  obsAudioNote: 'OBS-аудіо для оверлеїв медіа та донатів: увімкніть «Control audio via OBS», а потім у Advanced Audio Properties виберіть Audio Monitoring → Monitor and Output.',
+  obsAudioNote: 'OBS-аудіо для браузерних джерел (донати, медіа, звукові сповіщення): увімкніть «Control audio via OBS», залиште Audio Monitoring у режимі «Monitor Off» і використовуйте 48 кГц в OBS і Windows. Звук усе одно потрапляє в стрім; моніторинг браузерних джерел в OBS може тріщати.',
   overlayNote: 'Розмір OBS Browser Source: 750×500. Оверлей донатних сповіщень.',
   mediaNote: 'Розмір OBS Browser Source: 640×360. Медіапосилання: YouTube, Instagram, TikTok, Twitch, Reddit і X.',
   bitsOverlayNote: 'Розмір OBS Browser Source: 750×500. Оверлей відтворення звукових сповіщень; відео займає всю висоту джерела.',
