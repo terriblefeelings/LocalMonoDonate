@@ -39,6 +39,7 @@ fn bit_display_name(comment: &str) -> String {
 /// Public-deck order: `s:0,2,1 | mode:adhd | name: Nick`.
 /// Returns the picked bits in the listed order and the playback mode.
 fn parse_slot_order(comment: &str, bits: &[Bit]) -> Option<(Vec<Bit>, String)> {
+    if !comment.contains("донат сповіщення bits:") { return None; }
     let pos = comment.find("bits:")?;
     let rest = &comment[pos + 5..];
     let list = rest.split(|c: char| c.is_whitespace() || c == '|').next().unwrap_or("");
@@ -76,6 +77,7 @@ mod bit_name_tests {
         assert_eq!(se_message("hi", "https://www.tiktok.com/@x/video/1", "", "Airhorn"),
                    "hi | SoundAlert: Airhorn | TikTok: https://www.tiktok.com/@x/video/1");
         assert_eq!(se_message("hi", "", "", ""), "hi");
+        assert_eq!(se_message("hi", "", "", "A, B"), "hi | SoundAlert: A, B");
     }
 
     #[test]
@@ -92,6 +94,7 @@ mod bit_name_tests {
         assert_eq!(picked[0].code, "b");
         assert_eq!(mode, "single");
         assert!(parse_slot_order("донат сповіщення bits:9", &bits).is_none());
+        assert!(parse_slot_order("my message bits:0", &bits).is_none());
     }
 }
 
@@ -273,7 +276,7 @@ impl Ctx {
             jar.history.insert(0, HistoryItem {
                 id: tx.id.clone(), name: name.clone(), amount: uah, message: msg.clone(),
                 youtube_id: String::new(), media_url: String::new(), bit_label: labels.clone(), bit_code: codes,
-                matched: "bit".into(), code: None, at: now_ms(),
+                matched: "bit".into(), code: if picked.len() == 1 { Some(picked[0].code.clone()) } else { None }, at: now_ms(),
             });
             jar.stats.count += 1; jar.stats.total += uah;
             if uah > jar.stats.biggest { jar.stats.biggest = uah; }
