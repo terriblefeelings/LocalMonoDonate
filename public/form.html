@@ -15,10 +15,10 @@
   #hint{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .credits{position:static;margin:18px auto 0;max-width:560px;padding:0 16px;text-align:center;font-size:11px;line-height:1.55;color:var(--muted);opacity:.8;pointer-events:auto}
-.paynote{margin:10px 2px 0;text-align:center;font-size:12.5px;line-height:1.55;color:var(--muted)}
+.paynote{margin:10px 0 0;text-align:left;font-size:12.5px;line-height:1.55;color:var(--muted)}
 .paynote a{font-weight:700;color:var(--fg);text-decoration:underline}
 .paynote[hidden]{display:none}
-  .payhint{margin-top:6px;font-size:11.5px;line-height:1.5;color:var(--muted);max-width:520px;text-align:center}
+  .payhint{margin-top:6px;font-size:11.5px;line-height:1.5;color:var(--muted);text-align:left}
 body.hasbg .note{background:rgba(0,0,0,.46);border-radius:4px;padding:5px 8px}
 body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12px}
 .credits a{color:inherit;text-decoration:underline}
@@ -40,9 +40,9 @@ body.hasbg .credits{background:rgba(0,0,0,.95);border-radius:4px;padding:8px 12p
       <div class="note" id="hint"></div>
       <button class="primary" id="btn" data-i18n="pay" style="width:100%;justify-content:center;margin-top:16px;padding:13px">Перейти до оплати</button>
       <div class="payopts" id="payopts" hidden>
-        <div class="paynote" style="display:flex;flex-direction:column;gap:8px;align-items:center">
+        <div class="paynote" style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
           <span data-i18n="payDirect">Перейти до оплати напряму до Монобанки пана стрімера</span>
-          <a class="btn" id="paylink" target="_blank" rel="noopener" data-i18n="payGo">Перейти</a>
+          <a class="btn" id="paylink" target="_blank" rel="noopener" data-i18n="payGo" style="display:flex;width:100%;justify-content:center">Перейти</a>
           <span class="payhint" data-i18n="payNote">Примітка: якщо не хочете, щоб застосунок Monobank відкривався автоматично, натисніть і утримуйте кнопку «Перейти» і виберіть «Відкрити в новій вкладці браузера» або, за потреби, «Копіювати посилання».</span>
         </div>
       </div>
@@ -162,6 +162,12 @@ btn.addEventListener('click', async e => {
     try { localStorage.setItem('lmd:nick', $('name').value.trim()); } catch (e) {}
     btn.disabled = false; btn.textContent = window.t('pay');
   } catch { err(window.t('payErr')); btn.disabled = false; btn.textContent = window.t('pay'); }
+});
+['amount', 'name', 'message', 'youtube', 'bit', 'jar', 'voice'].forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('input', () => { payopts.hidden = true; paylink.removeAttribute('href'); });
+  el.addEventListener('change', () => { payopts.hidden = true; paylink.removeAttribute('href'); });
 });
 fetch('/api/config').then(r => r.json()).then(c => {
   if (c && c.bg) {

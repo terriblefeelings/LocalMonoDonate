@@ -195,7 +195,7 @@ impl Ctx {
         }
 
         // match a pending donation by code first, else by amount + recency
-        let mut idx = jar.pending.iter().position(|p| low.contains(&p.code));
+        let mut idx = jar.pending.iter().position(|p| low.contains(&p.code.to_lowercase()));
         let mut matched = "code";
         if idx.is_none() {
             let now = now_secs();

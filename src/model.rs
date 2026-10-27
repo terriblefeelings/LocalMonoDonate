@@ -1041,18 +1041,18 @@ pub fn write_state(paths: &Paths, st: &State) {
 
 pub fn gen_stats_token() -> String {
     let rng = rand::thread_rng();
-    rng.sample_iter(&Alphanumeric).take(12).map(|c| (c as char).to_ascii_lowercase()).collect()
+    rng.sample_iter(&Alphanumeric).take(12).map(|c| c as char).collect()
 }
 
 pub fn gen_bit_code() -> String {
     let rng = rand::thread_rng();
-    rng.sample_iter(&Alphanumeric).take(12).map(|c| (c as char).to_ascii_lowercase()).collect()
+    rng.sample_iter(&Alphanumeric).take(12).map(|c| c as char).collect()
 }
 
 pub fn gen_code(_prefix: &str, issued: &[String], pending: &[Pending]) -> String {
     loop {
         let rng = rand::thread_rng();
-        let code: String = rng.sample_iter(&Alphanumeric).take(12).map(|c| (c as char).to_ascii_lowercase()).collect();
+        let code: String = rng.sample_iter(&Alphanumeric).take(12).map(|c| c as char).collect();
         if !issued.contains(&code) && !pending.iter().any(|p| p.code == code) { return code; }
     }
 }
