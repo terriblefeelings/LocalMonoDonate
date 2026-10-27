@@ -698,7 +698,7 @@ fn test(ctx: &Ctx, mut request: tiny_http::Request) {
             ("SE Test 1", "Звичайне повідомлення", "", "", ""),
             ("SE Test 2", "Повідомлення з YouTube", "", "dQw4w9WgXcQ", ""),
             ("SE Test 3", "Повідомлення зі звуком", "", "", "Airhorn"),
-            ("SE Test 4", "Медіа та звук разом", "https://www.tiktok.com/@demo/video/1", "", "Bruh"),
+            ("SE Test 4", "Медіа та звук разом", "https://www.tiktok.com/@tiktok/video/7106594312292453675", "", "Bruh"),
             ("SE Test 5", "Дуже довге повідомлення, яке перевіряє, як StreamElements переносить текст у сповіщенні та стрічці активності", "", "", ""),
         ];
         let mut errors: Vec<String> = Vec::new();
