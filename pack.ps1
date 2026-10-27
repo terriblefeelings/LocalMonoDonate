@@ -20,6 +20,8 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $dist = Join-Path $root 'dist'
+$ver = (Select-String -Path (Join-Path $root 'Cargo.toml') -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches.Groups[1].Value
+if (-not $ver) { throw 'version not found in Cargo.toml' }
 $app = Join-Path $dist 'LocalMonoDonate'
 Remove-Item $dist -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $app | Out-Null
@@ -70,7 +72,7 @@ Copy-Item (Join-Path $root 'README.md') (Join-Path $app 'README.md')
 
 # zip can not store pre-1980 timestamps (WebView2Loader.dll ships with one)
 Get-ChildItem $app -Recurse -File | ForEach-Object { $_.LastWriteTime = Get-Date }
-$zip = Join-Path $dist ($(if ($WithTts) { 'MONOBANK-lite-0.2.17.zip' } else { 'LocalMonoDonate-0.2.17.zip' }))
+$zip = Join-Path $dist ($(if ($WithTts) { "MONOBANK-lite-$ver.zip" } else { "LocalMonoDonate-$ver.zip" }))
 Push-Location $dist
 Remove-Item $zip -Force -ErrorAction SilentlyContinue
 $seven = Get-Command 7z.exe -ErrorAction SilentlyContinue
