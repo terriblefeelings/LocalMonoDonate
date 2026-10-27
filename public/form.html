@@ -25,6 +25,9 @@
 /* the page-wide button rule outranks .pick.on, so the selected alert uses the id */
 #bitsGrid .pick.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 #bitsGrid{display:grid;gap:8px}
+#bitsGrid .pick{flex-direction:column;gap:1px;min-height:48px;padding:6px 8px;line-height:1.15}
+#bitsGrid .pick-label{display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;text-align:center}
+#bitsGrid .pick-price{display:block;width:100%;font-size:11px;font-weight:500;opacity:.7;text-align:center;white-space:nowrap}
 body .panel .body>#row_bits_total[hidden]{display:none}
 #bits_total:disabled{opacity:.55;cursor:not-allowed}
 body .panel .body>#row_bits_pick[hidden]{display:none}
@@ -137,7 +140,7 @@ Promise.all([
   if (JARS.length <= 1) $('row_jar').style.display = 'none';
   $('jar').addEventListener('change', applyJar); applyJar();
   // bits picker: the configured selectors become options (regular donation first)
-  BITS = (b && b.bits) || [];
+  BITS = ((b && b.bits) || []).slice().sort((a, b) => (Number(a.slot) || 0) - (Number(b.slot) || 0));
   const list = Array.isArray(b && b.modes) ? b.modes : (['single', 'order', 'adhd'].includes(b && b.mode) ? [b.mode] : ['single']);
   MODES = ['order', 'adhd', 'single'].filter(m => list.includes(m));
   GRID = Number(b && b.grid) || 3;
@@ -191,7 +194,12 @@ function renderBitsGrid() {
   BITS.forEach(bit => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'pick'; b.dataset.code = bit.code;
-    b.textContent = bit.label || bit.kind;
+    const label = bit.label || bit.kind;
+    const lab = document.createElement('span'); lab.className = 'pick-label'; lab.textContent = label;
+    const price = document.createElement('span'); price.className = 'pick-price';
+    price.textContent = Math.round(Number(bit.price) || 0) + ' ₴';
+    b.title = label;
+    b.append(lab, price);
     b.addEventListener('click', () => toggleBit(bit.code));
     g.append(b);
   });
