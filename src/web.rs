@@ -1676,11 +1676,7 @@ fn public_allowed(method: Method, path: &str, cfg: &Config) -> bool {
         | (Method::Get, "/api/state") | (Method::Get, "/api/notify") | (Method::Get, "/api/config")
         | (Method::Get, "/api/bits")
         | (Method::Post, "/api/submit")
-        | (Method::Post, "/api/test")
-        | (Method::Post, "/api/replay")
-        | (Method::Post, "/api/bits/order")
-        | (Method::Post, "/api/bits/pre_done")
-        | (Method::Post, "/api/youtube") => true,
+        | (Method::Post, "/api/bits/order") => true,
         (Method::Get, p) if p.starts_with("/media/") => true,
         (Method::Get, p) if p.starts_with("/media-x/") => true,
         (Method::Get, p) if p.starts_with("/tts/") => true,
@@ -2235,6 +2231,21 @@ mod media_tests {
             assert_eq!(x_status_id(url).as_deref(), Some("1446120853117177872"), "url: {url}");
         }
         assert_eq!(x_status_id("https://x.com/NASA"), None);
+    }
+}
+
+#[cfg(test)]
+mod public_gate_tests {
+    use super::*;
+
+    #[test]
+    fn public_listener_only_allows_donor_posts() {
+        let cfg = Config::default();
+        assert!(public_allowed(Method::Post, "/api/submit", &cfg));
+        assert!(public_allowed(Method::Post, "/api/bits/order", &cfg));
+        for p in ["/api/test", "/api/replay", "/api/bits/pre_done", "/api/youtube"] {
+            assert!(!public_allowed(Method::Post, p, &cfg), "{p}");
+        }
     }
 }
 
