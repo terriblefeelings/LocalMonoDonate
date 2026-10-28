@@ -109,13 +109,6 @@ pub fn warm(dir: &str) {
     }
 }
 
-/// The kept StyleTTS2-UA voices (exact names from the model's voices.json).
-pub const CUSTOM_VOICES: [&str; 12] = [
-    "Анастасія Павленко", "Вʼячеслав Дудко", "Влада Муравець", "Денис Денисенко",
-    "Катерина Потапенко", "Кирило Татарченко", "Людмила Чиркова", "Марта Мольфар",
-    "Павло Буковський", "Роман Куліш", "Тарас Василюк", "Юрій Вихованець",
-];
-
 /// Azure Speech voices offered: Ukrainian and US, one male + one female each.
 pub const AZURE_UK: [&str; 2] = ["uk-UA-PolinaNeural", "uk-UA-OstapNeural"];
 pub const AZURE_US: [&str; 2] = ["en-US-JennyNeural", "en-US-GuyNeural"];
@@ -123,36 +116,15 @@ pub const AZURE_VOICES: [&str; 4] = [
     "uk-UA-PolinaNeural", "uk-UA-OstapNeural", "en-US-JennyNeural", "en-US-GuyNeural",
 ];
 
-/// true when the local StyleTTS2 model ships next to the TTS engine (full builds only)
-pub fn style_available(dir: &str) -> bool {
-    let mut base = std::path::PathBuf::from(dir);
-    if !base.is_absolute() {
-        if let Ok(exe) = std::env::current_exe() {
-            if let Some(d) = exe.parent() { base = d.join(&base); }
-        }
-    }
-    base.join("styletts_istftnet_fp16.onnx").exists()
-}
-
-/// Voices offered in the UI: Google UA/EN (default), Azure when keys are set, and the
-/// StyleTTS2-UA names only when the model is present (the lite build ships Google/Azure).
-pub fn voices(dir: &str, azure_ok: bool) -> Vec<serde_json::Value> {
+/// Voices offered in the UI: Google UA/US by default, Azure when keys are set.
+pub fn voices(_dir: &str, azure_ok: bool) -> Vec<serde_json::Value> {
     let mut v = vec![
         serde_json::json!({ "id": "google:uk", "label": "Google (українська)", "lang": "uk" }),
         serde_json::json!({ "id": "google:us", "label": "Google (English US)", "lang": "en" }),
-        serde_json::json!({ "id": "edge:uk-UA-PolinaNeural", "label": "Microsoft Polina (uk-UA)", "lang": "uk" }),
-        serde_json::json!({ "id": "edge:uk-UA-OstapNeural", "label": "Microsoft Ostap (uk-UA)", "lang": "uk" }),
-        serde_json::json!({ "id": "edge:en-US-JennyNeural", "label": "Microsoft Jenny (en-US)", "lang": "en" }),
-        serde_json::json!({ "id": "edge:en-US-GuyNeural", "label": "Microsoft Guy (en-US)", "lang": "en" }),
     ];
     if azure_ok {
         for name in AZURE_VOICES {
             v.push(serde_json::json!({ "id": format!("azure:{}", name), "label": format!("Azure {}", name), "lang": if name.starts_with("uk") { "uk" } else { "en" } }));
-        }
-    }
-    if style_available(dir) {
-        for name in CUSTOM_VOICES {
-            v.push(serde_json::json!({ "id": name, "label": name, "lang": "uk" }));
         }
     }
     v

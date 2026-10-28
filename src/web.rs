@@ -1570,14 +1570,14 @@ fn tts_post(ctx: &Ctx, mut request: tiny_http::Request) {
     let t = &mut cfg.tts;
     let mode_in = v.get("mode").and_then(|x| x.as_str()).unwrap_or("google:uk").to_string();
     let voice_in = v.get("voice").and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
-    t.mode = if mode_in == "off" { "off".into() }
-        else if mode_in == "custom" || mode_in == "default" || mode_in == "edge" { mode_in.clone() }
-        else if mode_in == "google:uk" || mode_in == "google:us" { mode_in.clone() }
-        else { "google:uk".into() };
-    t.voice = if voice_in.starts_with("google:") || voice_in.starts_with("edge:") { voice_in }
-        else if mode_in == "off" { String::new() }
-        else if mode_in == "edge" { "edge:uk-UA-PolinaNeural".into() }
-        else { "google:uk".into() };
+    t.mode = match mode_in.as_str() {
+        "off" => "off".into(),
+        "google:us" => "google:us".into(),
+        "azure:uk" | "azure:us" => mode_in.clone(),
+        _ => "google:uk".into(),
+    };
+    let allowed = t.allowed_in(&t.dir);
+    t.voice = if t.mode == "off" || !allowed.contains(&voice_in) { String::new() } else { voice_in };
     t.azure_key.clear();
     t.azure_region.clear();
     if let Some(s) = v.get("readMode").and_then(|x| x.as_str()) { if !s.trim().is_empty() { t.read_mode = s.trim().into(); } }

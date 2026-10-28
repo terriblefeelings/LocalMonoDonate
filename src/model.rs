@@ -748,28 +748,29 @@ pub struct TtsCfg {
 impl TtsCfg {
     pub fn enabled(&self) -> bool { self.mode != "off" }
     pub fn has_azure(&self) -> bool { !self.azure_key.is_empty() && !self.azure_region.is_empty() }
-    /// voice ids the donor may pick for this mode (empty = no picker shown).
-    /// Google UA/EN always; Azure only with keys; StyleTTS2 only when its model exists.
+    /// voice ids offered for the configured set (empty = no voice).
     pub fn allowed(&self) -> Vec<String> {
         self.allowed_in(&self.dir)
     }
-    /// This build intentionally uses one voice only: Google Ukrainian.
     pub fn allowed_in(&self, _dir: &str) -> Vec<String> {
-        if self.mode == "off" { vec![] } else {
-            vec![
-                "google:uk".into(), "google:us".into(),
-                "edge:uk-UA-PolinaNeural".into(), "edge:uk-UA-OstapNeural".into(),
-                "edge:en-US-JennyNeural".into(), "edge:en-US-GuyNeural".into(),
-            ]
+        match self.mode.as_str() {
+            "off" => vec![],
+            "google:us" => vec!["google:us".into()],
+            "azure:uk" => crate::tts::AZURE_UK.iter().map(|v| format!("azure:{v}")).collect(),
+            "azure:us" => crate::tts::AZURE_US.iter().map(|v| format!("azure:{v}")).collect(),
+            _ => vec!["google:uk".into()],
         }
     }
     pub fn donor_picks(&self) -> bool { false }
     pub fn default_voice(&self) -> String {
         if self.mode == "off" { return String::new(); }
-        if !self.voice.trim().is_empty() { self.voice.clone() }
-        else if self.mode == "edge" { "edge:uk-UA-PolinaNeural".into() }
-        else if self.mode.starts_with("google:") || self.mode.starts_with("edge:") { self.mode.clone() }
-        else { "google:uk".into() }
+        if !self.voice.trim().is_empty() { return self.voice.clone(); }
+        match self.mode.as_str() {
+            "google:us" => "google:us".into(),
+            "azure:uk" => "azure:uk-UA-PolinaNeural".into(),
+            "azure:us" => "azure:en-US-JennyNeural".into(),
+            _ => "google:uk".into(),
+        }
     }
 }
 impl Default for TtsCfg {

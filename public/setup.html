@@ -25,18 +25,20 @@
   .appToggles .setitem{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
   .appToggles .setlabel{font-size:13.5px;font-weight:600;color:var(--fg)}
   .appToggles .note{margin:0;max-width:560px}
+  .appToggles .togglebtn{width:110px;padding:0;justify-content:center;text-align:center}
   #currentVersion{margin-bottom:8px}
   .up-to-date{display:none;margin-top:8px;font-size:12.5px;line-height:1.45;color:#7dffb0}
   .up-to-date.show{display:block}
   .up-to-date.err{color:#ff6b6b}
   .update-modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.55)}
   .update-modal.show{display:flex}
-  .update-card{width:100%;max-width:380px;padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 18px 50px rgba(0,0,0,.45)}
+  .update-card{width:100%;max-width:460px;padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 18px 50px rgba(0,0,0,.45)}
   .update-card h3{margin:0 0 8px;font-size:17px}
   .update-card p{margin:0 0 18px;font-size:13.5px;line-height:1.5;color:var(--muted)}
   .update-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+  .update-card .update-actions button{flex:1 1 0;min-width:0;justify-content:center;text-align:center}
   .update-btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  .update-card .danger{background:#D14D41;border-color:#D14D41;color:#0C0B0A;font-weight:600}
+  .update-card .danger-hover:hover{background:#D14D41;border-color:#D14D41;color:#0C0B0A}
   .healthmsg{white-space:pre-line}
 </style>
 </head>
@@ -596,8 +598,8 @@ $('reinstallBtn').onclick = () => {
   $('reinstallTitle').textContent = window.t('reinstallTitle');
   $('reinstallText').textContent = window.t('reinstallText');
   $('reinstallActions').innerHTML = '';
-  reinstallAction(window.t('reinstallKeep'), 'btn', () => reinstallConfirm(false));
-  reinstallAction(window.t('reinstallClear'), 'btn danger', () => reinstallConfirm(true));
+  reinstallAction(window.t('reinstallKeep'), 'btn danger-hover', () => reinstallConfirm(false));
+  reinstallAction(window.t('reinstallClear'), 'btn danger-hover', () => reinstallConfirm(true));
   reinstallAction(window.t('reinstallCancel'), 'primary', closeReinstall).focus();
   $('reinstallModal').classList.add('show');
 };

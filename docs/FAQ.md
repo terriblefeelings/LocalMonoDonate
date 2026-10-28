@@ -285,16 +285,12 @@ Setup → StreamElements: account id + JWT (Settings → Account → API token),
 Google українська + Google англійська — безкоштовно, без ключа, потрібне підключення до інтернету.
 Аудіо синтезується з частотою 48 кГц.
 
-**Як увімкнути Microsoft Neural?**
-Alerts → voice set → **Microsoft Neural** (Поліна, Остап, Jenny, Guy). Ключ не потрібен, потрібен інтернет.
-
 **Як увімкнути Azure?**
-Alerts → voice set → Azure, вставте власний ключ Speech і регіон. Голоси Azure зʼявляться лише після
-цього; оплачує Microsoft за вашим тарифом.
+Alerts → voice set → Azure UA або Azure US, вставте власний ключ Speech і регіон. Голоси Azure
+(Поліна/Остап, Jenny/Guy) зʼявляться лише після цього; оплачує Microsoft за вашим тарифом.
 
-**Де власні голоси StyleTTS?**
-Потрібна модель StyleTTS2 (~157 МБ) у `tts-engine`; без неї доступні Google, Microsoft Neural і Azure,
-а набір «custom» автоматично ховається.
+**Чи є Microsoft Neural або StyleTTS?**
+У цій збірці — ні: доступні лише Google UA/US і Azure.
 
 **Чи може донатер вибрати голос?**
 Так, коли набір голосів «ALL» (за замовчуванням) — форма показує вибір. Інакше використовується голос стрімера.
