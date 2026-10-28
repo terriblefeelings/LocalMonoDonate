@@ -68,6 +68,9 @@ if ($WithTts) {
   "widgetJar": "",
   "qrAlign": "bottom",
   "qrSize": 100,
+  "autoUpdate": true,
+  "startWithWindows": false,
+  "closeToTray": true,
   "streamelements": { "enabled": false, "accountId": "" }
 }
 '@ | Set-Content (Join-Path $app 'config.example.json') -Encoding UTF8

@@ -652,6 +652,12 @@ pub struct Config {
     #[serde(default)] pub qr_widgets: Vec<QrWidgetCfg>,
     #[serde(default = "d_qr_align")] pub qr_align: String, // top | mid | bottom
     #[serde(default = "d_qr_size")] pub qr_size: u32,      // 0..=200 %
+    /// download the small exe asset automatically on startup
+    #[serde(default = "d_true")] pub auto_update: bool,
+    /// add the app to HKCU Run so it opens after Windows login
+    #[serde(default)] pub start_with_windows: bool,
+    /// X hides to the tray instead of exiting
+    #[serde(default = "d_true")] pub close_to_tray: bool,
 
 }
 
@@ -684,7 +690,39 @@ impl Default for Config {
             qr_widgets: Vec::new(),
             qr_align: d_qr_align(),
             qr_size: d_qr_size(),
+            auto_update: true,
+            start_with_windows: false,
+            close_to_tray: true,
         }
+    }
+}
+
+/// Live close-button behaviour; the setup page can change it without a restart.
+pub static CLOSE_TO_TRAY: AtomicBool = AtomicBool::new(true);
+
+/// Add/remove the current exe from the per-user Windows startup entry.
+pub fn apply_start_with_windows(enabled: bool) {
+    let exe = match std::env::current_exe() {
+        Ok(p) => p,
+        Err(_) => return,
+    };
+    let key = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
+    let mut cmd = std::process::Command::new("reg.exe");
+    if enabled {
+        cmd.args(["add", key, "/v", "LocalMonoDonate", "/t", "REG_SZ",
+            "/d", &format!("\"{}\"", exe.display()), "/f"]);
+    } else {
+        cmd.args(["delete", key, "/v", "LocalMonoDonate", "/f"]);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    match cmd.output() {
+        Ok(o) if enabled && !o.status.success() => log(&format!("startup: reg add failed: {}", String::from_utf8_lossy(&o.stderr).trim())),
+        Err(e) if enabled => log(&format!("startup: reg add failed: {}", e)),
+        _ => {}
     }
 }
 

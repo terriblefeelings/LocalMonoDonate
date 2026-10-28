@@ -21,6 +21,19 @@
   .updateStack{display:none}
   .updateStack.show{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
   .port-note{background:#F3C969;border:0;cursor:pointer;font-family:inherit;max-width:420px;text-align:center;line-height:1.35}
+  .appToggles{display:flex;flex-direction:column;gap:18px}
+  .appToggles .setitem{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+  .appToggles .setlabel{font-size:13.5px;font-weight:600;color:var(--fg)}
+  .appToggles .note{margin:0;max-width:560px}
+  .up-to-date{display:none;margin-top:8px;font-size:12.5px;line-height:1.45;color:#7dffb0}
+  .up-to-date.show{display:block}
+  .up-to-date.err{color:#ff6b6b}
+  .update-modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.55)}
+  .update-modal.show{display:flex}
+  .update-card{width:100%;max-width:380px;padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 18px 50px rgba(0,0,0,.45)}
+  .update-card h3{margin:0 0 8px;font-size:17px}
+  .update-card p{margin:0 0 18px;font-size:13.5px;line-height:1.5;color:var(--muted)}
+  .update-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -47,7 +60,30 @@
       </div></div>
       <div class="row" style="align-items:flex-start"><label data-i18n="ports">Ports</label><div class="ctl">
         <div id="portsBox" style="display:flex;flex-direction:column;gap:6px"></div>
-        <div class="note" data-i18n="portsNote">Ports for the local app links. The defaults — 48973 (app), 48974 (auction) and 48975 (public/Tailscale) — are high ports that other programs rarely use. Change one only if another app is already using it: choose 1024–49151, keep all three different, and leave 8787 for Twitch. Press Apply ports; the app restarts and updates its links.</div>
+        <div class="note" data-i18n="portsNote">Ports for the local app links. The defaults - 48973 (app), 48974 (auction) and 48975 (public/Tailscale) - are high ports that other programs rarely use. Change one only if another app is already using it: choose 1024-49151, keep all three different, and leave 8787 for Twitch. Press Apply ports; the app restarts and updates its links.</div>
+      </div></div>
+      <div class="row" style="align-items:flex-start"><label data-i18n="appBehavior">Application</label><div class="ctl">
+        <div class="appToggles">
+          <div class="setitem">
+            <div class="setlabel" data-i18n="autoUpdate">Auto-update</div>
+            <span class="togglewrap"><button class="togglebtn on" id="autoUpdate" type="button" aria-pressed="true">Enabled</button></span>
+            <div class="note" data-i18n="autoUpdateNote">Downloads and installs a new version when the app starts. The app restarts by itself.</div>
+          </div>
+          <div class="setitem">
+            <div class="setlabel" data-i18n="startWithWindows">Start with Windows</div>
+            <span class="togglewrap"><button class="togglebtn" id="startWithWindows" type="button" aria-pressed="false">Disabled</button></span>
+            <div class="note" data-i18n="startWithWindowsNote">Opens the app automatically after you sign in to Windows.</div>
+          </div>
+          <div class="setitem">
+            <div class="setlabel" data-i18n="closeToTray">Minimize instead of closing</div>
+            <span class="togglewrap"><button class="togglebtn on" id="closeToTray" type="button" aria-pressed="true">Enabled</button></span>
+            <div class="note" data-i18n="closeToTrayNote">The X button hides the window to the tray. To quit completely, use Exit in the tray menu.</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="row" style="align-items:flex-start"><label data-i18n="updates">Updates</label><div class="ctl">
+        <button class="btn" id="checkUpdate" type="button" data-i18n="checkUpdate">Check update</button>
+        <div class="up-to-date" id="updateMsg" role="status" aria-live="polite"></div>
       </div></div>
     </div>
   </div>
@@ -127,6 +163,17 @@
   </div>
 </div>
 
+<div class="update-modal" id="updateModal">
+  <div class="update-card" role="dialog" aria-modal="true" aria-labelledby="updateTitle">
+    <h3 id="updateTitle" data-i18n="updateAvailable">Update available</h3>
+    <p id="updateText"></p>
+    <div class="update-actions">
+      <button class="btn" id="updateCancel" type="button" data-i18n="cancelUpdate">Cancel update</button>
+      <button class="primary" id="updateGo" type="button" data-i18n="updateDo">Update</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="bgfile" accept="image/*" style="display:none">
 <input type="file" id="bitsbgfile" accept="image/*" style="display:none">
 <div id="ratbox"><button class="x" id="ratx">✕</button><video id="ratvid" playsinline controls></video></div>
@@ -165,7 +212,16 @@ Object.assign(window.I18N.en, {
   mediaNote: 'OBS Browser Source size: 640×360. Media links: YouTube, Instagram, TikTok, Twitch, Reddit and X.',
   bitsOverlayNote: 'OBS Browser Source size: 750×500. Sound Alerts playback overlay; videos use the full source height.',
   portNote: 'OVERLAY PORTS HAVE BEEN UPDATED — CHANGE YOUR LINKS IN OBS',
-  updateNow: 'UPDATE', updating: 'Downloading update…', restarting: 'Restarting…', updateFailed: 'Update failed. Try the release page.'
+  appBehavior: 'Application', autoUpdate: 'Auto-update', startWithWindows: 'Start with Windows', closeToTray: 'Minimize instead of closing',
+  toggleOn: 'Enabled', toggleOff: 'Disabled',
+  autoUpdateNote: 'Downloads and installs a new version when the app starts. The app restarts by itself.',
+  startWithWindowsNote: 'Opens the app automatically after you sign in to Windows.',
+  closeToTrayNote: 'The X button hides the window to the tray. To quit completely, use Exit in the tray menu.',
+  updates: 'Updates', checkUpdate: 'Check update', checking: 'Checking…',
+  upToDate: 'Your application is up to date, current version {v}.',
+  updateAvailable: 'Update available', updateText: 'Version {latest} is available. You have {current}.',
+  cancelUpdate: 'Cancel update', updateDo: 'Update', checkFailed: 'Could not check for updates. Check your connection.',
+  updating: 'Downloading update…', restarting: 'Restarting…', updateFailed: 'Update failed. Try the release page.'
 });
 Object.assign(window.I18N.ua, {
   kDonate: 'Сторінка донатів', kOverlay: 'Оверлей', kYouTube: 'Медіа', kStats: 'Статистика',
@@ -175,7 +231,16 @@ Object.assign(window.I18N.ua, {
   mediaNote: 'Розмір OBS Browser Source: 640×360. Медіапосилання: YouTube, Instagram, TikTok, Twitch, Reddit і X.',
   bitsOverlayNote: 'Розмір OBS Browser Source: 750×500. Оверлей відтворення звукових сповіщень; відео займає всю висоту джерела.',
   portNote: 'ПОРТИ ОВЕРЛЕЇВ ОНОВЛЕНО — ЗМІНІТЬ ПОСИЛАННЯ В OBS',
-  updateNow: 'ОНОВИТИ', updating: 'Завантаження оновлення…', restarting: 'Перезапуск…', updateFailed: 'Не вдалося оновити. Спробуйте сторінку релізу.'
+  appBehavior: 'Застосунок', autoUpdate: 'Автооновлення', startWithWindows: 'Запускати з Windows', closeToTray: 'Згортати замість закриття',
+  toggleOn: 'Увімкнено', toggleOff: 'Вимкнено',
+  autoUpdateNote: 'Завантажує й встановлює нову версію під час запуску. Застосунок перезапускається сам.',
+  startWithWindowsNote: 'Автоматично відкриває застосунок після входу в Windows.',
+  closeToTrayNote: 'Кнопка «Х» ховає вікно в трей. Щоб вийти повністю, скористайтеся «Вихід» у меню трея.',
+  updates: 'Оновлення', checkUpdate: 'Перевірити оновлення', checking: 'Перевірка…',
+  upToDate: 'Оновлень немає. Поточна версія {v}.',
+  updateAvailable: 'Доступне оновлення', updateText: 'Доступна версія {latest}. У вас {current}.',
+  cancelUpdate: 'Скасувати оновлення', updateDo: 'Оновити', checkFailed: 'Не вдалося перевірити оновлення. Перевірте з’єднання.',
+  updating: 'Завантаження оновлення…', restarting: 'Перезапуск…', updateFailed: 'Не вдалося оновити. Спробуйте сторінку релізу.'
 });
 const $ = id => document.getElementById(id);
 function setStatus(m, err) { const s = $('status'); if (!s) return; s.className = 'status' + (err ? ' err' : ' ok'); s.textContent = m; }
@@ -338,6 +403,9 @@ async function load() { let c; try { c = await (await fetch('/api/config')).json
   TS = c.tailscale || {};
   $('jars').innerHTML = ''; { const js = (c.jars && c.jars.length ? c.jars : ['']); const jn = c.jarNames || []; const jm = c.jarMine || []; js.forEach((j, i) => addJarRow(j, jn[i], jm[i], i === 0)); }
   QR_COUNT = (c.qrWidgets && c.qrWidgets.length) || 1;
+  setAppToggle('autoUpdate', c.autoUpdate !== false);
+  setAppToggle('startWithWindows', c.startWithWindows === true);
+  setAppToggle('closeToTray', c.closeToTray !== false);
   applyFeatures(c.features || {}); refreshLive(); }
 function applyFeatures(f) {
   document.querySelectorAll('[data-feat]').forEach(cb => {
@@ -362,33 +430,72 @@ $('rfstats').onclick = async () => { if (!confirm('Generate a new stats link cod
     if (d.ok) { TOK = d.statsToken; refreshLive(); $('status').className = 'status ok'; $('status').textContent = 'new stats code: ' + TOK; }
     else { $('status').className = 'status err'; $('status').textContent = 'refresh failed'; }
   } catch { $('status').className = 'status err'; $('status').textContent = 'refresh failed'; } };
-async function loadUpdate() {
+async function loadPortNote() {
   try {
     const u = await (await fetch('/api/update')).json();
-    if (u && u.checking) { setTimeout(loadUpdate, 5000); return; }
-    if (u && u.available && u.url) {
-      const b = document.getElementById('updateBtn');
-      if (!b || !b.isConnected) { setTimeout(loadUpdate, 300); return; }
-      const label = window.t('updateNow') + ' ' + (u.latest || '');
-      b.textContent = label; b.disabled = false; b.classList.add('show');
-      b.onclick = async () => {
-        if (!u.asset) { window.open(u.url, '_blank', 'noopener'); return; }
-        if (b.disabled) return;
-        b.disabled = true; b.textContent = window.t('updating'); setStatus(window.t('updating'));
-        try {
-          const r = await (await fetch('/api/update/apply', { method: 'POST' })).json();
-          if (!r.ok) throw new Error(r.error || window.t('updateFailed'));
-          b.textContent = window.t('restarting'); setStatus(window.t('restarting'));
-        } catch (e) {
-          b.disabled = false; b.textContent = label;
-          setStatus(e.message || window.t('updateFailed'), true);
-        }
-      };
+    if (u && u.checking) { setTimeout(loadPortNote, 5000); return; }
+    if (u && u.available) {
       const n = document.getElementById('portNote');
       if (n) { n.textContent = window.t('portNote'); n.parentElement.classList.add('show'); }
     }
   } catch {}
 }
+let UPDATE_INFO = null;
+function setUpdateMsg(text, err) {
+  const m = $('updateMsg'); if (!m) return;
+  m.textContent = text || '';
+  m.className = 'up-to-date' + (text ? ' show' : '') + (err ? ' err' : '');
+}
+function appToggleState(id) { const b = $(id); return !!(b && b.classList.contains('on')); }
+function setAppToggle(id, on) {
+  const b = $(id); if (!b) return;
+  b.classList.toggle('on', !!on);
+  b.setAttribute('aria-pressed', String(!!on));
+  b.textContent = window.t(on ? 'toggleOn' : 'toggleOff');
+}
+function saveAppToggles() {
+  const body = { autoUpdate: appToggleState('autoUpdate'), startWithWindows: appToggleState('startWithWindows'), closeToTray: appToggleState('closeToTray') };
+  fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
+}
+['autoUpdate', 'startWithWindows', 'closeToTray'].forEach(id => { const el = $(id); if (el) el.onclick = () => { setAppToggle(id, !appToggleState(id)); saveAppToggles(); }; });
+window.applyLang = () => ['autoUpdate', 'startWithWindows', 'closeToTray'].forEach(id => setAppToggle(id, appToggleState(id)));
+$('checkUpdate').onclick = async () => {
+  const b = $('checkUpdate');
+  if (b.disabled) return;
+  const label = b.textContent;
+  b.disabled = true; b.textContent = window.t('checking'); setUpdateMsg('');
+  try {
+    const u = await (await fetch('/api/update/check', { method: 'POST' })).json();
+    UPDATE_INFO = u;
+    if (u && u.available && u.url) {
+      $('updateText').textContent = window.t('updateText').replace('{latest}', u.latest || '').replace('{current}', u.current || '');
+      $('updateModal').classList.add('show');
+      $('updateGo').focus();
+    } else if (u && u.error) {
+      setUpdateMsg(window.t('checkFailed'), true);
+    } else {
+      setUpdateMsg(window.t('upToDate').replace('{v}', (u && u.current) || ''));
+    }
+  } catch { setUpdateMsg(window.t('checkFailed'), true); }
+  b.disabled = false; b.textContent = label;
+};
+$('updateGo').onclick = async () => {
+  const u = UPDATE_INFO;
+  if (!u || !u.url) return;
+  $('updateModal').classList.remove('show');
+  // auto-update off (or no standalone exe): the release page is the fallback
+  if (!appToggleState('autoUpdate') || !u.asset) { window.open(u.url, '_blank', 'noopener'); return; }
+  const b = $('checkUpdate');
+  b.disabled = true; b.textContent = window.t('updating'); setUpdateMsg(window.t('updating'));
+  try {
+    const r = await (await fetch('/api/update/apply', { method: 'POST' })).json();
+    if (!r.ok) throw new Error(r.error || window.t('updateFailed'));
+    b.textContent = window.t('restarting'); setUpdateMsg(window.t('restarting'));
+  } catch (e) { b.disabled = false; b.textContent = window.t('checkUpdate'); setUpdateMsg(e.message || window.t('updateFailed'), true); }
+};
+$('updateCancel').onclick = () => $('updateModal').classList.remove('show');
+$('updateModal').onclick = e => { if (e.target.id === 'updateModal') $('updateModal').classList.remove('show'); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('updateModal').classList.remove('show'); });
 document.addEventListener('DOMContentLoaded', () => { const n = document.getElementById('portNote');
   if (n) n.onclick = () => { const l = document.getElementById('links'); if (l) l.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
 window.savePage = async () => { const sb = $('save'); if (sb) sb.disabled = true; $('status').className = 'status'; $('status').textContent = 'saving…';
@@ -468,7 +575,7 @@ async function tsConnect() {
       .then(d => { if (d && d.ok) setTimeout(loadTs, 1200); }).catch(() => {});
   }); }
 load();
-loadUpdate();
+loadPortNote();
 loadTs();
 loadTwitch();
 loadSE();

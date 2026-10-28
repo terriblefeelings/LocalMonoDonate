@@ -57,27 +57,78 @@ fn release_update_info(j: &serde_json::Value, current: &str) -> serde_json::Valu
             "available": version_gt(&tag, current), "url": url, "name": name, "asset": asset })
 }
 
+fn fetch_update_info() -> serde_json::Value {
+    let current = env!("CARGO_PKG_VERSION");
+    // Staging/test override; production uses the public release feed.
+    let api = std::env::var("LMD_UPDATE_API").unwrap_or_else(|_|
+        "https://api.github.com/repos/terriblefeelings/LocalMonoDonate/releases/latest".to_string());
+    match ureq::get(&api)
+        .set("User-Agent", "LocalMonoDonate")
+        .set("Accept", "application/vnd.github+json")
+        .timeout(Duration::from_secs(10))
+        .call()
+    {
+        Ok(r) => match r.into_string().ok().and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok()) {
+            Some(j) => release_update_info(&j, current),
+            None => json!({ "checking": false, "available": false, "current": current, "error": "invalid GitHub response" }),
+        },
+        Err(e) => json!({ "checking": false, "available": false, "current": current, "error": e.to_string() }),
+    }
+}
+
+/// One automatic attempt per release per hour. Without this, a failed
+/// self-replace (e.g. a read-only folder) would restart-loop on every launch.
+fn auto_attempt_allowed(latest: &str) -> bool {
+    let path = std::env::temp_dir().join("LocalMonoDonate-update-attempt");
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    if let Ok(s) = std::fs::read_to_string(&path) {
+        let mut it = s.split_whitespace();
+        if it.next() == Some(latest) {
+            if let Some(t) = it.next().and_then(|x| x.parse::<u64>().ok()) {
+                if now.saturating_sub(t) < 3600 { return false; }
+            }
+        }
+    }
+    let _ = std::fs::write(&path, format!("{latest} {now}"));
+    true
+}
+
 /// Background GitHub release check; /api/update serves the cached result.
-pub fn start_update_check() {
-    std::thread::spawn(|| {
-        let current = env!("CARGO_PKG_VERSION");
-        // Staging/test override; production uses the public release feed.
-        let api = std::env::var("LMD_UPDATE_API").unwrap_or_else(|_|
-            "https://api.github.com/repos/terriblefeelings/LocalMonoDonate/releases/latest".to_string());
-        let val = match ureq::get(&api)
-            .set("User-Agent", "LocalMonoDonate")
-            .set("Accept", "application/vnd.github+json")
-            .timeout(Duration::from_secs(10))
-            .call()
-        {
-            Ok(r) => match r.into_string().ok().and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok()) {
-                Some(j) => release_update_info(&j, current),
-                None => json!({ "checking": false, "available": false, "current": current, "error": "invalid GitHub response" }),
+/// With `auto` the newer standalone exe is installed and the app restarts.
+pub fn start_update_check(auto: bool) {
+    std::thread::spawn(move || {
+        let val = fetch_update_info();
+        *update_info().lock().unwrap() = val.clone();
+        if !auto || val.get("available").and_then(|x| x.as_bool()) != Some(true) { return; }
+        let asset = match val.get("asset").filter(|x| !x.is_null()) { Some(a) => a.clone(), None => return };
+        let tag = val.get("latest").and_then(|x| x.as_str()).unwrap_or("").to_string();
+        if !auto_attempt_allowed(&tag) {
+            log(&format!("update: {tag} was already attempted in the last hour, staying on this version"));
+            return;
+        }
+        match download_update(&asset) {
+            Ok(exe) => match spawn_update_helper(&exe) {
+                Ok(()) => {
+                    log(&format!("update: installing {tag}; restarting"));
+                    std::thread::sleep(Duration::from_millis(300));
+                    std::process::exit(0);
+                }
+                Err(e) => {
+                    let _ = std::fs::remove_file(&exe);
+                    log(&format!("update: could not start the updater: {e}"));
+                }
             },
-            Err(e) => json!({ "checking": false, "available": false, "current": current, "error": e.to_string() }),
-        };
-        *update_info().lock().unwrap() = val;
+            Err(e) => log(&format!("update: download failed: {e}")),
+        }
     });
+}
+
+/// Fresh check for the manual button; unlike /api/update it never returns "checking".
+fn update_check(request: tiny_http::Request) {
+    let val = fetch_update_info();
+    *update_info().lock().unwrap() = val.clone();
+    let _ = request.respond(json_resp(200, val));
 }
 
 /// Quote a value for a single-quoted PowerShell string.
@@ -1562,6 +1613,7 @@ fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
         "tailscale": ts,
         "token": cfg.token, "bg": cfg.bg, "bitsBg": cfg.bits_bg, "bitsPageBg": cfg.bits_page_bg, "bitsGrid": cfg.bits_grid, "jars": cfg.jars, "jarNames": cfg.jar_names, "jarMine": cfg.jar_mine, "maxJars": MAX_JARS, "widgetJar": cfg.widget_jar,
         "qrWidgets": cfg.qr_widgets, "qrAlign": cfg.qr_align, "qrSize": cfg.qr_size, "qrLinks": qr_links,
+        "autoUpdate": cfg.auto_update, "startWithWindows": cfg.start_with_windows, "closeToTray": cfg.close_to_tray,
         "features": cfg.features,
         "links": { "donate": donate, "stats": stats, "overlay": overlay, "qr": qr_link(&cfg), "bitsPage": bits_page, "bitsOverlay": bits_overlay, "youtube": youtube_link(&cfg) }
     });
@@ -1639,6 +1691,9 @@ fn config_post(ctx: &Ctx, mut request: tiny_http::Request) {
     }
     if let Some(s) = v.get("qrAlign").and_then(|x| x.as_str()) { cfg.qr_align = normalize_qr_align(s); }
     if let Some(n) = v.get("qrSize").and_then(|x| x.as_u64()) { cfg.qr_size = (n as u32).min(200); }
+    if let Some(b) = v.get("autoUpdate").and_then(|x| x.as_bool()) { cfg.auto_update = b; }
+    if let Some(b) = v.get("startWithWindows").and_then(|x| x.as_bool()) { cfg.start_with_windows = b; }
+    if let Some(b) = v.get("closeToTray").and_then(|x| x.as_bool()) { cfg.close_to_tray = b; }
     if let Some(s) = v.get("publicBase").and_then(|x| x.as_str()) {
         let s = s.trim().trim_end_matches('/');
         // accept a bare host ("ratcorporation.us.kg") or a full URL
@@ -1649,6 +1704,8 @@ fn config_post(ctx: &Ctx, mut request: tiny_http::Request) {
 
     save_config(&ctx.paths, &cfg);
     *ctx.cfg.lock().unwrap() = cfg.clone();
+    CLOSE_TO_TRAY.store(cfg.close_to_tray, Ordering::Relaxed);
+    apply_start_with_windows(cfg.start_with_windows);
     ctx.sync_jars();
     {
         let mut st = ctx.state.lock().unwrap();
@@ -2276,6 +2333,11 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         } else {
             let _ = request.respond(json_resp(405, json!({ "ok": false })));
         }
+        return;
+    }
+    if path == "/api/update/check" {
+        if method == Method::Post { update_check(request); }
+        else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
         return;
     }
     if path == "/api/update/apply" {

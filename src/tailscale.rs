@@ -288,12 +288,39 @@ pub fn running() -> bool {
     status().get("running").and_then(|x| x.as_bool()).unwrap_or(false)
 }
 
+/// Start the Tailscale Windows service when the app was opened before it.
+/// Best effort: `sc` may need elevation, so the caller re-checks `running()`.
+pub fn start() -> bool {
+    if running() { return true; }
+    log("tailscale: not connected, starting the service");
+    let mut c = Command::new("sc.exe");
+    c.args(["start", "Tailscale"]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        c.creation_flags(0x0800_0000);
+    }
+    match c.output() {
+        Ok(o) if !o.status.success() => {
+            let e = String::from_utf8_lossy(&o.stdout);
+            log(&format!("tailscale: service start returned {}: {}", o.status, e.trim()));
+        }
+        Err(e) => log(&format!("tailscale: service start failed: {}", e)),
+        _ => {}
+    }
+    for _ in 0..20 {
+        if running() { log("tailscale: connected"); return true; }
+        std::thread::sleep(Duration::from_millis(500));
+    }
+    false
+}
+
 /// keep Funnel pointed at the public port.
 /// Node name is forced to [HOSTNAME]; stale rules (e.g. an old browser-debug port that
 /// answers "Host header is specified and is not an IP address or localhost") are dropped
 /// by resetting before publishing.
 pub fn ensure(port: u16) {
-    if !running() { return; }
+    if !running() && !start() { return; }
     let dns = dns_name().to_ascii_lowercase();
     if !dns.starts_with(&format!("{}.", HOSTNAME)) {
         set_hostname(HOSTNAME);

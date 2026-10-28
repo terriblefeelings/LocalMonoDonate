@@ -131,6 +131,8 @@ fn main() {
     init_logging(&base);
     let mut cfg = load_config(&base);
     let headless = std::env::args().any(|a| a == "--headless");
+    CLOSE_TO_TRAY.store(cfg.close_to_tray, std::sync::atomic::Ordering::Relaxed);
+    apply_start_with_windows(cfg.start_with_windows);
 
     // Fixed, uncommon ports per listener. 8787 stays reserved for the Twitch
     // callback. Legacy defaults migrate once; a busy port is never replaced,
@@ -190,8 +192,9 @@ fn main() {
     if auc_port > 0 && auc_port != main_port {
         let c = ctx.clone(); std::thread::spawn(move || twitch::run(c, auc_port, true));
     }
-    if !headless && std::env::var_os("LMD_NO_UPDATE").is_none() { web::start_update_check(); }
+    if !headless && std::env::var_os("LMD_NO_UPDATE").is_none() { web::start_update_check(ctx.cfg().auto_update); }
     { let c = ctx.clone(); std::thread::spawn(move || web::serve(c)); }
+    { let c = ctx.cfg(); std::thread::spawn(move || startup_health(&c)); }
     if main_port != crate::twitch::OAUTH_PORT {
         std::thread::spawn(move || serve_oauth_shim(main_port));
     }
@@ -220,6 +223,57 @@ fn open_external(url: &str) {
     let op: Vec<u16> = "open\0".encode_utf16().collect();
     let file: Vec<u16> = url.encode_utf16().chain(std::iter::once(0)).collect();
     unsafe { ShellExecuteW(std::ptr::null_mut(), op.as_ptr(), file.as_ptr(), std::ptr::null(), std::ptr::null(), 1); }
+}
+
+/// One-shot self-check on every launch: ports answer, Tailscale is connected
+/// with our node name and funnel, and the TTS engine folder is present.
+fn startup_health(cfg: &Config) {
+    use std::net::{SocketAddr, TcpStream};
+    use std::path::Path;
+
+    // give the listeners and the Tailscale startup thread a moment
+    std::thread::sleep(std::time::Duration::from_secs(3));
+    log("health: startup check");
+    for (port, what) in [(cfg.port, "app"), (cfg.auction_port, "auction"), (cfg.public_port, "public")] {
+        if port == 0 { continue; }
+        let addr = SocketAddr::from(([127, 0, 0, 1], port));
+        match TcpStream::connect_timeout(&addr, std::time::Duration::from_secs(3)) {
+            Ok(_) => log(&format!("health: {what} port {port} is listening")),
+            Err(e) => log(&format!("health: {what} port {port} is NOT listening: {e}")),
+        }
+    }
+    if std::env::var_os("LMD_NO_TAILSCALE").is_none() && cfg.public_port > 0 {
+        if !tailscale::installed() {
+            log("health: Tailscale is not installed; the public link stays local-only");
+        } else {
+            if !tailscale::running() { tailscale::start(); }
+            let st = tailscale::status();
+            let running = st.get("running").and_then(|x| x.as_bool()) == Some(true);
+            let dns = st.get("dnsName").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            if running {
+                log(&format!("health: Tailscale is connected as {dns}"));
+                if !dns.to_ascii_lowercase().starts_with(&format!("{}.", tailscale::HOSTNAME)) {
+                    log("health: node name differs from the expected one; repairing");
+                }
+                if !tailscale::funnel_ok(cfg.public_port) {
+                    log("health: funnel is not attached to the public port; repairing");
+                }
+                // idempotent: returns immediately when the name and funnel are right
+                tailscale::ensure(cfg.public_port);
+                if !dns.is_empty() {
+                    log(&format!("health: public link https://{dns}/"));
+                }
+            } else {
+                log("health: Tailscale is installed but not connected; open Tailscale and sign in");
+            }
+        }
+    }
+    let tts = Path::new(&cfg.tts.dir);
+    if tts.exists() {
+        log(&format!("health: tts engine folder is present ({})", cfg.tts.dir));
+    } else if cfg.tts.enabled() {
+        log(&format!("health: tts engine folder is missing ({}); alerts will use the fallback voice", cfg.tts.dir));
+    }
 }
 
 fn run_window(main_port: u16) -> wry::Result<()> {
@@ -265,7 +319,7 @@ fn run_window(main_port: u16) -> wry::Result<()> {
         *control_flow = ControlFlow::WaitUntil(Instant::now() + Duration::from_millis(500));
         match event {
             Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
-                if tray_ok { log("tray: hide on close"); tray::hide(&window); } else { log("tray: close exits"); ts_cleanup(); *control_flow = ControlFlow::Exit; }
+                if tray_ok && CLOSE_TO_TRAY.load(Ordering::Relaxed) { log("tray: hide on close"); tray::hide(&window); } else { log("tray: close exits"); ts_cleanup(); *control_flow = ControlFlow::Exit; }
             }
             Event::WindowEvent { event: WindowEvent::Resized(_), .. } => {
                 if tray_ok && window.is_minimized() { log("tray: hide on minimize"); tray::hide(&window); }
