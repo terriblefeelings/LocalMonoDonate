@@ -8,8 +8,8 @@
 #   powershell -File pack.ps1 -WithMsi                 # + offline Tailscale installer
 #
 # Release upload should include both:
-#   dist\MONOBANK-lite-<ver>.zip  (first install and Reinstall, TTS engine included)
-#   dist\LocalMonoDonate.exe      (small in-app auto-update asset)
+#   dist\MONOBANK-lite-<ver>.zip   (first install and Reinstall, TTS engine included)
+#   dist\LMD-Update-<ver>.exe      (self-contained updater for manual and automatic updates)
 #
 # The app downloads the current Tailscale release at install time, so the bundled MSI is
 # only for offline machines and is left out by default (~37 MB saved).
@@ -77,8 +77,32 @@ if ($WithTts) {
 
 Copy-Item (Join-Path $root 'README.md') (Join-Path $app 'README.md')
 
-# Small standalone asset for the in-app updater; the full zip remains the first-install package.
-Copy-Item (Join-Path $app 'LocalMonoDonate.exe') (Join-Path $dist 'LocalMonoDonate.exe') -Force
+# Self-contained updater: the app files (without the big tts-engine) are zipped
+# and appended to LMDUpdate.exe. Doubling the file is idle; one click applies it.
+$upd = Join-Path $root 'build\update-payload'
+Remove-Item $upd -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force $upd | Out-Null
+Get-ChildItem $app -Force | Where-Object { $_.Name -ne 'tts-engine' } | ForEach-Object {
+  Copy-Item $_.FullName -Destination $upd -Recurse -Force
+}
+$ver | Set-Content (Join-Path $upd 'update-version.txt') -Encoding ASCII
+Get-ChildItem $upd -Recurse -File | ForEach-Object { $_.LastWriteTime = Get-Date }
+$payload = Join-Path $env:TEMP "LMD-update-payload-$ver.zip"
+Remove-Item $payload -Force -ErrorAction SilentlyContinue
+Compress-Archive -Path (Join-Path $upd '*') -DestinationPath $payload -CompressionLevel Optimal -Force
+$updater = Join-Path $root 'target\release\LMDUpdate.exe'
+if (-not (Test-Path $updater)) { throw 'LMDUpdate.exe was not built' }
+$out = Join-Path $dist "LMD-Update-$ver.exe"
+$exeBytes = [System.IO.File]::ReadAllBytes($updater)
+$zipBytes = [System.IO.File]::ReadAllBytes($payload)
+$footer = [BitConverter]::GetBytes([int64]$zipBytes.Length) + [System.Text.Encoding]::ASCII.GetBytes('LMDZ')
+$stream = [System.IO.File]::Create($out)
+$stream.Write($exeBytes, 0, $exeBytes.Length)
+$stream.Write($zipBytes, 0, $zipBytes.Length)
+$stream.Write($footer, 0, $footer.Length)
+$stream.Dispose()
+Remove-Item $upd -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item $payload -Force -ErrorAction SilentlyContinue
 
 # zip can not store pre-1980 timestamps (WebView2Loader.dll ships with one)
 Get-ChildItem $app -Recurse -File | ForEach-Object { $_.LastWriteTime = Get-Date }
