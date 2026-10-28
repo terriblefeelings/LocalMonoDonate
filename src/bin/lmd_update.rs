@@ -25,6 +25,10 @@ use windows_sys::Win32::System::Threading::{
     PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE,
 };
 #[cfg(windows)]
+use windows_sys::Win32::UI::Controls::Dialogs::{
+    GetOpenFileNameW, OPENFILENAMEW, OFN_FILEMUSTEXIST, OFN_NOCHANGEDIR, OFN_PATHMUSTEXIST,
+};
+#[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     MessageBoxW, IDYES, MB_ICONERROR, MB_ICONQUESTION, MB_OK, MB_YESNO,
 };
@@ -105,6 +109,113 @@ fn terminate(pid: u32) {
             WaitForSingleObject(h, 5000);
             CloseHandle(h);
         }
+    }
+}
+
+/// Exe path stored in the per-user Run key (set by "Start with Windows").
+#[cfg(windows)]
+fn run_entry() -> Option<PathBuf> {
+    let mut cmd = Command::new("reg.exe");
+    cmd.args([
+        "query",
+        r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
+        "/v",
+        "LocalMonoDonate",
+    ])
+    .stdout(std::process::Stdio::piped())
+    .stderr(std::process::Stdio::null());
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    let out = cmd.output().ok()?;
+    let text = String::from_utf8_lossy(&out.stdout);
+    let line = text.lines().find(|l| l.contains("REG_SZ"))?;
+    let value = line.split("REG_SZ").nth(1)?.trim().trim_matches('"');
+    let path = PathBuf::from(value);
+    if path.exists() { Some(path) } else { None }
+}
+
+/// Bounded search for LocalMonoDonate.exe in the usual portable locations.
+#[cfg(windows)]
+fn search_dir(dir: &std::path::Path, depth: u32) -> Option<PathBuf> {
+    if depth == 0 || !dir.is_dir() { return None; }
+    let mut subdirs = Vec::new();
+    for entry in std::fs::read_dir(dir).ok()?.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if path.is_file() {
+            if name.eq_ignore_ascii_case("LocalMonoDonate.exe") { return Some(path); }
+        } else if path.is_dir() {
+            let lower = name.to_ascii_lowercase();
+            if matches!(lower.as_str(), "node_modules" | "target" | "venv2" | ".git" | "windowsapps") {
+                continue;
+            }
+            subdirs.push(path);
+        }
+    }
+    for sub in subdirs {
+        if let Some(found) = search_dir(&sub, depth - 1) { return Some(found); }
+    }
+    None
+}
+
+#[cfg(windows)]
+fn find_on_disk() -> Option<PathBuf> {
+    if let Some(path) = run_entry() { return Some(path); }
+    let mut roots = Vec::new();
+    if let Ok(p) = std::env::var("LOCALAPPDATA") {
+        roots.push(PathBuf::from(p).join("Programs"));
+    }
+    if let Ok(p) = std::env::var("USERPROFILE") {
+        let home = PathBuf::from(p);
+        roots.push(home.join("Desktop"));
+        roots.push(home.join("Downloads"));
+        roots.push(home.join("Documents"));
+    }
+    for var in ["ProgramFiles", "ProgramFiles(x86)"] {
+        if let Ok(p) = std::env::var(var) {
+            let root = PathBuf::from(p);
+            // Program Files is huge: only descend into plausible app folders.
+            if let Ok(rd) = std::fs::read_dir(&root) {
+                for entry in rd.flatten() {
+                    let name = entry.file_name().to_string_lossy().to_ascii_lowercase();
+                    if name.contains("mono") || name.contains("donate") || name.contains("lmd") {
+                        roots.push(entry.path());
+                    }
+                }
+            }
+        }
+    }
+    for root in roots {
+        if let Some(found) = search_dir(&root, 3) { return Some(found); }
+    }
+    None
+}
+
+/// Last resort: let the user point at LocalMonoDonate.exe.
+#[cfg(windows)]
+fn pick_file() -> Option<PathBuf> {
+    unsafe {
+        let mut buf = [0u16; 1024];
+        let filter: Vec<u16> = "LocalMonoDonate.exe\0LocalMonoDonate.exe\0All files\0*.*\0\0"
+            .encode_utf16()
+            .collect();
+        let title: Vec<u16> = "Select LocalMonoDonate.exe"
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
+        let mut ofn: OPENFILENAMEW = std::mem::zeroed();
+        ofn.lStructSize = std::mem::size_of::<OPENFILENAMEW>() as u32;
+        ofn.lpstrFilter = filter.as_ptr();
+        ofn.lpstrFile = buf.as_mut_ptr();
+        ofn.nMaxFile = buf.len() as u32;
+        ofn.lpstrTitle = title.as_ptr();
+        ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+        if GetOpenFileNameW(&mut ofn) == 0 { return None; }
+        let len = buf.iter().position(|&c| c == 0).unwrap_or(0);
+        let path = PathBuf::from(String::from_utf16_lossy(&buf[..len]));
+        if path.exists() { Some(path) } else { None }
     }
 }
 
@@ -191,8 +302,10 @@ fn main() {
         (pid, dir)
     } else if let Some((p, exe)) = find_running() {
         (p, exe.parent().map(|d| d.to_path_buf()).unwrap_or_default())
+    } else if let Some(exe) = find_on_disk().or_else(pick_file) {
+        (0, exe.parent().map(|d| d.to_path_buf()).unwrap_or_default())
     } else {
-        message("LocalMonoDonate is not running.\n\nStart it, then run this updater again: the running app tells the updater where it is installed.", MB_ICONERROR | MB_OK);
+        message("LocalMonoDonate.exe was not found.\n\nRun the app once, then start this updater again, or pick LocalMonoDonate.exe when asked.", MB_ICONERROR | MB_OK);
         return;
     };
 
@@ -206,8 +319,10 @@ fn main() {
             .and_then(|p| p.file_stem().map(|s| s.to_string_lossy().to_string()))
             .unwrap_or_else(|| "update".into());
         let text = format!(
-            "LocalMonoDonate found:\n{}\n\nApply {}?\n\nThe app will close, its files will be replaced and it will start again.",
-            install.display(), label
+            "LocalMonoDonate found:\n{}\n\nApply {}?\n\n{}",
+            install.display(), label,
+            if pid == 0 { "The app is not running; it will start after the update." }
+            else { "The app will close, its files will be replaced and it will start again." }
         );
         if message(&text, MB_ICONQUESTION | MB_YESNO) != IDYES { return; }
         #[cfg(windows)]
