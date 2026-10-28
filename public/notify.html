@@ -35,13 +35,13 @@
   <div class="nt-workbench">
     <aside class="nt-bank nt-panel" aria-labelledby="cueHeading">
       <header class="nt-panel__head">
-        <div><h2 id="cueHeading"><span class="nt-panel__id" aria-hidden="true">01</span><span data-i18n="cueBank">Cue Bank</span></h2><p data-i18n="cueBankHint">Select a cue to inspect its range and styling.</p><p class="nt-bank__precedence" data-i18n="precedenceNote">First matching rule wins. Later overlapping ranges are ignored.</p></div>
+        <div><h2 id="cueHeading"><span class="nt-panel__id" aria-hidden="true">01</span><span data-i18n="cueBank">Cue Bank</span></h2><p data-i18n="cueBankHint">Select a cue to inspect its range and styling.</p></div>
         <span class="nt-bank__count" id="cueCount">1 variation</span>
       </header>
       <div id="rules" class="nt-rule-list" role="list" aria-label="Donation variations"></div>
       <div class="nt-bank__range">
-        <span id="rangeLabel" class="nt-rangebar__label" data-i18n="triggerRange">Amount range</span>
-        <div id="rangeFields" class="nt-bank__range-line">
+        <span class="nt-rangebar__label" data-i18n="triggerRange">Amount range</span>
+        <div class="nt-bank__range-line">
           <label class="nt-rangebar__field" for="rule_min"><span data-i18n="from">from</span><input type="number" id="rule_min" min="10" max="29999" inputmode="numeric"></label>
           <label class="nt-rangebar__field" for="rule_max"><span data-i18n="toInf">to</span><input type="number" id="rule_max" min="10" max="29999" inputmode="numeric"></label>
           <span class="nt-unit" data-i18n="currencyUnit">UAH</span>
@@ -58,7 +58,7 @@
       </header>
       <dl class="nt-readout">
         <div><dt data-i18n="consoleProfile">Editing</dt><dd id="activeCueName">Default (rest)</dd></div>
-        <div><dt data-i18n="triggerRange">Amount range</dt><dd><span id="ruleUnit" class="nt-unit" data-i18n="currencyUnit">UAH</span> <span id="ruleRange">0 +</span></dd></div>
+        <div><dt data-i18n="triggerRange">Amount range</dt><dd><span class="nt-unit" data-i18n="currencyUnit">UAH</span> <span id="ruleRange">0 +</span></dd></div>
         <div><dt data-i18n="previewOnly">Preview</dt><dd><span data-i18n="localOnly">Local only</span></dd></div>
       </dl>
       <div class="nt-monitor__frame">
@@ -104,7 +104,7 @@
         <p class="nt-note nt-span-2" data-i18n="varsHint">%donate% = user name, %money% = amount; both work in either line</p>
 
         <label class="nt-field nt-field--wide" for="msg_font">
-        <span class="nt-field__label" data-i18n="fontMessage">Message font</span>
+        <span class="nt-field__label" data-i18n="font">Font</span>
         <select id="msg_font"></select>
         </label>
         <label class="nt-field" for="msg_size">
@@ -128,7 +128,7 @@
         <input type="range" id="msg_outline_op" min="0" max="1" step="0.01">
         </label>
         <label class="nt-field" for="msg_maxw">
-        <span class="nt-field__label" data-i18n="maxwMessage">Message max width (px)</span>
+        <span class="nt-field__label" data-i18n="maxw">Max width (px)</span>
         <input type="number" id="msg_maxw" min="80" max="2000" inputmode="numeric">
         </label>
         <label class="nt-field" for="msg_maxh">
@@ -136,7 +136,7 @@
         <input type="number" id="msg_maxh" min="24" max="800" inputmode="numeric">
         </label>
         <label class="nt-field" for="red_bg">
-        <span class="nt-field__label" data-i18n="bgcMessage">Message background</span>
+        <span class="nt-field__label" data-i18n="bgc">Background</span>
         <input type="color" id="red_bg">
         </label>
         <label class="nt-field" for="red_bg_opacity">
@@ -152,7 +152,7 @@
         <section class="nt-tabpanel" id="panel-top" role="tabpanel" aria-labelledby="tab-top" hidden>
           <div class="nt-fields">
 <label class="nt-field nt-field--wide" for="blue_font">
-        <span class="nt-field__label" data-i18n="fontTop">Top line font</span>
+        <span class="nt-field__label" data-i18n="font">Font</span>
         <select id="blue_font"></select>
         </label>
         <label class="nt-field" for="blue_size">
@@ -176,11 +176,11 @@
         <input type="range" id="blue_outline_op" min="0" max="1" step="0.01">
         </label>
         <label class="nt-field" for="blue_maxw">
-        <span class="nt-field__label" data-i18n="maxwTop">Top line max width (px)</span>
+        <span class="nt-field__label" data-i18n="maxw">Max width (px)</span>
         <input type="number" id="blue_maxw" min="80" max="2000" inputmode="numeric">
         </label>
         <label class="nt-field" for="blue_bg">
-        <span class="nt-field__label" data-i18n="bgcTop">Top line background</span>
+        <span class="nt-field__label" data-i18n="bgc">Background</span>
         <input type="color" id="blue_bg">
         </label>
         <label class="nt-field" for="blue_bg_opacity">
@@ -205,7 +205,7 @@
         <section class="nt-tabpanel" id="panel-amount" role="tabpanel" aria-labelledby="tab-amount" hidden>
           <div class="nt-fields">
 <label class="nt-field nt-field--wide" for="green_font">
-        <span class="nt-field__label" data-i18n="fontAmount">Amount line font</span>
+        <span class="nt-field__label" data-i18n="font">Font</span>
         <select id="green_font"></select>
         </label>
         <label class="nt-field" for="green_size">
@@ -229,11 +229,11 @@
         <input type="range" id="green_outline_op" min="0" max="1" step="0.01">
         </label>
         <label class="nt-field" for="green_maxw">
-        <span class="nt-field__label" data-i18n="maxwAmount">Amount line max width (px)</span>
+        <span class="nt-field__label" data-i18n="maxw">Max width (px)</span>
         <input type="number" id="green_maxw" min="80" max="2000" inputmode="numeric">
         </label>
         <label class="nt-field" for="green_bg">
-        <span class="nt-field__label" data-i18n="bgcAmount">Amount line background</span>
+        <span class="nt-field__label" data-i18n="bgc">Background</span>
         <input type="color" id="green_bg">
         </label>
         <label class="nt-field" for="green_bg_opacity">
@@ -333,7 +333,7 @@
         <section class="nt-tabpanel" id="panel-frame" role="tabpanel" aria-labelledby="tab-frame" hidden>
           <div class="nt-fields">
 <label class="nt-field" for="win_bg">
-        <span class="nt-field__label" data-i18n="bgcWindow">Window background</span>
+        <span class="nt-field__label" data-i18n="bgc">Background</span>
         <input type="color" id="win_bg">
         </label>
         <label class="nt-field" for="win_bg_opacity">
@@ -349,7 +349,7 @@
         <input type="number" id="win_maxh" min="0" max="2000" inputmode="numeric">
         </label>
         <label class="nt-field nt-field--wide" for="max_width">
-        <span class="nt-field__label" data-i18n="maxwWindow">Window max width (px)</span>
+        <span class="nt-field__label" data-i18n="maxw">Max width (px)</span>
         <input type="number" id="max_width" min="120" max="2000" inputmode="numeric">
         </label>
         <label class="nt-field" for="win_border_color">
@@ -456,8 +456,7 @@
 </main>
 </div>
 
-
-<div id="toast" class="nt-toast" role="status" aria-live="polite" hidden></div>
+<button id="zoomReset" class="nt-zoom-hud" type="button" title="Reset zoom" aria-label="Reset page zoom"><span id="zoomValue">100%</span></button>
 
 <script src="/i18n.js"></script>
 <script src="/head.js"></script>
