@@ -338,3 +338,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .nt-panel__head p,.nt-sectionline__copy p,.nt-bank__precedence{font-size:12px}
 .nt-cue__test{color:var(--muted)}
 .nt-cue__test:hover{color:var(--fg);background:var(--field2)}
+/* restore the original rule-row button visual; keep the new labels */
+.nt-cue{height:30px;min-height:30px;grid-template-columns:minmax(0,1fr) 44px 44px 34px}
+.nt-cue__body{height:30px}
+.nt-cue__test{height:30px;font-size:8px;color:var(--admin-red);background:var(--card2);border:0;border-left:1px solid var(--line);border-radius:0;line-height:1;letter-spacing:.06em}
+.nt-cue__test--yt{font-size:8px;letter-spacing:0}
+.nt-cue__test+.nt-cue__test{border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.nt-cue__test:hover{color:var(--admin-red);background:var(--card2);border-color:var(--line)}
+.nt-cue__test:hover+.nt-cue__test{color:var(--admin-red)}
+.nt-cue__side{grid-template-rows:1fr 1fr;gap:0}
+.nt-cue__toggle{height:auto;min-height:0;font-size:9px}
+.nt-cue__ghost--top,.nt-cue__ghost--bottom{background:var(--fg);border:0;opacity:1}
+.nt-rule__name{font-size:10px}
+.nt-rule__range{font-size:8px}
+.nt-rule__warn{font-size:9px}.nt-cue__ghost--top,.nt-cue__ghost--bottom{background:var(--fg)!important;border:0!important;opacity:1!important}
