@@ -69,7 +69,7 @@ Object.assign(DICT.en, {
   testShort:'Test', poolShort:'pool', addedToPool:'Added to pool', poolLabel:'Add to pool', poolRemove:'Remove from pool',
   testVariation:'Test this variation', deleteVariation:'Delete variation', selectVariation:'Select variation',
   outputLabel:'Output Monitor', monitorTitle:'Alert Preview', previewOnly:'Preview', previewLocal:'Local preview only — nothing is broadcast.',
-  previewDrag:'Scroll to zoom; drag to pan; double-click to center.', hoverZoomNote:'Scroll over the preview to change media zoom. Drag to pan; double-click to recenter.',
+  previewDrag:'Ctrl+scroll to zoom; drag to pan; double-click to center.', hoverZoomNote:'Ctrl+scroll over the preview to change media zoom. Drag to pan; double-click to recenter.',
   parameterConsole:'Parameter Console', settingsHint:'Tune the voice, motion, text, media, and frame.', settingsHintRight:'Applies to the selected cue',
   signalCopyType:'Copy and type', signalTop:'Top line', signalAmount:'Amount line', signalVoice:'Voice', signalTiming:'Timing and motion',
   signalFrame:'Output frame', signalMedia:'Media channel', signalData:'Configuration data',
@@ -106,7 +106,7 @@ Object.assign(DICT.ua, {
   testShort:'ТЕСТ', poolShort:'пул', addedToPool:'Додано до пулу', poolLabel:'Додати до пулу', poolRemove:'Прибрати з пулу',
   testVariation:'Перевірити цей варіант', deleteVariation:'Видалити варіант', selectVariation:'Вибрати варіант',
   outputLabel:'Монітор виводу', monitorTitle:'Перегляд алерта', previewOnly:'Прев’ю', previewLocal:'Лише локальний перегляд — нічого не транслюється.',
-  previewDrag:'Прокрутіть, щоб наблизити; перетягніть, щоб змістити; двічі клацніть, щоб центрувати.', hoverZoomNote:'Прокрутіть над переглядом, щоб змінити масштаб медіа. Перетягніть, щоб змістити; двічі клацніть, щоб центрувати.',
+  previewDrag:'Ctrl+прокрутка — масштаб; перетягніть — зсув; двічі клацніть — центр.', hoverZoomNote:'Ctrl+прокрутка над переглядом змінює масштаб медіа. Перетягніть, щоб змістити; двічі клацніть, щоб центрувати.',
   parameterConsole:'Параметри', settingsHint:'Налаштуйте голос, рух, текст, медіа та рамку.', settingsHintRight:'Застосовується до вибраного алерта',
   signalCopyType:'Текст і шрифт', signalTop:'Верхній рядок', signalAmount:'Рядок суми', signalVoice:'Голос', signalTiming:'Час і рух',
   signalFrame:'Рамка алерта', signalMedia:'Медіа', signalData:'Дані',
@@ -132,6 +132,48 @@ Object.assign(DICT.ua, {
   exportNote:'Завантажити поточний набір алертів у JSON.', importNote:'Завантажити набір алертів із JSON-файлу.', resetNote:'Скинути вибраний алерт до вбудованих значень за замовчуванням.',
   previewNote:'Прокрутіть над переглядом, щоб змінити масштаб; перетягніть, щоб змістити; двічі клацніть, щоб центрувати.'
 });
+Object.assign(DICT.en, {
+  cueBank:'Rules', cueBankHint:'Pick a rule to edit its range and styling.', addRule:'+ Add rule',
+  cueSingular:'rule', cuePlural:'rules', name:'Rule', variation:'Donation rule', variationName:'Rule name',
+  selectVariation:'Select rule', deleteVariation:'Delete rule', testVariation:'Test this rule',
+  testRuleLabel:'Test media', defaultLabel:'Fallback', settingsHintRight:'Applies to the selected rule',
+  bgcMessage:'Message background', bgcTop:'Top line background', bgcAmount:'Amount line background', bgcWindow:'Window background',
+  maxwMessage:'Message max width (px)', maxwTop:'Top line max width (px)', maxwAmount:'Amount line max width (px)', maxwWindow:'Window max width (px)',
+  fontMessage:'Message font', fontTop:'Top line font', fontAmount:'Amount line font', upload:'Upload',
+  fixedCueNote:'Fixed amount — this rule plays only in this range.', poolCueNote:'Pool rule — shares equal chance with the default.',
+  precedenceNote:'First matching rule wins. Later overlapping ranges are ignored.',
+  fallbackRange:'everything else', fallbackNote:'Everything else — used when no earlier rule matches.', testRowNote:'Test-only row; it does not match donations.', notLoaded:'not loaded',
+  loadFailed:'Could not load alerts. Your saved rules are untouched.', retry:'Retry',
+  starterUpdated:'Starter rules updated to 10–99, 100–499 and 500+. Save to keep them.',
+  unsavedConfirm:'Discard unsaved changes?',
+  rangeInvalid:'Invalid range: “from” must not be greater than “to”.',
+  rangeCovered:'This rule is fully covered by an earlier rule and will never fire.',
+  rangeOverlap:'Range overlaps an earlier rule; the earlier rule wins.',
+  testSending:'Sending test…', testSent:'Test alert sent to the overlay', testFailed:'Test failed',
+  deleted:'Rule deleted', undo:'Undo', confirmImport:'Replace all rules with this file?',
+  importFailed:'Import failed: the file is not a valid rule set.', importDone:'Rules imported. Save to keep them.', saved:'Saved'
+});
+Object.assign(DICT.ua, {
+  cueBank:'Правила', cueBankHint:'Виберіть правило, щоб змінити діапазон і стиль.', addRule:'+ Додати правило',
+  cueSingular:'правило', cuePlural:'правил', cueFew:'правила', name:'Правило', variation:'Правило донату', variationName:'Назва правила',
+  selectVariation:'Вибрати правило', deleteVariation:'Видалити правило', testVariation:'Перевірити це правило',
+  testRuleLabel:'Тест медіа', defaultLabel:'Запасне', settingsHintRight:'Застосовується до вибраного правила',
+  bgcMessage:'Фон повідомлення', bgcTop:'Фон верхнього рядка', bgcAmount:'Фон рядка суми', bgcWindow:'Фон вікна',
+  maxwMessage:'Макс. ширина повідомлення (px)', maxwTop:'Макс. ширина верхнього рядка (px)', maxwAmount:'Макс. ширина рядка суми (px)', maxwWindow:'Макс. ширина вікна (px)',
+  fontMessage:'Шрифт повідомлення', fontTop:'Шрифт верхнього рядка', fontAmount:'Шрифт рядка суми', upload:'Завантажити',
+  fixedCueNote:'Фіксована сума — правило діє лише в цьому діапазоні.', poolCueNote:'Спільний пул — рівний шанс із запасним правилом.',
+  precedenceNote:'Спрацьовує перше правило, що збігається. Пізніші перетини ігноруються.',
+  fallbackRange:'усе інше', fallbackNote:'Усе інше — коли жодне попереднє правило не збіглося.', testRowNote:'Тестовий рядок; не бере участі в розподілі донатів.', notLoaded:'не завантажено',
+  loadFailed:'Не вдалося завантажити алерти. Збережені правила не змінено.', retry:'Повторити',
+  starterUpdated:'Стартові правила оновлено: 10–99, 100–499 і 500+. Збережіть, щоб залишити їх.',
+  unsavedConfirm:'Скасувати незбережені зміни?',
+  rangeInvalid:'Некоректний діапазон: «від» не може бути більше за «до».',
+  rangeCovered:'Це правило повністю перекрито попереднім і ніколи не спрацює.',
+  rangeOverlap:'Діапазон перетинається з попереднім правилом; спрацює попереднє.',
+  testSending:'Надсилаємо тест…', testSent:'Тестовий алерт надіслано на оверлей', testFailed:'Тест не вдався',
+  deleted:'Правило видалено', undo:'Скасувати', confirmImport:'Замінити всі правила цим файлом?',
+  importFailed:'Імпорт не вдався: файл не є коректним набором правил.', importDone:'Правила імпортовано. Збережіть, щоб залишити їх.', saved:'Збережено'
+});
 let lang = localStorage.getItem('lm_lang') || 'en';
 const t = k => (DICT[lang] && DICT[lang][k]) || (DICT.en[k] || k);
 function countLabel(n) {
@@ -153,29 +195,131 @@ function applyLang() { lang = localStorage.getItem('lm_lang') || lang; document.
 let rules = [], sel = 0, settingsLoaded = false;
 function newId() { return 'r' + Math.random().toString(36).slice(2, 8); }
 function ensureTestRule() { if (!rules.some(r => r.id === 'test')) rules.push({ id: 'test', label: '', min: 0, max: 0, pool: false, style: {}, test_media_url: '' }); }
-function ensureStarterBank() {
-  if (rules.length !== 1 || rules[0].id !== 'default') return;
-  const starter = Array.from({ length: 7 }, () => ({ id: newId(), label: '', min: 100, max: 100, pool: false, style: {} }));
-  rules = starter.concat(rules);
-  sel = 0;
+let rulesLoaded = false;
+function starterRule(min, max) { return { id: newId(), label: '', min, max, pool: false, style: {} }; }
+function legacyStarter(r) {
+  return r && r.id !== 'default' && r.id !== 'test' && !r.label
+    && Number(r.min) === 100 && Number(r.max) === 100 && !r.pool;
 }
-function renderRules() { const box = $('rules'); box.innerHTML = '';
+function ensureStarterBank() {
+  const plain = rules.filter(r => r.id !== 'default' && r.id !== 'test');
+  const rest = rules.filter(r => r.id === 'default' || r.id === 'test');
+  if (plain.length === 7 && plain.every(legacyStarter)) {
+    rules = [starterRule(10, 99), starterRule(100, 499), starterRule(500, 29999)].concat(rest);
+    sel = 0;
+    return true;
+  }
+  if (rules.length === 1 && rules[0].id === 'default') {
+    rules = [starterRule(10, 99), starterRule(100, 499), starterRule(500, 29999), rules[0]];
+    sel = 0;
+    return true;
+  }
+  return false;
+}
+function rangeIssues() {
+  const out = {};
+  const active = rules.filter(r => r.id !== 'default' && r.id !== 'test');
+  active.forEach((r, i) => {
+    if (r.pool) return;
+    if (Number(r.min) > Number(r.max) && Number(r.max) !== 0) { out[r.id] = 'invalid'; return; }
+    const earlier = active.slice(0, i).filter(p => !p.pool);
+    if (earlier.find(p => p.min <= r.min && (p.max === 0 || p.max >= r.max))) { out[r.id] = 'covered'; return; }
+    if (earlier.find(p => p.max === 0 || p.max >= r.min)) out[r.id] = 'overlap';
+  });
+  return out;
+}
+let toastTimer = null;
+function showToast(text, ms = 2600, action = null, error = false) {
+  const el = $('toast'); if (!el) return;
+  el.innerHTML = '';
+  const label = document.createElement('span'); label.textContent = text; el.append(label);
+  if (action) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = action.label;
+    b.onclick = () => { el.hidden = true; clearTimeout(toastTimer); action.fn(); };
+    el.append(b);
+  }
+  el.classList.toggle('is-error', !!error);
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, ms);
+}
+let dirty = false, allowLeave = false;
+function syncSaveDot() {
+  const save = $('save');
+  if (save) save.classList.toggle('has-dirty', dirty);
+}
+function markDirty() { if (!dirty) { dirty = true; syncSaveDot(); } }
+function markClean() { dirty = false; syncSaveDot(); }
+function syncControls() {
+  const save = $('save'); if (save) save.disabled = !rulesLoaded;
+  const add = $('addrule'); if (add) add.disabled = !rulesLoaded;
+  syncSaveDot();
+}
+document.addEventListener('DOMContentLoaded', syncControls);
+window.addEventListener('beforeunload', e => { if (!dirty || allowLeave) return; e.preventDefault(); e.returnValue = ''; });
+function attachNavGuard() {
+  document.querySelectorAll('#siteHeader a').forEach(a => a.addEventListener('click', e => {
+    if (!dirty) return;
+    if (window.confirm(t('unsavedConfirm'))) allowLeave = true;
+    else { e.preventDefault(); e.stopImmediatePropagation(); }
+  }));
+}
+document.addEventListener('DOMContentLoaded', attachNavGuard);
+document.addEventListener('input', e => {
+  if (!e.target.closest || !e.target.closest('.nt-shell')) return;
+  markDirty();
+  const status = $('status'); if (status) status.textContent = '';
+});
+document.addEventListener('change', e => {
+  if (!e.target.closest || !e.target.closest('.nt-shell')) return;
+  markDirty();
+  const status = $('status'); if (status) status.textContent = '';
+});
+
+function renderLoadError() {
+  const box = $('rules'); if (!box) return;
+  box.innerHTML = '';
+  const card = document.createElement('div');
+  card.className = 'nt-load-error';
+  card.setAttribute('role', 'alert');
+  const p = document.createElement('p'); p.textContent = t('loadFailed');
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'nt-button nt-button--primary'; b.textContent = t('retry');
+  b.onclick = () => { b.disabled = true; loadRules(); };
+  card.append(p, b);
+  box.append(card);
+  const count = $('cueCount'); if (count) count.textContent = t('notLoaded');
+  const add = $('addrule'); if (add) add.disabled = true;
+  const save = $('save'); if (save) save.disabled = true;
+  const min = $('rule_min'), max = $('rule_max');
+  if (min) min.disabled = true; if (max) max.disabled = true;
+  const note = $('rulenote'); if (note) note.textContent = '';
+}
+
+function renderRules() {
+  const box = $('rules'); if (!box) return;
+  if (!rulesLoaded) { renderLoadError(); return; }
+  box.innerHTML = '';
   const count = $('cueCount'); if (count) count.textContent = countLabel(rules.length);
-  const active = rules[sel]; const activeName = $('activeCueName');
+  const active = rules[sel];
   const displayNameOf = (r, i) => r.id === 'default' ? t('defaultLabel') : r.id === 'test' ? t('testRuleLabel') : (r.label || t('name') + ' ' + (i + 1));
+  const activeName = $('activeCueName');
   if (activeName) activeName.textContent = active ? displayNameOf(active, sel) : '—';
   const range = $('ruleRange');
-  if (range) range.textContent = active ? `${active.min || 0} ${active.max > 0 ? '– ' + active.max : '+'}` : '—';
+  if (range) range.textContent = active ? (active.id === 'default' ? t('fallbackRange') : active.max > 0 ? `${active.min || 0}–${active.max} ₴` : `${active.min || 0}+ ₴`) : '—';
+  const unit = $('ruleUnit');
+  if (unit) unit.style.display = active && active.id === 'default' ? 'none' : '';
+  const issues = rangeIssues();
   rules.forEach((r, i) => {
-    const isDef = r.id === 'default';
+    const isDef = r.id === 'default', isTest = r.id === 'test';
     const displayName = displayNameOf(r, i);
+    const issue = issues[r.id];
     const row = document.createElement('div');
-    row.className = 'nt-cue' + (isDef ? ' nt-cue--default' : '');
+    row.className = 'nt-cue' + (isDef ? ' nt-cue--default' : '') + (issue === 'invalid' ? ' is-invalid' : '') + (issue === 'covered' ? ' is-covered' : '');
     row.tabIndex = 0;
     row.dataset.ruleId = r.id;
     row.setAttribute('role', 'listitem');
     row.setAttribute('aria-current', i === sel ? 'true' : 'false');
-    row.setAttribute('aria-label', t('selectVariation') + ': ' + displayName);
+    row.setAttribute('aria-label', t('selectVariation') + ': ' + displayName + (isDef || isTest || r.pool ? '' : `, ${r.min || 0}–${r.max || '∞'} ₴`));
     row.onkeydown = e => { if (e.target !== row || (e.key !== 'Enter' && e.key !== ' ')) return; e.preventDefault(); sel = i; loadStyleToUI(); renderRules(); };
     row.onclick = () => { sel = i; loadStyleToUI(); renderRules(); };
 
@@ -186,69 +330,138 @@ function renderRules() { const box = $('rules'); box.innerHTML = '';
     const nm = document.createElement('span');
     nm.className = 'nt-rule__name';
     nm.textContent = displayName;
+    if (issue && !isDef && !isTest) {
+      const warn = document.createElement('span');
+      warn.className = 'nt-rule__warn'; warn.textContent = '!';
+      warn.title = t(issue === 'invalid' ? 'rangeInvalid' : issue === 'covered' ? 'rangeCovered' : 'rangeOverlap');
+      nm.append(warn);
+    }
     const rng = document.createElement('span');
     rng.className = 'nt-rule__range' + (r.pool ? ' is-pool' : '');
-    rng.textContent = r.pool ? t('addedToPool') : `${r.min || 0} ₴ / ${(r.max > 0 ? r.max + ' ₴' : '∞')}`;
+    if (r.pool) rng.textContent = t('addedToPool');
+    else if (isDef) rng.textContent = t('fallbackRange');
+    else if (isTest) rng.textContent = '';
+    else rng.textContent = `${r.min || 0} ₴ / ${(r.max > 0 ? r.max + ' ₴' : '∞')}`;
     lab.append(nm, rng);
     body.append(lab);
 
     const test = document.createElement('button');
-    test.className = 'nt-cue__test';
-    test.type = 'button';
-    test.textContent = t('testShort');
-    test.title = t('testVariation');
-    test.setAttribute('aria-label', t('testVariation'));
-    test.onclick = (e) => { e.stopPropagation(); testRule(r); };
+    test.className = 'nt-cue__test'; test.type = 'button';
+    test.textContent = t('testShort'); test.title = t('testVariation'); test.setAttribute('aria-label', t('testVariation'));
+    test.onclick = e => { e.stopPropagation(); testRule(r); };
 
-    const isTest = r.id === 'test';
     const second = document.createElement('button');
-    second.className = 'nt-cue__test nt-cue__test--yt';
-    second.type = 'button';
+    second.className = 'nt-cue__test nt-cue__test--yt'; second.type = 'button';
     second.textContent = isTest ? t('testMD') : t('testYT');
     second.title = isTest ? t('testMDTitle') : t('testYTTitle');
     second.setAttribute('aria-label', second.title);
-    second.onclick = (e) => { e.stopPropagation(); testRule(r, isTest ? 'md' : 'yt'); };
+    second.onclick = e => { e.stopPropagation(); testRule(r, isTest ? 'md' : 'yt'); };
 
     row.append(body, test, second);
     if (isDef || isTest) {
-      /* Decorative side stack: it reads as part of the row, but has no actions. */
       const side = document.createElement('div');
       side.className = 'nt-cue__side nt-cue__side--default';
       side.setAttribute('aria-hidden', 'true');
-      const top = document.createElement('span');
-      top.className = 'nt-cue__ghost nt-cue__ghost--top';
-      const bottom = document.createElement('span');
-      bottom.className = 'nt-cue__ghost nt-cue__ghost--bottom';
+      const top = document.createElement('span'); top.className = 'nt-cue__ghost nt-cue__ghost--top';
+      const bottom = document.createElement('span'); bottom.className = 'nt-cue__ghost nt-cue__ghost--bottom';
       side.append(top, bottom);
       row.append(side);
     } else {
       const side = document.createElement('div');
       side.className = 'nt-cue__side';
       const pool = document.createElement('button');
-      pool.className = 'nt-cue__toggle nt-cue__toggle--pool';
-      pool.type = 'button';
+      pool.className = 'nt-cue__toggle nt-cue__toggle--pool'; pool.type = 'button';
       pool.textContent = r.pool ? '✓' : '+';
       pool.title = r.pool ? t('poolRemove') : t('poolLabel');
       pool.setAttribute('aria-label', pool.title);
       pool.setAttribute('aria-pressed', r.pool ? 'true' : 'false');
-      pool.onclick = (e) => { e.stopPropagation(); r.pool = !r.pool; renderRules(); if (sel === i) loadStyleToUI(); };
+      pool.onclick = e => { e.stopPropagation(); r.pool = !r.pool; renderRules(); if (sel === i) loadStyleToUI(); markDirty(); };
       const del = document.createElement('button');
-      del.className = 'nt-cue__toggle nt-cue__toggle--delete';
-      del.type = 'button';
-      del.textContent = '×';
-      del.title = t('deleteVariation');
-      del.setAttribute('aria-label', t('deleteVariation'));
-      del.onclick = (e) => { e.stopPropagation(); rules.splice(i, 1); if (sel >= rules.length) sel = 0; loadStyleToUI(); renderRules(); };
+      del.className = 'nt-cue__toggle nt-cue__toggle--delete'; del.type = 'button';
+      del.textContent = '×'; del.title = t('deleteVariation'); del.setAttribute('aria-label', t('deleteVariation'));
+      del.onclick = e => {
+        e.stopPropagation();
+        const at = rules.indexOf(r); if (at < 0) return;
+        const removed = rules.splice(at, 1)[0];
+        if (sel >= rules.length) sel = Math.max(0, rules.length - 1);
+        loadStyleToUI(); renderRules(); markDirty();
+        showToast(t('deleted'), 6000, {
+          label: t('undo'),
+          fn: () => {
+            rules.splice(Math.min(at, rules.length), 0, removed);
+            sel = Math.min(at, rules.length - 1);
+            loadStyleToUI(); renderRules(); markDirty();
+          }
+        });
+      };
       side.append(del, pool);
       row.append(side);
     }
     box.append(row);
-  }); }
-function testRule(r, mode) { const body = { amount: sampleAmount(r), name: t('previewDonor'), ruleId: r.id, style: r.style || {} }; if (mode === 'yt') body.youtube = 'https://www.youtube.com/watch?v=teUWsONJkk8'; if (mode === 'md') body.mediaUrl = ($('test_media_url')?.value || '').trim(); fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
-$('addrule').onclick = () => { const idx = Math.max(0, rules.findIndex(r => r.id === 'default')); rules.splice(idx, 0, { id: newId(), label: '', min: 100, max: 100, pool: false, style: {} }); sel = idx; loadStyleToUI(); renderRules(); };
-const clampRange = v => Math.min(29999, Math.max(10, Math.round(Number(v)) || 10));
-['rule_min','rule_max'].forEach(id => $(id).addEventListener('input', () => { if (!rules[sel]) return; rules[sel].min = clampRange($('rule_min').value); rules[sel].max = clampRange($('rule_max').value); renderRules(); }));
-$('rule_label').addEventListener('input', e => { if (!rules[sel] || rules[sel].id === 'default') return; rules[sel].label = e.target.value.trim(); renderRules(); });
+  });
+  updateRuleOpts();
+}
+async function testRule(r, mode) {
+  if (!r || !rulesLoaded) return;
+  const i = rules.indexOf(r);
+  if (i >= 0 && i !== sel) { sel = i; loadStyleToUI(); renderRules(); }
+  try { r.style = readStyle(); } catch {}
+  const row = document.querySelector(`.nt-cue[data-rule-id="${r.id}"]`);
+  row?.classList.add('is-testing');
+  showToast(t('testSending'), 30000);
+  const body = { amount: sampleAmount(r), name: t('previewDonor'), ruleId: r.id, style: r.style || {} };
+  if (mode === 'yt') body.youtube = 'https://www.youtube.com/watch?v=teUWsONJkk8';
+  if (mode === 'md') body.mediaUrl = ($('test_media_url')?.value || '').trim();
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    let res;
+    try {
+      res = await fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal });
+    } finally { clearTimeout(timer); }
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok || d.ok === false) throw new Error(d.error || ('HTTP ' + res.status));
+    showToast(t('testSent'));
+  } catch (e) {
+    showToast(t('testFailed') + (e.message ? ': ' + e.message : ''), 4500, null, true);
+  } finally {
+    row?.classList.remove('is-testing');
+  }
+}
+$('addrule').onclick = () => {
+  if (!rulesLoaded) return;
+  const idx = Math.max(0, rules.findIndex(r => r.id === 'default'));
+  rules.splice(idx, 0, starterRule(10, 10));
+  sel = idx; loadStyleToUI(); renderRules(); markDirty();
+  const row = document.querySelector(`.nt-cue[data-rule-id="${rules[idx].id}"]`);
+  row?.scrollIntoView({ block: 'nearest' });
+  $('rule_min').focus();
+};
+const clampMin = v => Math.min(29999, Math.max(10, Math.round(Number(v)) || 10));
+const clampMax = v => Math.min(29999, Math.max(0, Math.round(Number(v)) || 0));
+$('rule_min').addEventListener('input', () => {
+  if (!rules[sel] || rules[sel].id === 'default') return;
+  rules[sel].min = Number($('rule_min').value) || 0;
+  renderRules(); markDirty();
+});
+$('rule_max').addEventListener('input', () => {
+  if (!rules[sel] || rules[sel].id === 'default') return;
+  rules[sel].max = Number($('rule_max').value) || 0;
+  renderRules(); markDirty();
+});
+['rule_min','rule_max'].forEach(id => $(id).addEventListener('change', () => {
+  if (!rules[sel] || rules[sel].id === 'default') return;
+  const min = id === 'rule_min' ? clampMin($(id).value) : clampMin($('rule_min').value);
+  const max = id === 'rule_max' ? clampMax($(id).value) : clampMax($('rule_max').value);
+  rules[sel].min = min; rules[sel].max = max;
+  $('rule_min').value = min; $('rule_max').value = max;
+  renderRules(); markDirty();
+}));
+$('rule_label').addEventListener('input', e => {
+  if (!rules[sel] || rules[sel].id === 'default') return;
+  rules[sel].label = e.target.value.trim();
+  renderRules(); markDirty();
+});
 /* YouTube settings live on the Donate Page Customization page */
 /* add-to-pool is toggled in each rule row */
 function readStyle() { const s = {}; for (const k of STYLE_KEYS) { const el = $(k); if (!el) continue; if (BOOL.has(k)) s[k] = el.checked; else if (NUM.has(k)) s[k] = Number(el.value); else s[k] = el.value; }
@@ -262,13 +475,28 @@ function writeStyle(s) { const m = Object.assign({}, DEFAULTS, s || {}); for (co
   else if (k === 'media_w' || k === 'media_h') el.value = (Number(m[k]) > 0 ? m[k] : 320);
   else el.value = (m[k] ?? ''); }
   document.dispatchEvent(new CustomEvent('notify:style')); }
-function updateRuleOpts() { const r = rules[sel]; if (!r) return; const isDef = r.id === 'default';
+function updateRuleOpts() {
+  const r = rules[sel]; if (!r) return;
+  const isDef = r.id === 'default';
   if (isDef) { r.min = 10; r.max = 29999; $('rule_min').value = 10; $('rule_max').value = 29999; }
   const lock = isDef || r.pool;
   $('rule_min').disabled = lock; $('rule_max').disabled = lock;
+  const hideRange = isDef || r.id === 'test';
+  const rangeLabel = $('rangeLabel'), rangeFields = $('rangeFields');
+  if (rangeLabel) rangeLabel.style.display = hideRange ? 'none' : '';
+  if (rangeFields) rangeFields.style.display = hideRange ? 'none' : '';
   const nameInput = $('rule_label');
   if (nameInput) { nameInput.disabled = isDef; nameInput.placeholder = isDef ? t('defaultLabel') : t('name'); }
-  $('rulenote').textContent = isDef || !r.pool ? t('fixedCueNote') : t('poolCueNote');
+  const issues = rangeIssues();
+  const issue = (r.id !== 'default' && r.id !== 'test' && !r.pool) ? issues[r.id] : null;
+  const note = issue === 'invalid' ? t('rangeInvalid')
+    : issue === 'covered' ? t('rangeCovered')
+    : issue === 'overlap' ? t('rangeOverlap')
+    : isDef ? t('fallbackNote')
+    : r.id === 'test' ? t('testRowNote')
+    : !r.pool ? t('fixedCueNote') : t('poolCueNote');
+  const el = $('rulenote');
+  if (el) { el.textContent = note; el.classList.toggle('nt-note--warning', !!issue); }
 }
 function syncTestTab() { const isTest = rules[sel] && rules[sel].id === 'test'; const tab = $('tab-test'), panel = $('panel-test'); if (tab) tab.hidden = !isTest; if (panel) panel.hidden = !isTest || !tab.classList.contains('is-active'); if (!isTest && tab && tab.classList.contains('is-active')) { const copy = $('tab-copy'); if (copy) copy.click(); } }
 function loadStyleToUI() { if (rules[sel]) { writeStyle(rules[sel].style || {}); $('test_media_url').value = rules[sel].test_media_url || '';
@@ -333,29 +561,82 @@ async function loadTts() {
     fillTtsVoices(); if (tc.voice) $('tts_voice').value = tc.voice; refreshSelLabels(); } catch {}
 }
 $('tts_mode').addEventListener('change', fillTtsVoices);
-window.savePage = async () => { if (rules[sel]) { rules[sel].style = readStyle(); if (rules[sel].id === 'test') rules[sel].test_media_url = ($('test_media_url')?.value || '').trim(); }
-  try { const r = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rules }) }); const d = await r.json();
+window.savePage = async () => {
+  if (!rulesLoaded) { showToast(t('loadFailed'), 4500, null, true); return; }
+  if (rules[sel]) {
+    rules[sel].style = readStyle();
+    if (rules[sel].id === 'test') rules[sel].test_media_url = ($('test_media_url')?.value || '').trim();
+  }
+  if (Object.values(rangeIssues()).includes('invalid')) {
+    showToast(t('rangeInvalid'), 4500, null, true);
+    $('status').className = 'status err'; $('status').textContent = t('rangeInvalid');
+    return;
+  }
+  const save = $('save'); if (save) save.disabled = true;
+  try {
+    const r = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rules }) });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'save error');
     await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: $('tts_mode').value, voice: $('tts_voice').value, readMode: $('tts_read').value,
         speed: Number($('tts_speed').value) || 1.2,
         azureKey: $('azure_key').value, azureRegion: $('azure_region').value }) });
-    $('status').className = 'status' + (d.ok ? ' ok' : ' err'); $('status').textContent = d.ok ? t('saved') : ('error: ' + (d.error || ''));
-    if (d.ok) { const nr = await (await fetch('/api/notify')).json(); if (nr.rules) { rules = nr.rules; loadStyleToUI(); renderRules(); } } } catch { $('status').className='status err'; $('status').textContent = 'save error'; } };
+    markClean();
+    $('status').className = 'status'; $('status').textContent = '';
+    showToast(t('saved'), 2200);
+    const nr = await (await fetch('/api/notify')).json();
+    if (nr && Array.isArray(nr.rules)) { rules = nr.rules; if (sel >= rules.length) sel = 0; loadStyleToUI(); renderRules(); }
+  } catch (e) {
+    $('status').className = 'status err';
+    $('status').textContent = (e.message || 'save error');
+    showToast((e.message || 'save error'), 4500, null, true);
+  } finally {
+    if (save) save.disabled = false;
+  }
+};
 /* test wired in extraTools */
 function sampleAmount(r) { if (r.id === 'default') return 100; if (r.max > r.min && r.min > 0) return r.min; if (r.max > 0) return r.max; return r.min > 0 ? r.min : 100; }
 $('export').onclick = () => { const blob = new Blob([JSON.stringify({ rules }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'localmonodonate-alerts.json'; a.click(); };
-$('import').onclick = () => { const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange = () => { const f=inp.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ try{ const j=JSON.parse(rd.result); if (j.rules) { rules=j.rules; sel=0; loadStyleToUI(); renderRules(); } }catch{} }; rd.readAsText(f); }; inp.click(); };
+$('import').onclick = () => { const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange = () => { const f=inp.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ try { const j=JSON.parse(rd.result); if (!j || !Array.isArray(j.rules)) throw new Error('invalid'); if (!confirm(t('confirmImport'))) return; rules = j.rules.filter(r => r && typeof r === 'object').map(r => ({ id: r.id || newId(), label: r.label || '', min: Number(r.min) || 0, max: Number(r.max) || 0, pool: !!r.pool, style: r.style || {}, test_media_url: r.test_media_url || '' })); if (!rules.length) throw new Error('empty'); if (!rules.some(r => r.id === 'default')) rules.push({ id:'default', label:'', min:0, max:0, style:{} }); ensureTestRule(); sel=0; loadStyleToUI(); renderRules(); markDirty(); showToast(t('importDone'), 2600); } catch { showToast(t('importFailed'), 4500, null, true); } }; rd.readAsText(f); }; inp.click(); };
 $('reset').onclick = () => { if (!rules[sel]) return; if (!confirm(t('confirmReset'))) return;
-  rules[sel].style = JSON.parse(JSON.stringify(DEFAULTS)); loadStyleToUI(); renderRules();
-  $('status').className = 'status ok'; $('status').textContent = t('resetDone'); };
+  rules[sel].style = JSON.parse(JSON.stringify(DEFAULTS)); loadStyleToUI(); renderRules(); markDirty();
+  showToast(t('resetDone'), 2600); };
 let pvT = null;
 document.querySelectorAll('input,select').forEach(el => { if (el.id && el.id !== 'file' && el.id !== 'bgfile') el.addEventListener('input', () => { clearTimeout(pvT); pvT = setTimeout(preview, 90); }); });
 function refreshSelLabels() {}
+async function loadRules() {
+  try {
+    const res = await fetch('/api/notify');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const n = await res.json();
+    if (!n || !Array.isArray(n.rules)) throw new Error('invalid payload');
+    rules = n.rules.length ? n.rules : [ { id:'default', label:'', min:0, max:0, style:{} } ];
+    sel = 0; rulesLoaded = true;
+    const migrated = ensureStarterBank();
+    ensureTestRule();
+    applyLang(); loadStyleToUI(); settingsLoaded = true;
+    markClean();
+    const save = $('save'); if (save) save.disabled = false;
+    const add = $('addrule'); if (add) add.disabled = false;
+    if (migrated) { markDirty(); showToast(t('starterUpdated'), 6000); }
+    return true;
+  } catch (e) {
+    rulesLoaded = false; rules = []; settingsLoaded = false;
+    renderLoadError();
+    $('status').className = 'status err';
+    $('status').textContent = t('loadFailed');
+    return false;
+  }
+}
 (async () => {
-  try { const fonts = await (await fetch('/api/fonts')).json(); const list = (fonts.fonts && fonts.fonts.length ? fonts.fonts : ['Segoe UI','Arial']);
+  try { const fonts = await (await fetch('/api/fonts')).json();
+    const banned = /marlett|webdings|wingdings|bookshelf symbol|8514oem|ms reference|segoe mdl2|segoe fluent|hololens|symbol/i;
+    let list = (fonts.fonts && fonts.fonts.length ? fonts.fonts : ['Segoe UI','Arial']).filter(f => !banned.test(f));
+    if (!list.length) list = ['Segoe UI','Arial'];
     ['blue_font','green_font','msg_font'].forEach(id => { const s2 = $(id); s2.innerHTML = ''; for (const f of list) { const o = document.createElement('option'); o.value = f; o.textContent = f; s2.append(o); } }); } catch {}
-  try { const n = await (await fetch('/api/notify')).json(); rules = (n.rules && n.rules.length) ? n.rules : [ { id:'default', label:'', min:0, max:0, style:{} } ]; sel = 0; } catch { rules = [ { id:'default', label:'', min:0, max:0, style:{} } ]; }
-  ensureStarterBank(); ensureTestRule(); applyLang(); loadStyleToUI(); settingsLoaded = true; loadTts(); })();
+  await loadRules();
+  loadTts();
+})();
 window.applyLang = applyLang;
 window.refreshPreview = function () { try { preview(); } catch {} };
 /* Presentation hook for media drag-to-pan. */

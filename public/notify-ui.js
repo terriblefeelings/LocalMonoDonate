@@ -35,22 +35,7 @@
 
   const panelHost = document.querySelector('.nt-tabpanels');
   function syncInspectorHeight() {
-    if (!panelHost) return;
-    if (window.matchMedia('(max-width:900px)').matches) { panelHost.style.minHeight = ''; return; }
-    const allPanels = Array.from(panelHost.querySelectorAll('.nt-tabpanel'));
-    if (!allPanels.length) return;
-    const style = getComputedStyle(panelHost);
-    const padding = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
-    let tallest = 0;
-    allPanels.forEach(panel => {
-      const wasHidden = panel.hidden;
-      panel.hidden = false;
-      panel.style.visibility = 'hidden';
-      tallest = Math.max(tallest, panel.scrollHeight);
-      panel.hidden = wasHidden;
-      panel.style.visibility = '';
-    });
-    panelHost.style.minHeight = Math.ceil(tallest + padding) + 'px';
+    if (panelHost) panelHost.style.minHeight = '';
   }
   window.addEventListener('resize', syncInspectorHeight, { passive: true });
   document.addEventListener('notify:style', syncInspectorHeight);
@@ -162,7 +147,7 @@
   document.addEventListener('notify:lang', () => { syncInspectorHeight(); });
 
   stage.addEventListener('wheel', event => {
-    if (event.ctrlKey) return;
+    if (!event.ctrlKey) return;
     event.preventDefault();
     const zoom = $('media_zoom');
     if (!zoom) return;

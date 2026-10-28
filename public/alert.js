@@ -30,8 +30,8 @@
     const src = N.video_url || N.image_url; if (!src) return null;
     const box = document.createElement('div'); box.className = 'nmbox';
     box.style.width = (N.media_w||320) + 'px'; box.style.height = (N.media_h||320) + 'px'; box.style.borderRadius = (N.media_radius||0) + 'px';
-    const el = document.createElement(N.video_url ? 'video' : 'img'); el.src = src;
-    el.style.transform = `translate(${N.media_pan_x||0}px, ${N.media_pan_y||0}px) scale(${(N.media_zoom||100)/100})`;
+    const el = document.createElement(N.video_url ? 'video' : 'img'); el.src = src;    el.style.transform = `translate(${N.media_pan_x||0}px, ${N.media_pan_y||0}px) scale(${(N.media_zoom||100)/100})`;
+    if (el.tagName === 'IMG') el.alt = '';
     el.style.transformOrigin = 'center center';
     if (el.tagName === 'VIDEO') { el.playsInline = true;
       if (opts && opts.preview) { el.muted = true; el.autoplay = false; el.preload = 'metadata'; }
