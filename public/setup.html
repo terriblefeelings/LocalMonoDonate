@@ -37,7 +37,10 @@
   .update-card p{margin:0 0 18px;font-size:13.5px;line-height:1.5;color:var(--muted)}
   .update-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
   .update-card .update-actions button{flex:1 1 0;min-width:0;justify-content:center;text-align:center}
-  .update-btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .update-action{width:140px;padding:0;justify-content:center;text-align:center}
+  .update-tools{display:flex;flex-wrap:wrap;gap:18px;margin-top:12px}
+  .update-tools .setitem{display:flex;flex-direction:column;align-items:flex-start;gap:6px;flex:1 1 240px;min-width:0}
+  .update-tools .note{margin:0}
   .update-card .danger-hover:hover{background:#D14D41;border-color:#D14D41;color:#0C0B0A}
   .healthmsg{white-space:pre-line}
 </style>
@@ -89,12 +92,18 @@
       </div></div>
       <div class="row" style="align-items:flex-start"><label data-i18n="updates">Updates</label><div class="ctl">
         <div class="setlabel" id="currentVersion">Current version: 0.2.19</div>
-        <button class="btn" id="checkUpdate" type="button" data-i18n="checkUpdate">Check update</button>
+        <button class="btn update-action" id="checkUpdate" type="button" data-i18n="checkUpdate">Check update</button>
         <div class="note" data-i18n="checkUpdateNote">Checks GitHub for a newer version. With auto-update enabled, Update installs it and restarts the app. With auto-update disabled, Update opens the release page.</div>
         <div class="up-to-date" id="updateMsg" role="status" aria-live="polite"></div>
-        <div class="update-btnrow">
-          <button class="btn" id="checkHealth" type="button" data-i18n="checkHealth">Check health</button>
-          <button class="btn" id="reinstallBtn" type="button" data-i18n="reinstallBtn">Reinstall</button>
+        <div class="update-tools">
+          <div class="setitem">
+            <button class="btn update-action" id="checkHealth" type="button" data-i18n="checkHealth">Check health</button>
+            <div class="note" data-i18n="healthNote">Checks WebView2, the TTS engine, ffmpeg, Python, Tailscale and ports. Lists anything missing.</div>
+          </div>
+          <div class="setitem">
+            <button class="btn update-action" id="reinstallBtn" type="button" data-i18n="reinstallBtn">Reinstall</button>
+            <div class="note" data-i18n="reinstallNote">Downloads the latest full release and replaces the app files. You choose whether to keep your data.</div>
+          </div>
         </div>
         <div class="up-to-date healthmsg" id="healthMsg" role="status" aria-live="polite"></div>
       </div></div>
@@ -239,6 +248,8 @@ Object.assign(window.I18N.en, {
   currentVersion: 'Current version: {v}',
   checkUpdateNote: 'Checks GitHub for a newer version. With auto-update enabled, Update installs it and restarts the app. With auto-update disabled, Update opens the release page.',
   checkHealth: 'Check health', reinstallBtn: 'Reinstall',
+  healthNote: 'Checks WebView2, the TTS engine, ffmpeg, Python, Tailscale and ports. Lists anything missing.',
+  reinstallNote: 'Downloads the latest full release and replaces the app files. You choose whether to keep your data.',
   healthChecking: 'Checking…', healthOk: 'Everything is installed.',
   healthMissing: 'Missing: {list}.', healthProposal: 'Use Reinstall below to restore the missing components.',
   healthFailed: 'Could not run the health check.',
@@ -276,6 +287,8 @@ Object.assign(window.I18N.ua, {
   currentVersion: 'Поточна версія: {v}',
   checkUpdateNote: 'Перевіряє GitHub на нову версію. Якщо автооновлення увімкнено, «Оновити» встановить її та перезапустить застосунок. Якщо вимкнено — «Оновити» відкриє сторінку релізу.',
   checkHealth: 'Перевірити стан', reinstallBtn: 'Перевстановити',
+  healthNote: 'Перевіряє WebView2, TTS-двигун, ffmpeg, Python, Tailscale і порти. Показує, чого бракує.',
+  reinstallNote: 'Завантажує останній повний реліз і замінює файли застосунку. Ви вибираєте, зберегти дані чи ні.',
   healthChecking: 'Перевірка…', healthOk: 'Усе встановлено.',
   healthMissing: 'Відсутнє: {list}.', healthProposal: 'Натисніть «Перевстановити» нижче, щоб відновити відсутні компоненти.',
   healthFailed: 'Не вдалося виконати перевірку.',
