@@ -7,6 +7,7 @@
 </head>
 <body>
 <div id="stage"></div>
+<script src="/alert.js"></script>
 <script>
 const CFG = { videoMaxMs: 180000 };
 let RULES = [];
@@ -15,9 +16,7 @@ loadSettings(); setInterval(loadSettings, 5000);
 function pickStyle(amount, ruleId) {
   if (ruleId) { const r = RULES.find(x => x.id === ruleId); if (r) return r.style || {}; }
   for (const r of RULES) { if (r.id === 'default' || r.id === 'test' || r.pool) continue; const mn = r.min || 0, mx = r.max || 0; if (amount + 1e-9 >= mn && (mx <= 0 || amount <= mx + 1e-9)) return r.style || {}; }
-  const pool = RULES.filter(r => r.id === 'default' || r.id === 'test' || r.pool);
-  if (!pool.length) return {};
-  return pool[Math.floor(Math.random() * pool.length)].style || {};
+  return Alert.pickPooled(RULES, amount);
 }
 function ytCmd(win, func, args = []) { try { win.postMessage(JSON.stringify({ event: 'command', func, args }), '*'); } catch {} }
 function playYT(host, id, maxMs) {

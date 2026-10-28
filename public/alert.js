@@ -74,5 +74,13 @@
     let size = base; el.style.fontSize = size + 'px'; let g = 80;
     while (el.scrollHeight > maxh + 1 && size > 8 && g-- > 0) { size -= 1; el.style.fontSize = size + 'px'; }
   }
-  window.Alert = { DEFAULTS, fmt, hexA, sub, isVidUrl, outline, animFrom, lineStyle, mediaBox, build, fitMessage };
+  /* pool rules only compete for amounts inside their own range, so a 500-800 pool
+     never plays for 400; the default rule is the global pool because it spans 10-29999 */
+  function rangeHit(r, amount) { const mn = r.min || 0, mx = r.max || 0; return amount + 1e-9 >= mn && (mx <= 0 || amount <= mx + 1e-9); }
+  function pickPooled(rules, amount) {
+    const pool = rules.filter(r => r.id !== 'test' && (r.id === 'default' || r.pool) && rangeHit(r, amount));
+    if (!pool.length) return (rules.find(r => r.id === 'default') || {}).style || {};
+    return pool[Math.floor(Math.random() * pool.length)].style || {};
+  }
+  window.Alert = { DEFAULTS, fmt, hexA, sub, isVidUrl, outline, animFrom, lineStyle, mediaBox, build, fitMessage, rangeHit, pickPooled };
 })();
