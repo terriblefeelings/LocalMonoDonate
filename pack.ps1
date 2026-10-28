@@ -8,7 +8,7 @@
 #   powershell -File pack.ps1 -WithMsi                 # + offline Tailscale installer
 #
 # Release upload should include both:
-#   dist\MONOBANK-lite-<ver>.zip  (first install, TTS engine included)
+#   dist\MONOBANK-lite-<ver>.zip  (first install and Reinstall, TTS engine included)
 #   dist\LocalMonoDonate.exe      (small in-app auto-update asset)
 #
 # The app downloads the current Tailscale release at install time, so the bundled MSI is

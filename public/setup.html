@@ -35,6 +35,9 @@
   .update-card h3{margin:0 0 8px;font-size:17px}
   .update-card p{margin:0 0 18px;font-size:13.5px;line-height:1.5;color:var(--muted)}
   .update-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+  .update-btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .update-card .danger{background:#D14D41;border-color:#D14D41;color:#0C0B0A;font-weight:600}
+  .healthmsg{white-space:pre-line}
 </style>
 </head>
 <body>
@@ -87,6 +90,11 @@
         <button class="btn" id="checkUpdate" type="button" data-i18n="checkUpdate">Check update</button>
         <div class="note" data-i18n="checkUpdateNote">Checks GitHub for a newer version. With auto-update enabled, Update installs it and restarts the app. With auto-update disabled, Update opens the release page.</div>
         <div class="up-to-date" id="updateMsg" role="status" aria-live="polite"></div>
+        <div class="update-btnrow">
+          <button class="btn" id="checkHealth" type="button" data-i18n="checkHealth">Check health</button>
+          <button class="btn" id="reinstallBtn" type="button" data-i18n="reinstallBtn">Reinstall</button>
+        </div>
+        <div class="up-to-date healthmsg" id="healthMsg" role="status" aria-live="polite"></div>
       </div></div>
     </div>
   </div>
@@ -177,6 +185,14 @@
   </div>
 </div>
 
+<div class="update-modal" id="reinstallModal">
+  <div class="update-card" role="dialog" aria-modal="true" aria-labelledby="reinstallTitle">
+    <h3 id="reinstallTitle"></h3>
+    <p id="reinstallText"></p>
+    <div class="update-actions" id="reinstallActions"></div>
+  </div>
+</div>
+
 <input type="file" id="bgfile" accept="image/*" style="display:none">
 <input type="file" id="bitsbgfile" accept="image/*" style="display:none">
 <div id="ratbox"><button class="x" id="ratx">✕</button><video id="ratvid" playsinline controls></video></div>
@@ -220,6 +236,22 @@ Object.assign(window.I18N.en, {
   autoUpdateNote: 'When enabled, new versions download and install automatically when the app starts. When disabled, updates are manual: Check update reports a new version and Update opens the release page.',
   currentVersion: 'Current version: {v}',
   checkUpdateNote: 'Checks GitHub for a newer version. With auto-update enabled, Update installs it and restarts the app. With auto-update disabled, Update opens the release page.',
+  checkHealth: 'Check health', reinstallBtn: 'Reinstall',
+  healthChecking: 'Checking…', healthOk: 'Everything is installed.',
+  healthMissing: 'Missing: {list}.', healthProposal: 'Use Reinstall below to restore the missing components.',
+  healthFailed: 'Could not run the health check.',
+  h_webviewLoader: 'WebView2 loader', h_webview: 'WebView2 runtime', h_tts: 'TTS engine', h_python: 'Python runtime',
+  h_ffmpeg: 'ffmpeg', h_ttsModel: 'TTS model and voices', h_tailscale: 'Tailscale',
+  h_tailscaleOff: 'Tailscale is not connected', h_funnel: 'Tailscale Funnel', h_ports: 'app ports',
+  h_appDir: 'app folder (not writable)', h_appData: 'settings folder (not writable)',
+  reinstallTitle: 'Reinstall the app?', reinstallText: 'Downloads the latest full release and replaces the app files.',
+  reinstallKeep: 'Keep my data', reinstallClear: 'Clear everything', reinstallCancel: 'Cancel',
+  reinstallConfirmTitle: 'Confirm reinstall',
+  reinstallKeepText: 'The app will be replaced with the latest release. Settings, logins, donation and sound-alert setup are kept.',
+  reinstallClearText: 'The app and all its data will be deleted: settings, logins, donation and sound-alert setup. This cannot be undone.',
+  reinstallYes: 'Yes', reinstallNo: 'No',
+  reinstallWorkingTitle: 'Reinstalling', reinstallDownloading: 'Downloading the latest release… The app will restart when it is ready.',
+  reinstallFailed: 'Reinstall failed',
   startWithWindowsNote: 'Opens the app automatically after you sign in to Windows.',
   closeToTrayNote: 'The X button hides the window to the tray. To quit completely, use Exit in the tray menu.',
   updates: 'Updates', checkUpdate: 'Check update', checking: 'Checking…',
@@ -241,6 +273,22 @@ Object.assign(window.I18N.ua, {
   autoUpdateNote: 'Коли увімкнено, нові версії завантажуються й встановлюються автоматично під час запуску. Коли вимкнено, оновлення лише вручну: «Перевірити оновлення» повідомить про нову версію, а «Оновити» відкриє сторінку релізу.',
   currentVersion: 'Поточна версія: {v}',
   checkUpdateNote: 'Перевіряє GitHub на нову версію. Якщо автооновлення увімкнено, «Оновити» встановить її та перезапустить застосунок. Якщо вимкнено — «Оновити» відкриє сторінку релізу.',
+  checkHealth: 'Перевірити стан', reinstallBtn: 'Перевстановити',
+  healthChecking: 'Перевірка…', healthOk: 'Усе встановлено.',
+  healthMissing: 'Відсутнє: {list}.', healthProposal: 'Натисніть «Перевстановити» нижче, щоб відновити відсутні компоненти.',
+  healthFailed: 'Не вдалося виконати перевірку.',
+  h_webviewLoader: 'завантажувач WebView2', h_webview: 'середовище WebView2', h_tts: 'TTS-двигун', h_python: 'Python',
+  h_ffmpeg: 'ffmpeg', h_ttsModel: 'модель і голоси TTS', h_tailscale: 'Tailscale',
+  h_tailscaleOff: 'Tailscale не підключено', h_funnel: 'Tailscale Funnel', h_ports: 'порти застосунку',
+  h_appDir: 'тека застосунку (немає доступу на запис)', h_appData: 'тека налаштувань (немає доступу на запис)',
+  reinstallTitle: 'Перевстановити застосунок?', reinstallText: 'Завантажить останній повний реліз і замінить файли застосунку.',
+  reinstallKeep: 'Зберегти дані', reinstallClear: 'Очистити все', reinstallCancel: 'Скасувати',
+  reinstallConfirmTitle: 'Підтвердьте перевстановлення',
+  reinstallKeepText: 'Застосунок буде замінено останнім релізом. Налаштування, входи, донати й звукові сповіщення збережуться.',
+  reinstallClearText: 'Застосунок і всі його дані буде видалено: налаштування, входи, донати й звукові сповіщення. Скасувати це неможливо.',
+  reinstallYes: 'Так', reinstallNo: 'Ні',
+  reinstallWorkingTitle: 'Перевстановлення', reinstallDownloading: 'Завантажуємо останній реліз… Коли все буде готово, застосунок перезапуститься.',
+  reinstallFailed: 'Не вдалося перевстановити',
   startWithWindowsNote: 'Автоматично відкриває застосунок після входу в Windows.',
   closeToTrayNote: 'Кнопка «Х» ховає вікно в трей. Щоб вийти повністю, скористайтеся «Вихід» у меню трея.',
   updates: 'Оновлення', checkUpdate: 'Перевірити оновлення', checking: 'Перевірка…',
@@ -508,7 +556,80 @@ $('updateGo').onclick = async () => {
 };
 $('updateCancel').onclick = () => $('updateModal').classList.remove('show');
 $('updateModal').onclick = e => { if (e.target.id === 'updateModal') $('updateModal').classList.remove('show'); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape') $('updateModal').classList.remove('show'); });
+
+function setHealthMsg(text, err) {
+  const m = $('healthMsg'); if (!m) return;
+  m.textContent = text || '';
+  m.className = 'up-to-date healthmsg' + (text ? ' show' : '') + (err ? ' err' : '');
+}
+$('checkHealth').onclick = async () => {
+  const b = $('checkHealth'); if (b.disabled) return;
+  const label = b.textContent;
+  b.disabled = true; b.textContent = window.t('healthChecking'); setHealthMsg('');
+  try {
+    const h = await (await fetch('/api/health')).json();
+    if (h && h.ok) {
+      setHealthMsg(window.t('healthOk'));
+    } else if (h && Array.isArray(h.missing) && h.missing.length) {
+      const names = h.missing.map(id => window.t('h_' + id)).join(', ');
+      setHealthMsg(window.t('healthMissing').replace('{list}', names) + '\n' + window.t('healthProposal'), true);
+    } else {
+      setHealthMsg(window.t('healthFailed'), true);
+    }
+  } catch { setHealthMsg(window.t('healthFailed'), true); }
+  b.disabled = false; b.textContent = label;
+};
+
+let reinstallBusy = false;
+function closeReinstall() {
+  if (reinstallBusy) return;
+  $('reinstallModal').classList.remove('show');
+}
+function reinstallAction(label, cls, fn) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = cls; b.textContent = label; b.onclick = fn;
+  $('reinstallActions').append(b);
+  return b;
+}
+$('reinstallBtn').onclick = () => {
+  if (reinstallBusy) return;
+  $('reinstallTitle').textContent = window.t('reinstallTitle');
+  $('reinstallText').textContent = window.t('reinstallText');
+  $('reinstallActions').innerHTML = '';
+  reinstallAction(window.t('reinstallKeep'), 'btn', () => reinstallConfirm(false));
+  reinstallAction(window.t('reinstallClear'), 'btn danger', () => reinstallConfirm(true));
+  reinstallAction(window.t('reinstallCancel'), 'primary', closeReinstall).focus();
+  $('reinstallModal').classList.add('show');
+};
+function reinstallConfirm(clear) {
+  $('reinstallTitle').textContent = window.t('reinstallConfirmTitle');
+  $('reinstallText').textContent = clear ? window.t('reinstallClearText') : window.t('reinstallKeepText');
+  $('reinstallActions').innerHTML = '';
+  reinstallAction(window.t('reinstallNo'), 'btn', closeReinstall).focus();
+  reinstallAction(window.t('reinstallYes'), 'primary', () => runReinstall(clear));
+}
+async function runReinstall(clear) {
+  reinstallBusy = true;
+  $('reinstallTitle').textContent = window.t('reinstallWorkingTitle');
+  $('reinstallText').textContent = window.t('reinstallDownloading');
+  $('reinstallActions').innerHTML = '';
+  try {
+    const r = await (await fetch('/api/reinstall', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clear }) })).json();
+    if (!r.ok) throw new Error(r.error || window.t('reinstallFailed'));
+  } catch (e) {
+    reinstallBusy = false;
+    $('reinstallTitle').textContent = window.t('reinstallFailed');
+    $('reinstallText').textContent = e.message || window.t('reinstallFailed');
+    $('reinstallActions').innerHTML = '';
+    reinstallAction(window.t('reinstallNo'), 'btn', closeReinstall);
+  }
+}
+$('reinstallModal').onclick = e => { if (e.target.id === 'reinstallModal') closeReinstall(); };
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  $('updateModal').classList.remove('show');
+  closeReinstall();
+});
 document.addEventListener('DOMContentLoaded', () => { const n = document.getElementById('portNote');
   if (n) n.onclick = () => { const l = document.getElementById('links'); if (l) l.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
 window.savePage = async () => { const sb = $('save'); if (sb) sb.disabled = true; $('status').className = 'status'; $('status').textContent = 'saving…';

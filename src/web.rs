@@ -57,22 +57,36 @@ fn release_update_info(j: &serde_json::Value, current: &str) -> serde_json::Valu
             "available": version_gt(&tag, current), "url": url, "name": name, "asset": asset })
 }
 
-fn fetch_update_info() -> serde_json::Value {
-    let current = env!("CARGO_PKG_VERSION");
+/// Latest public release as GitHub returns it.
+fn latest_release_json() -> Result<serde_json::Value, String> {
     // Staging/test override; production uses the public release feed.
     let api = std::env::var("LMD_UPDATE_API").unwrap_or_else(|_|
         "https://api.github.com/repos/terriblefeelings/LocalMonoDonate/releases/latest".to_string());
-    match ureq::get(&api)
+    ureq::get(&api)
         .set("User-Agent", "LocalMonoDonate")
         .set("Accept", "application/vnd.github+json")
         .timeout(Duration::from_secs(10))
         .call()
-    {
-        Ok(r) => match r.into_string().ok().and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok()) {
-            Some(j) => release_update_info(&j, current),
-            None => json!({ "checking": false, "available": false, "current": current, "error": "invalid GitHub response" }),
-        },
-        Err(e) => json!({ "checking": false, "available": false, "current": current, "error": e.to_string() }),
+        .map_err(|e| e.to_string())?
+        .into_string()
+        .map_err(|e| e.to_string())
+        .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
+}
+
+/// Release assets are only accepted from the project's own download host.
+fn allowed_asset_prefix() -> String {
+    if let Ok(api) = std::env::var("LMD_UPDATE_API") {
+        api.rsplit_once('/').map(|(base, _)| format!("{base}/")).unwrap_or_default()
+    } else {
+        "https://github.com/terriblefeelings/LocalMonoDonate/releases/download/".to_string()
+    }
+}
+
+fn fetch_update_info() -> serde_json::Value {
+    let current = env!("CARGO_PKG_VERSION");
+    match latest_release_json() {
+        Ok(j) => release_update_info(&j, current),
+        Err(e) => json!({ "checking": false, "available": false, "current": current, "error": e }),
     }
 }
 
@@ -136,12 +150,7 @@ fn ps_str(s: &str) -> String { format!("'{}'", s.replace('\'', "''")) }
 
 fn download_update(asset: &serde_json::Value) -> Result<std::path::PathBuf, String> {
     let url = asset.get("url").and_then(|x| x.as_str()).unwrap_or("");
-    let allowed = if let Ok(api) = std::env::var("LMD_UPDATE_API") {
-        api.rsplit_once('/').map(|(base, _)| format!("{base}/")).unwrap_or_default()
-    } else {
-        "https://github.com/terriblefeelings/LocalMonoDonate/releases/download/".to_string()
-    };
-    if !url.starts_with(&allowed) {
+    if !url.starts_with(&allowed_asset_prefix()) {
         return Err("unexpected update URL".into());
     }
     let resp = ureq::get(url)
@@ -208,7 +217,9 @@ Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
         log = ps_str(log.to_string_lossy().as_ref()));
     std::fs::write(&script, body).map_err(|e| e.to_string())?;
     let mut cmd = std::process::Command::new("powershell.exe");
-    cmd.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File"])
+    // never inherit the app folder as CWD: the reinstall moves that folder
+    cmd.current_dir(std::env::temp_dir())
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File"])
         .arg(&script);
     #[cfg(windows)]
     {
@@ -249,6 +260,248 @@ fn update_apply(request: tiny_http::Request) {
         std::thread::sleep(Duration::from_millis(300));
         std::process::exit(0);
     });
+}
+
+/// true when the WebView2 runtime is installed (per-machine or per-user).
+fn webview_runtime_present() -> bool {
+    let mut roots = Vec::new();
+    for var in ["ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA"] {
+        if let Ok(p) = std::env::var(var) {
+            roots.push(std::path::PathBuf::from(p).join("Microsoft").join("EdgeWebView").join("Application"));
+        }
+    }
+    roots.iter().any(|root| {
+        std::fs::read_dir(root)
+            .map(|rd| rd.flatten().any(|e| e.path().join("msedgewebview2.exe").exists()))
+            .unwrap_or(false)
+    })
+}
+
+fn dir_writable(dir: &std::path::Path) -> bool {
+    let probe = dir.join(format!(".lmd-health-{}", std::process::id()));
+    match std::fs::write(&probe, b"ok") {
+        Ok(()) => { let _ = std::fs::remove_file(&probe); true }
+        Err(_) => false,
+    }
+}
+
+/// What a working install needs: runtime files, TTS pieces, Tailscale and a
+/// writable app/data folder. Missing ids are translated by the setup page.
+fn health_report(ctx: &Ctx) -> serde_json::Value {
+    use std::net::{SocketAddr, TcpStream};
+    let cfg = ctx.cfg();
+    let exe_dir = std::env::current_exe().ok()
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let mut missing: Vec<&'static str> = Vec::new();
+
+    if !exe_dir.join("WebView2Loader.dll").exists() { missing.push("webviewLoader"); }
+    if !webview_runtime_present() { missing.push("webview"); }
+
+    if cfg.tts.enabled() {
+        let mut tts_dir = std::path::PathBuf::from(&cfg.tts.dir);
+        if !tts_dir.is_absolute() { tts_dir = exe_dir.join(tts_dir); }
+        if !tts_dir.join("serve.py").exists() { missing.push("tts"); }
+        if !tts_dir.join("venv2").join("Scripts").join("python.exe").exists() { missing.push("python"); }
+        if !tts_dir.join("ffmpeg.exe").exists() { missing.push("ffmpeg"); }
+        if !tts_dir.join("styletts_istftnet_fp16.onnx").exists()
+            || !tts_dir.join("space").join("voices").exists() { missing.push("ttsModel"); }
+    }
+
+    if std::env::var_os("LMD_NO_TAILSCALE").is_none() {
+        let st = crate::tailscale::status();
+        if st.get("installed").and_then(|x| x.as_bool()) != Some(true) {
+            missing.push("tailscale");
+        } else if st.get("running").and_then(|x| x.as_bool()) != Some(true) {
+            missing.push("tailscaleOff");
+        } else if cfg.public_port > 0 && !crate::tailscale::funnel_ok(cfg.public_port) {
+            missing.push("funnel");
+        }
+    }
+
+    for port in [cfg.port, cfg.auction_port, cfg.public_port] {
+        if port == 0 { continue; }
+        let addr = SocketAddr::from(([127, 0, 0, 1], port));
+        if TcpStream::connect_timeout(&addr, Duration::from_secs(2)).is_err() {
+            if !missing.contains(&"ports") { missing.push("ports"); }
+        }
+    }
+
+    if !dir_writable(&exe_dir) { missing.push("appDir"); }
+    if !dir_writable(&ctx.paths.base) { missing.push("appData"); }
+
+    json!({
+        "ok": missing.is_empty(),
+        "missing": missing,
+        "version": env!("CARGO_PKG_VERSION")
+    })
+}
+
+/// The full install archive from the latest release (never the update exe).
+fn full_zip_asset(j: &serde_json::Value) -> Option<serde_json::Value> {
+    j.get("assets").and_then(|x| x.as_array()).and_then(|assets| {
+        assets.iter().find(|a| {
+            let name = a.get("name").and_then(|x| x.as_str()).unwrap_or("");
+            name.starts_with("MONOBANK-lite-") && name.to_ascii_lowercase().ends_with(".zip")
+        })
+    }).map(|a| json!({
+        "name": a.get("name").and_then(|x| x.as_str()).unwrap_or(""),
+        "url": a.get("browser_download_url").and_then(|x| x.as_str()).unwrap_or(""),
+        "size": a.get("size").and_then(|x| x.as_u64()).unwrap_or(0)
+    }))
+}
+
+fn download_full_zip(asset: &serde_json::Value) -> Result<std::path::PathBuf, String> {
+    let url = asset.get("url").and_then(|x| x.as_str()).unwrap_or("");
+    if !url.starts_with(&allowed_asset_prefix()) {
+        return Err("unexpected reinstall URL".into());
+    }
+    let path = std::env::temp_dir().join(format!("LocalMonoDonate-reinstall-{}.zip", std::process::id()));
+    let resp = ureq::get(url)
+        .set("User-Agent", "LocalMonoDonate")
+        .timeout(Duration::from_secs(1800))
+        .call()
+        .map_err(|e| e.to_string())?;
+    let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+    let got = std::io::copy(&mut resp.into_reader().take(600 * 1024 * 1024), &mut file)
+        .map_err(|e| e.to_string());
+    drop(file);
+    let got = match got {
+        Ok(n) => n,
+        Err(e) => { let _ = std::fs::remove_file(&path); return Err(e); }
+    };
+    let expected = asset.get("size").and_then(|x| x.as_u64()).unwrap_or(0);
+    if expected > 0 && got != expected {
+        let _ = std::fs::remove_file(&path);
+        return Err(format!("download size {got} does not match {expected}"));
+    }
+    let mut magic = [0u8; 4];
+    let is_zip = std::fs::File::open(&path)
+        .and_then(|mut f| f.read_exact(&mut magic))
+        .map(|_| magic.starts_with(b"PK"))
+        .unwrap_or(false);
+    if !is_zip {
+        let _ = std::fs::remove_file(&path);
+        return Err("download is not a zip archive".into());
+    }
+    Ok(path)
+}
+
+/// Replace the whole app folder with the release zip after this process exits.
+/// `clear` also deletes the %APPDATA% data folder, so the next start is fresh.
+fn spawn_reinstall_helper(ctx: &Ctx, zip: &std::path::Path, clear: bool) -> Result<(), String> {
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let install = exe.parent().ok_or("cannot find the app folder")?.to_path_buf();
+    // a portable build keeps its data in the app folder; never wipe the app itself
+    let clear = clear && ctx.paths.base != install;
+    let pid = std::process::id();
+    let script = std::env::temp_dir().join(format!("LocalMonoDonate-reinstall-{pid}.ps1"));
+    let log = std::env::temp_dir().join(format!("LocalMonoDonate-reinstall-{pid}.log"));
+    let body = format!(r#"$ErrorActionPreference = 'Stop'
+$appPid = {pid}
+$zip = {zip}
+$dst = {dst}
+$appData = {appdata}
+$clear = ${clear}
+$log = {log}
+$old = $null
+Set-Location -LiteralPath $env:TEMP
+try {{
+  Wait-Process -Id $appPid -Timeout 60 -ErrorAction SilentlyContinue
+  Start-Sleep -Milliseconds 800
+  $tmp = Join-Path $env:TEMP ('LMD-reinstall-' + [guid]::NewGuid().ToString('N'))
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  [System.IO.Compression.ZipFile]::ExtractToDirectory($zip, $tmp)
+  $src = Join-Path $tmp 'LocalMonoDonate'
+  if (-not (Test-Path -LiteralPath $src)) {{ throw 'the archive has no LocalMonoDonate folder' }}
+  if ($clear -and (Test-Path -LiteralPath $appData)) {{
+    try {{ Remove-Item -LiteralPath $appData -Recurse -Force }} catch {{ "clear data failed: $_" | Out-File -LiteralPath $log -Append }}
+  }}
+  $parent = Split-Path -Parent $dst
+  $leaf = Split-Path -Leaf $dst
+  $old = Join-Path $parent ($leaf + '.old-' + (Get-Date -Format 'yyyyMMddHHmmss'))
+  $moved = $false
+  for ($i = 0; $i -lt 40; $i++) {{
+    try {{ Move-Item -LiteralPath $dst -Destination $old -Force; $moved = $true; break }} catch {{ Start-Sleep -Milliseconds 500 }}
+  }}
+  if (-not $moved) {{ throw 'could not move the app folder' }}
+  Copy-Item -LiteralPath $src -Destination $dst -Recurse -Force
+  Start-Process -FilePath (Join-Path $dst 'LocalMonoDonate.exe') -WorkingDirectory $dst
+  'ok' | Out-File -LiteralPath $log -Append
+  Start-Sleep -Seconds 2
+  Remove-Item -LiteralPath $old -Recurse -Force -ErrorAction SilentlyContinue
+  Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
+}} catch {{
+  "fail: $_" | Out-File -LiteralPath $log -Append
+  if ($old -and (Test-Path -LiteralPath $old)) {{
+    if (Test-Path -LiteralPath $dst) {{ Remove-Item -LiteralPath $dst -Recurse -Force -ErrorAction SilentlyContinue }}
+    Move-Item -LiteralPath $old -Destination $dst -Force -ErrorAction SilentlyContinue
+  }}
+  if (Test-Path -LiteralPath (Join-Path $dst 'LocalMonoDonate.exe')) {{
+    Start-Process -FilePath (Join-Path $dst 'LocalMonoDonate.exe') -WorkingDirectory $dst
+  }}
+}}
+Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
+"#,
+        pid = pid,
+        zip = ps_str(zip.to_string_lossy().as_ref()),
+        dst = ps_str(install.to_string_lossy().as_ref()),
+        appdata = ps_str(ctx.paths.base.to_string_lossy().as_ref()),
+        clear = if clear { "true" } else { "false" },
+        log = ps_str(log.to_string_lossy().as_ref()));
+    std::fs::write(&script, body).map_err(|e| e.to_string())?;
+    let mut cmd = std::process::Command::new("powershell.exe");
+    // never inherit the app folder as CWD: the reinstall moves that folder
+    cmd.current_dir(std::env::temp_dir())
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File"])
+        .arg(&script);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn reinstall(ctx: &Ctx, mut request: tiny_http::Request) {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static BUSY: AtomicBool = AtomicBool::new(false);
+    let v = read_body(&mut request);
+    let clear = v.get("clear").and_then(|x| x.as_bool()).unwrap_or(false);
+    if BUSY.swap(true, Ordering::SeqCst) {
+        let _ = request.respond(json_resp(200, json!({ "ok": false, "error": "reinstall already running" })));
+        return;
+    }
+    let result = (|| -> Result<(), String> {
+        let j = latest_release_json()?;
+        let tag = j.get("tag_name").and_then(|x| x.as_str()).unwrap_or("");
+        let current = env!("CARGO_PKG_VERSION");
+        if version_gt(current, tag) {
+            return Err(format!("the latest release ({tag}) is older than the running version ({current})"));
+        }
+        let asset = full_zip_asset(&j).ok_or("the latest release has no full install zip")?;
+        let zip = download_full_zip(&asset)?;
+        if let Err(e) = spawn_reinstall_helper(ctx, &zip, clear) {
+            let _ = std::fs::remove_file(&zip);
+            return Err(e);
+        }
+        Ok(())
+    })();
+    match result {
+        Ok(()) => {
+            let _ = request.respond(json_resp(200, json!({ "ok": true })));
+            std::thread::spawn(|| {
+                std::thread::sleep(Duration::from_millis(300));
+                std::process::exit(0);
+            });
+        }
+        Err(e) => {
+            BUSY.store(false, Ordering::SeqCst);
+            let _ = request.respond(json_resp(200, json!({ "ok": false, "error": e })));
+        }
+    }
 }
 
 fn hdr(k: &str, v: &str) -> Header { Header::from_bytes(k.as_bytes(), v.as_bytes()).unwrap() }
@@ -2336,6 +2589,20 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         }
         return;
     }
+    if path == "/api/health" {
+        if method == Method::Get {
+            let v = health_report(&ctx);
+            let _ = request.respond(json_resp(200, v));
+        } else {
+            let _ = request.respond(json_resp(405, json!({ "ok": false })));
+        }
+        return;
+    }
+    if path == "/api/reinstall" {
+        if method == Method::Post { reinstall(&ctx, request); }
+        else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
     if path == "/api/update/check" {
         if method == Method::Post { update_check(request); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
@@ -2494,7 +2761,7 @@ mod public_gate_tests {
 
 #[cfg(test)]
 mod update_tests {
-    use super::{release_update_info, version_gt};
+    use super::{full_zip_asset, release_update_info, version_gt};
     use serde_json::json;
 
     #[test]
@@ -2530,5 +2797,24 @@ mod update_tests {
             ]
         });
         assert!(release_update_info(&zip_only, "0.2.19")["asset"].is_null());
+    }
+
+    #[test]
+    fn reinstall_uses_the_full_zip_and_never_the_update_asset() {
+        let release = json!({
+            "tag_name": "v9.9.9",
+            "assets": [
+                { "name": "LocalMonoDonate.exe", "browser_download_url": "https://example.test/LocalMonoDonate.exe", "size": 1 },
+                { "name": "MONOBANK-update-9.9.9.zip", "browser_download_url": "https://example.test/update.zip", "size": 2 },
+                { "name": "MONOBANK-lite-9.9.9.zip", "browser_download_url": "https://example.test/full.zip", "size": 3 }
+            ]
+        });
+        let asset = full_zip_asset(&release).expect("full zip");
+        assert_eq!(asset["name"], "MONOBANK-lite-9.9.9.zip");
+        assert_eq!(asset["url"], "https://example.test/full.zip");
+        assert_eq!(asset["size"], 3);
+
+        let no_zip = json!({ "assets": [{ "name": "LocalMonoDonate.exe" }] });
+        assert!(full_zip_asset(&no_zip).is_none());
     }
 }
