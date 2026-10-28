@@ -74,13 +74,17 @@
     let size = base; el.style.fontSize = size + 'px'; let g = 80;
     while (el.scrollHeight > maxh + 1 && size > 8 && g-- > 0) { size -= 1; el.style.fontSize = size + 'px'; }
   }
-  /* pool rules only compete for amounts inside their own range, so a 500-800 pool
-     never plays for 400; the default rule is the global pool because it spans 10-29999 */
+  /* 10-29999 exactly is the global range; anything else is a specific pool.
+     Specific pools compete only among themselves; the global pool is for
+     amounts no specific pool covers. */
   function rangeHit(r, amount) { const mn = r.min || 0, mx = r.max || 0; return amount + 1e-9 >= mn && (mx <= 0 || amount <= mx + 1e-9); }
+  function isGlobalRange(r) { return r.id === 'default' || (r.min === 10 && r.max === 29999); }
   function pickPooled(rules, amount) {
-    const pool = rules.filter(r => r.id !== 'test' && (r.id === 'default' || r.pool) && rangeHit(r, amount));
-    if (!pool.length) return (rules.find(r => r.id === 'default') || {}).style || {};
-    return pool[Math.floor(Math.random() * pool.length)].style || {};
+    const hits = rules.filter(r => r.id !== 'test' && (r.id === 'default' || r.pool) && rangeHit(r, amount));
+    const specific = hits.filter(r => !isGlobalRange(r));
+    const list = specific.length ? specific : hits.filter(isGlobalRange);
+    if (!list.length) return (rules.find(r => r.id === 'default') || {}).style || {};
+    return list[Math.floor(Math.random() * list.length)].style || {};
   }
   window.Alert = { DEFAULTS, fmt, hexA, sub, isVidUrl, outline, animFrom, lineStyle, mediaBox, build, fitMessage, rangeHit, pickPooled };
 })();
