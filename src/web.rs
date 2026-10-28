@@ -1607,6 +1607,7 @@ fn config_get(ctx: &Ctx, public: bool) -> serde_json::Value {
     };
     let qr_links: Vec<String> = (0..MAX_QR_WIDGETS).map(|i| qr_link_at(&cfg, i)).collect();
     let mut v = json!({
+        "version": env!("CARGO_PKG_VERSION"),
         "nickname": cfg.nickname, "overlayname": cfg.overlayname,
         "publicDonate": public_donate,
         "statsToken": cfg.stats_token, "port": cfg.port, "publicPort": cfg.public_port, "publicBase": public_base,
