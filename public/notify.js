@@ -132,6 +132,30 @@ Object.assign(DICT.ua, {
   exportNote:'Завантажити поточний набір алертів у JSON.', importNote:'Завантажити набір алертів із JSON-файлу.', resetNote:'Скинути вибраний алерт до вбудованих значень за замовчуванням.',
   previewNote:'Прокрутіть над переглядом, щоб змінити масштаб; перетягніть, щоб змістити; двічі клацніть, щоб центрувати.'
 });
+Object.assign(DICT.en, {
+  cueBank:'Rules', cueBankHint:'Pick a rule to review its range and styling.', addRule:'+ Add rule',
+  cueSingular:'rule', cuePlural:'rules', name:'Rule', variation:'Donation rule', variationName:'Rule name',
+  selectVariation:'Select rule', deleteVariation:'Delete rule', testVariation:'Test this rule',
+  testRuleLabel:'Test media', defaultLabel:'Fallback', settingsHintRight:'Applies to the selected rule',
+  fixedCueNote:'Fixed amount — this rule plays only in this range.', poolCueNote:'Pool rule — shares equal chance with the default.',
+  bgcMessage:'Message background', bgcTop:'Top line background', bgcAmount:'Amount line background', bgcWindow:'Window background',
+  maxwMessage:'Message max width (px)', maxwTop:'Top line max width (px)', maxwAmount:'Amount line max width (px)', maxwWindow:'Window max width (px)',
+  fontMessage:'Message font', fontTop:'Top line font', fontAmount:'Amount line font', upload:'Upload',
+  ttsNote:'Voice is global: it applies to all rules. Choose Google UA/US, or Azure after entering a key.',
+  resetDone:'Rule reset to defaults.', confirmReset:'Reset this rule?'
+});
+Object.assign(DICT.ua, {
+  cueBank:'Правила', cueBankHint:'Виберіть правило, щоб переглянути його діапазон і стиль.', addRule:'+ Додати правило',
+  cueSingular:'правило', cuePlural:'правил', cueFew:'правила', name:'Правило', variation:'Правило донату', variationName:'Назва правила',
+  selectVariation:'Вибрати правило', deleteVariation:'Видалити правило', testVariation:'Перевірити це правило',
+  testRuleLabel:'Тест медіа', defaultLabel:'Запасне', settingsHintRight:'Застосовується до вибраного правила',
+  fixedCueNote:'Фіксована сума — правило діє лише в цьому діапазоні.', poolCueNote:'Спільний пул — рівний шанс із запасним правилом.',
+  bgcMessage:'Фон повідомлення', bgcTop:'Фон верхнього рядка', bgcAmount:'Фон рядка суми', bgcWindow:'Фон вікна',
+  maxwMessage:'Макс. ширина повідомлення (px)', maxwTop:'Макс. ширина верхнього рядка (px)', maxwAmount:'Макс. ширина рядка суми (px)', maxwWindow:'Макс. ширина вікна (px)',
+  fontMessage:'Шрифт повідомлення', fontTop:'Шрифт верхнього рядка', fontAmount:'Шрифт рядка суми', upload:'Завантажити',
+  ttsNote:'Голос спільний для всіх правил. Оберіть Google UA/US або Azure після введення ключа.',
+  resetDone:'Правило скинуто до налаштувань за замовчуванням.', confirmReset:'Скинути це правило?'
+});
 let lang = localStorage.getItem('lm_lang') || 'en';
 const t = k => (DICT[lang] && DICT[lang][k]) || (DICT.en[k] || k);
 function countLabel(n) {
