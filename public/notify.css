@@ -280,3 +280,15 @@ body .nt-bank,body .nt-monitor{box-shadow:0 0 14px 6px var(--bg)}
 .nt-cue__test:hover+.nt-cue__test{border-left-color:var(--admin-red);color:var(--admin-red)}
 
 .nt-cue{grid-template-columns:minmax(0,1fr) 44px 44px 34px}
+
+/* the cue bank keeps the monitor height and scrolls internally on desktop */
+@media (min-width:901px){
+  .nt-workbench{position:relative}
+  .nt-bank{position:absolute;left:0;top:0;bottom:0;width:360px;height:auto}
+  .nt-monitor{grid-column:2}
+}
+@media (min-width:901px) and (max-width:1100px){.nt-bank{width:300px}}
+.nt-rule-list{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
+.nt-rule-list::-webkit-scrollbar{width:8px;height:0;display:block}
+.nt-rule-list::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:4px}
+.nt-rule-list::-webkit-scrollbar-track{background:transparent}
