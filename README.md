@@ -334,8 +334,9 @@ powershell -File pack.ps1 -WithTts -TtsEngine <шлях-до-lite-tts-engine>
 # результат: dist\MONOBANK-lite-<version>.zip і dist\LocalMonoDonate.exe
 ```
 
-У реліз завантажуйте обидва файли: повний zip для першого встановлення та `LocalMonoDonate.exe` для
-автооновлення. Без окремого exe кнопка UPDATE відкриє сторінку релізу.
+У реліз завантажуйте обидва файли: повний zip для першого встановлення та кнопки **Перевстановити**, і
+`LocalMonoDonate.exe` для автооновлення та ручного оновлення. Без окремого exe кнопка UPDATE відкриє
+сторінку релізу.
 
 `include_str!` вбудовує всі файли з `public/` у exe — **після редагування HTML/JS/CSS потрібна перезбірка**.
 
