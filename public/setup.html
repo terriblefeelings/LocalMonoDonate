@@ -16,7 +16,7 @@
   .tsguide{font-size:12px;line-height:1.65;margin-top:8px}
   /* one centered column, constrained so it reads as a focused form (not lost in a wide canvas) */
   .wrap{max-width:760px}
-  .update-btn{display:none;align-items:center;padding:8px 14px;border-radius:10px;background:#A9DC76;color:#0C0B0A;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.03em}
+  .update-btn{display:none;align-items:center;padding:8px 14px;border-radius:10px;background:#A9DC76;color:#0C0B0A;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:.03em;border:0;cursor:pointer;font-family:inherit}
   .update-btn.show{display:inline-flex}
   .updateStack{display:none}
   .updateStack.show{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
@@ -164,7 +164,8 @@ Object.assign(window.I18N.en, {
   overlayNote: 'OBS Browser Source size: 750×500. Donation alert overlay.',
   mediaNote: 'OBS Browser Source size: 640×360. Media links: YouTube, Instagram, TikTok, Twitch, Reddit and X.',
   bitsOverlayNote: 'OBS Browser Source size: 750×500. Sound Alerts playback overlay; videos use the full source height.',
-  portNote: 'OVERLAY PORTS HAVE BEEN UPDATED — CHANGE YOUR LINKS IN OBS'
+  portNote: 'OVERLAY PORTS HAVE BEEN UPDATED — CHANGE YOUR LINKS IN OBS',
+  updateNow: 'UPDATE', updating: 'Downloading update…', restarting: 'Restarting…', updateFailed: 'Update failed. Try the release page.'
 });
 Object.assign(window.I18N.ua, {
   kDonate: 'Сторінка донатів', kOverlay: 'Оверлей', kYouTube: 'Медіа', kStats: 'Статистика',
@@ -173,7 +174,8 @@ Object.assign(window.I18N.ua, {
   overlayNote: 'Розмір OBS Browser Source: 750×500. Оверлей донатних сповіщень.',
   mediaNote: 'Розмір OBS Browser Source: 640×360. Медіапосилання: YouTube, Instagram, TikTok, Twitch, Reddit і X.',
   bitsOverlayNote: 'Розмір OBS Browser Source: 750×500. Оверлей відтворення звукових сповіщень; відео займає всю висоту джерела.',
-  portNote: 'ПОРТИ ОВЕРЛЕЇВ ОНОВЛЕНО — ЗМІНІТЬ ПОСИЛАННЯ В OBS'
+  portNote: 'ПОРТИ ОВЕРЛЕЇВ ОНОВЛЕНО — ЗМІНІТЬ ПОСИЛАННЯ В OBS',
+  updateNow: 'ОНОВИТИ', updating: 'Завантаження оновлення…', restarting: 'Перезапуск…', updateFailed: 'Не вдалося оновити. Спробуйте сторінку релізу.'
 });
 const $ = id => document.getElementById(id);
 function setStatus(m, err) { const s = $('status'); if (!s) return; s.className = 'status' + (err ? ' err' : ' ok'); s.textContent = m; }
@@ -367,7 +369,21 @@ async function loadUpdate() {
     if (u && u.available && u.url) {
       const b = document.getElementById('updateBtn');
       if (!b || !b.isConnected) { setTimeout(loadUpdate, 300); return; }
-      b.textContent = 'UPDATE ' + (u.latest || ''); b.href = u.url; b.classList.add('show');
+      const label = window.t('updateNow') + ' ' + (u.latest || '');
+      b.textContent = label; b.disabled = false; b.classList.add('show');
+      b.onclick = async () => {
+        if (!u.asset) { window.open(u.url, '_blank', 'noopener'); return; }
+        if (b.disabled) return;
+        b.disabled = true; b.textContent = window.t('updating'); setStatus(window.t('updating'));
+        try {
+          const r = await (await fetch('/api/update/apply', { method: 'POST' })).json();
+          if (!r.ok) throw new Error(r.error || window.t('updateFailed'));
+          b.textContent = window.t('restarting'); setStatus(window.t('restarting'));
+        } catch (e) {
+          b.disabled = false; b.textContent = label;
+          setStatus(e.message || window.t('updateFailed'), true);
+        }
+      };
       const n = document.getElementById('portNote');
       if (n) { n.textContent = window.t('portNote'); n.parentElement.classList.add('show'); }
     }

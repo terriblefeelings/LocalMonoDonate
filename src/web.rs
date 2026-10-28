@@ -35,29 +35,168 @@ fn version_gt(latest: &str, current: &str) -> bool {
     false
 }
 
+/// Standalone executable asset used by the in-app updater. The full zip stays
+/// for first installs; existing installs only download this small file.
+const UPDATE_ASSET: &str = "LocalMonoDonate.exe";
+
+fn release_update_info(j: &serde_json::Value, current: &str) -> serde_json::Value {
+    let tag = j.get("tag_name").and_then(|x| x.as_str()).unwrap_or("").to_string();
+    let url = j.get("html_url").and_then(|x| x.as_str()).unwrap_or("").to_string();
+    let name = j.get("name").and_then(|x| x.as_str()).unwrap_or(&tag).to_string();
+    let asset = j.get("assets").and_then(|x| x.as_array())
+        .and_then(|assets| assets.iter().find(|a| {
+            a.get("name").and_then(|x| x.as_str()) == Some(UPDATE_ASSET)
+        }))
+        .map(|a| json!({
+            "name": UPDATE_ASSET,
+            "url": a.get("browser_download_url").and_then(|x| x.as_str()).unwrap_or(""),
+            "size": a.get("size").and_then(|x| x.as_u64()).unwrap_or(0),
+            "digest": a.get("digest").and_then(|x| x.as_str()).unwrap_or("")
+        }));
+    json!({ "checking": false, "current": current, "latest": tag,
+            "available": version_gt(&tag, current), "url": url, "name": name, "asset": asset })
+}
+
 /// Background GitHub release check; /api/update serves the cached result.
 pub fn start_update_check() {
     std::thread::spawn(|| {
         let current = env!("CARGO_PKG_VERSION");
-        let val = match ureq::get("https://api.github.com/repos/terriblefeelings/LocalMonoDonate/releases/latest")
+        // Staging/test override; production uses the public release feed.
+        let api = std::env::var("LMD_UPDATE_API").unwrap_or_else(|_|
+            "https://api.github.com/repos/terriblefeelings/LocalMonoDonate/releases/latest".to_string());
+        let val = match ureq::get(&api)
             .set("User-Agent", "LocalMonoDonate")
             .set("Accept", "application/vnd.github+json")
             .timeout(Duration::from_secs(10))
             .call()
         {
             Ok(r) => match r.into_string().ok().and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok()) {
-                Some(j) => {
-                    let tag = j.get("tag_name").and_then(|x| x.as_str()).unwrap_or("").to_string();
-                    let url = j.get("html_url").and_then(|x| x.as_str()).unwrap_or("").to_string();
-                    let name = j.get("name").and_then(|x| x.as_str()).unwrap_or(&tag).to_string();
-                    json!({ "checking": false, "current": current, "latest": tag,
-                            "available": version_gt(&tag, current), "url": url, "name": name })
-                }
+                Some(j) => release_update_info(&j, current),
                 None => json!({ "checking": false, "available": false, "current": current, "error": "invalid GitHub response" }),
             },
             Err(e) => json!({ "checking": false, "available": false, "current": current, "error": e.to_string() }),
         };
         *update_info().lock().unwrap() = val;
+    });
+}
+
+/// Quote a value for a single-quoted PowerShell string.
+fn ps_str(s: &str) -> String { format!("'{}'", s.replace('\'', "''")) }
+
+fn download_update(asset: &serde_json::Value) -> Result<std::path::PathBuf, String> {
+    let url = asset.get("url").and_then(|x| x.as_str()).unwrap_or("");
+    let allowed = if let Ok(api) = std::env::var("LMD_UPDATE_API") {
+        api.rsplit_once('/').map(|(base, _)| format!("{base}/")).unwrap_or_default()
+    } else {
+        "https://github.com/terriblefeelings/LocalMonoDonate/releases/download/".to_string()
+    };
+    if !url.starts_with(&allowed) {
+        return Err("unexpected update URL".into());
+    }
+    let resp = ureq::get(url)
+        .set("User-Agent", "LocalMonoDonate")
+        .timeout(Duration::from_secs(120))
+        .call()
+        .map_err(|e| e.to_string())?;
+    let mut buf = Vec::new();
+    resp.into_reader().take(32 * 1024 * 1024).read_to_end(&mut buf).map_err(|e| e.to_string())?;
+    let expected = asset.get("size").and_then(|x| x.as_u64()).unwrap_or(0);
+    if expected > 0 && buf.len() as u64 != expected {
+        return Err(format!("download size {} does not match {}", buf.len(), expected));
+    }
+    if buf.len() < 1024 || &buf[..2] != b"MZ" {
+        return Err("download is not a Windows executable".into());
+    }
+    let path = std::env::temp_dir().join(format!("LocalMonoDonate-update-{}.exe", std::process::id()));
+    std::fs::write(&path, &buf).map_err(|e| e.to_string())?;
+    Ok(path)
+}
+
+/// Replace the running executable and restart it after this process exits.
+fn spawn_update_helper(new_exe: &std::path::Path) -> Result<(), String> {
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let pid = std::process::id();
+    let script = std::env::temp_dir().join(format!("LocalMonoDonate-update-{pid}.ps1"));
+    let log = std::env::temp_dir().join(format!("LocalMonoDonate-update-{pid}.log"));
+    let old = format!("{}.old", exe.display());
+    let body = format!(r#"$ErrorActionPreference = 'Stop'
+$appPid = {pid}
+$dst = {dst}
+$new = {new}
+$old = {old}
+$log = {log}
+try {{
+  Wait-Process -Id $appPid -Timeout 30 -ErrorAction SilentlyContinue
+  Start-Sleep -Milliseconds 500
+  Remove-Item -LiteralPath $old -Force -ErrorAction SilentlyContinue
+  $moved = $false
+  for ($i = 0; $i -lt 40; $i++) {{
+    try {{ Move-Item -LiteralPath $dst -Destination $old -Force; $moved = $true; break }} catch {{ Start-Sleep -Milliseconds 500 }}
+  }}
+  if (-not $moved) {{ throw 'could not move the running exe' }}
+  Copy-Item -LiteralPath $new -Destination $dst -Force
+  Start-Process -FilePath $dst -WorkingDirectory (Split-Path -LiteralPath $dst)
+  'ok' | Out-File -LiteralPath $log -Append
+  Start-Sleep -Seconds 2
+  Remove-Item -LiteralPath $old -Force -ErrorAction SilentlyContinue
+}} catch {{
+  "fail: $_" | Out-File -LiteralPath $log -Append
+  if (Test-Path -LiteralPath $old) {{
+    Copy-Item -LiteralPath $old -Destination $dst -Force -ErrorAction SilentlyContinue
+    Start-Process -FilePath $dst -WorkingDirectory (Split-Path -LiteralPath $dst)
+  }} elseif (Test-Path -LiteralPath $dst) {{
+    Start-Process -FilePath $dst -WorkingDirectory (Split-Path -LiteralPath $dst)
+  }}
+}}
+Remove-Item -LiteralPath $new -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
+"#,
+        dst = ps_str(exe.to_string_lossy().as_ref()),
+        new = ps_str(new_exe.to_string_lossy().as_ref()),
+        old = ps_str(&old),
+        log = ps_str(log.to_string_lossy().as_ref()));
+    std::fs::write(&script, body).map_err(|e| e.to_string())?;
+    let mut cmd = std::process::Command::new("powershell.exe");
+    cmd.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File"])
+        .arg(&script);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn update_apply(request: tiny_http::Request) {
+    let info = update_info().lock().unwrap().clone();
+    if !info.get("available").and_then(|x| x.as_bool()).unwrap_or(false) {
+        let _ = request.respond(json_resp(200, json!({ "ok": false, "error": "no update available" })));
+        return;
+    }
+    let asset = match info.get("asset").filter(|x| !x.is_null()) {
+        Some(a) => a.clone(),
+        None => {
+            let _ = request.respond(json_resp(200, json!({ "ok": false, "error": "this release has no auto-update asset" })));
+            return;
+        }
+    };
+    let new_exe = match download_update(&asset) {
+        Ok(p) => p,
+        Err(e) => {
+            let _ = request.respond(json_resp(200, json!({ "ok": false, "error": e })));
+            return;
+        }
+    };
+    if let Err(e) = spawn_update_helper(&new_exe) {
+        let _ = std::fs::remove_file(&new_exe);
+        let _ = request.respond(json_resp(200, json!({ "ok": false, "error": e })));
+        return;
+    }
+    let _ = request.respond(json_resp(200, json!({ "ok": true })));
+    std::thread::spawn(|| {
+        std::thread::sleep(Duration::from_millis(300));
+        std::process::exit(0);
     });
 }
 
@@ -2139,6 +2278,11 @@ fn handle(ctx: Arc<Ctx>, mut request: tiny_http::Request, port: u16) {
         }
         return;
     }
+    if path == "/api/update/apply" {
+        if method == Method::Post { update_apply(request); }
+        else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
+        return;
+    }
     if path == "/api/youtube" {
         if method == Method::Post { youtube_post(&ctx, request); }
         else { let _ = request.respond(json_resp(405, json!({ "ok": false }))); }
@@ -2287,7 +2431,8 @@ mod public_gate_tests {
 
 #[cfg(test)]
 mod update_tests {
-    use super::version_gt;
+    use super::{release_update_info, version_gt};
+    use serde_json::json;
 
     #[test]
     fn newer_release_wins_and_equal_is_silent() {
@@ -2297,5 +2442,30 @@ mod update_tests {
         assert!(version_gt("v0.10.0", "0.9.9"));
         assert!(version_gt("v1.0", "0.99.99"));
         assert!(!version_gt("v0.2.4-beta", "0.2.4"));
+    }
+
+    #[test]
+    fn picks_the_standalone_exe_and_ignores_zip_only_releases() {
+        let release = json!({
+            "tag_name": "v9.9.9",
+            "name": "Test",
+            "html_url": "https://github.com/terriblefeelings/LocalMonoDonate/releases/tag/v9.9.9",
+            "assets": [
+                { "name": "MONOBANK-lite-9.9.9.zip", "browser_download_url": "https://github.com/terriblefeelings/LocalMonoDonate/releases/download/v9.9.9/MONOBANK-lite-9.9.9.zip", "size": 1000 },
+                { "name": "LocalMonoDonate.exe", "browser_download_url": "https://github.com/terriblefeelings/LocalMonoDonate/releases/download/v9.9.9/LocalMonoDonate.exe", "size": 1234, "digest": "sha256:abc" }
+            ]
+        });
+        let info = release_update_info(&release, "0.2.19");
+        assert_eq!(info["available"], true);
+        assert_eq!(info["asset"]["size"], 1234);
+        assert_eq!(info["asset"]["url"], "https://github.com/terriblefeelings/LocalMonoDonate/releases/download/v9.9.9/LocalMonoDonate.exe");
+
+        let zip_only = json!({
+            "tag_name": "v9.9.9",
+            "assets": [
+                { "name": "MONOBANK-lite-9.9.9.zip", "browser_download_url": "https://example.test/x.zip", "size": 1000 }
+            ]
+        });
+        assert!(release_update_info(&zip_only, "0.2.19")["asset"].is_null());
     }
 }

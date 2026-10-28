@@ -7,6 +7,10 @@
 #   powershell -File pack.ps1 -WithTts -TtsEngine D:\tts-engine-lite
 #   powershell -File pack.ps1 -WithMsi                 # + offline Tailscale installer
 #
+# Release upload should include both:
+#   dist\MONOBANK-lite-<ver>.zip  (first install, TTS engine included)
+#   dist\LocalMonoDonate.exe      (small in-app auto-update asset)
+#
 # The app downloads the current Tailscale release at install time, so the bundled MSI is
 # only for offline machines and is left out by default (~37 MB saved).
 #
@@ -69,6 +73,9 @@ if ($WithTts) {
 '@ | Set-Content (Join-Path $app 'config.example.json') -Encoding UTF8
 
 Copy-Item (Join-Path $root 'README.md') (Join-Path $app 'README.md')
+
+# Small standalone asset for the in-app updater; the full zip remains the first-install package.
+Copy-Item (Join-Path $app 'LocalMonoDonate.exe') (Join-Path $dist 'LocalMonoDonate.exe') -Force
 
 # zip can not store pre-1980 timestamps (WebView2Loader.dll ships with one)
 Get-ChildItem $app -Recurse -File | ForEach-Object { $_.LastWriteTime = Get-Date }

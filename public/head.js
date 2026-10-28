@@ -286,7 +286,7 @@
       '<a class="ib btn" href="/auctionsettings" data-i18n-title="navAuction" title="Auction settings">' + ico(ICON.auction) + '</a>' +
       '<button class="primary save-icon" id="save" data-i18n-title="save" title="Save" aria-label="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg></button>' +
       (location.pathname === '/setup'
-        ? '<div class="updateStack"><a id="updateBtn" class="update-btn" target="_blank" rel="noopener"></a>' +
+        ? '<div class="updateStack"><button id="updateBtn" class="update-btn" type="button"></button>' +
           '<button id="portNote" class="update-btn port-note show" type="button" data-i18n="portNote">OVERLAY PORTS HAVE BEEN UPDATED — CHANGE YOUR LINKS IN OBS</button></div>'
         : '');
     document.querySelectorAll('#themeseg button').forEach(b => b.onclick = () => applyTheme(b.dataset.th));
